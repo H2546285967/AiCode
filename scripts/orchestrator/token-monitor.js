@@ -1,3 +1,4 @@
+// Token 成本监控（v1.2）
 #!/usr/bin/env node
 /**
  * Token 成本监控

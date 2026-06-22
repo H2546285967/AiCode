@@ -1,3 +1,4 @@
+// Layer 2 LLM 评分（启发式占位，v1.2）
 #!/usr/bin/env node
 /**
  * Layer 2 LLM 评分（灰区任务用）

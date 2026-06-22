@@ -1,8 +1,50 @@
+# Claude Code ignore file
+# 告诉 CC 不要读取这些目录/文件（节省 token）
+# 格式类似 .gitignore
+
+# 范式/参考文档（按需手动读取）
+AI-【0】-AI规则与范式/
+AI-【1】-打破信息茧房/
+AI-【2】-学习/
+AI-【4】-公司项目/
+
+# 个人项目（按项目工作）
+AI-【3】-项目开发/
+
+# 其他 AI 工具的记忆（不归 CC 管）
+.Codex/
 .ai-memory/
-.idea/
-【3】工作资料/
-.claude/
+.qoder/
+.lingma/
+.minimaxrc/
+.qoderrules/
+.cursorrules/
+
+# 自动化脚本（按需）
+.automation/
+
+# 大文件/临时文件
+logs/
 *.log
 *.tmp
-node_modules/
+*.zip
+*.tar.gz
+
+# 编辑器临时文件
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Git 内部
 .git/
+.gitignore
+.worktrees/
+
+# 内部归档（手动读）
+archives/
+
+# 原有配置（保留）
+node_modules/

@@ -16,6 +16,9 @@
 | **智能调度** | 复杂任务自动派子代理并行，主会话等完工（2-3 倍提速） |
 | **快照备份** | 重要节点用 `会话快照` 系统备份，重启 1 秒接上（save.js 自动维护索引） |
 | **自我约束** | AI 完成改动后**自动**跑测试+存快照+写KB+更新文档，不需用户提醒 |
+| **上下文分片** | `.claudeignore` 排除 2GB+ 数据，理论省 60% token |
+| **QA 子代理** | `.claude/agents/qa-reviewer.md`（独立验证，28/28 测试覆盖） |
+| **后台异步** | `Ctrl+B` 把当前命令放到后台跑，主线继续。`/tasks` 看所有后台任务 |
 
 ---
 
@@ -35,6 +38,8 @@
 | **保存快照** | `node scripts/会话快照/save.js "标题" "标签"` | 结束会话前 |
 | **备份对话** | `node scripts/会话快照/backup-history.js "标签"` | 重要里程碑 |
 | **加载快照** | 看 `ROOT_快速加载会话.md` | 下次会话开头 |
+| **切到后台** | `Ctrl+B` | 把当前命令放到后台跑 |
+| **看后台任务** | `/tasks` | 列所有后台运行的任务 |
 
 ---
 
@@ -240,7 +245,7 @@ node scripts/会话快照/load.js v1.1
    含：snapshots-index.md + COMPLETION-REPORT.md + Git tag
 ```
 
-### Git worktree 多工作区（P0 已上线）
+### Git worktree 多工作区（P0 已上线 + v1.3.2 实测）
 
 让多个 worker 在不同分支并行开发，不冲突：
 
@@ -251,6 +256,12 @@ bash scripts/parallel/worktree-parallel.sh "任务名" 2
 # 合并回主分支
 bash scripts/parallel/worktree-merge.sh "任务名"
 ```
+
+**v1.3.2 实测结果**：
+- 2 worker 并行：**7 秒**
+- 串行估计：**11 秒**
+- **提速 36%**（小任务下未达社区 4 倍，但 36% 实打实省时间）
+- 大任务下提速更明显（4 个 worker 改 4 个文件）
 
 **注意**：worktree 必须在 Git 仓库下用，工作空间根目录已初始化。
 
@@ -357,4 +368,4 @@ echo '{"tool_name":"UserPromptSubmit","tool_input":{"prompt":"排查 BUG"}}' | n
 
 ---
 
-_最后更新：2026-06-22 · 含智能调度 v1.2.0 + 快照系统 v1.1 + 三级检查点 v1.3 + Git worktree P0 + 中文化命名 + 26 项测试全过_
+_最后更新：2026-06-22 · 含智能调度 v1.2.0 + 快照系统 v1.1 + 三级检查点 v1.3 + Worktree P0 实测（提速 36%）+ 中文化命名 + 28 项测试全过_
