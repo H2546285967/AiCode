@@ -250,6 +250,19 @@ function updateQuickLoad(d) {
   // 启动段：自定义消息 or 默认占位符
   const nextTaskLine = nextTaskMsg ? nextTaskMsg : '<填入你想继续做的事>';
 
+  // v1.3 三级检查点：检测是否需要归档提示
+  let levelHint = '';
+  const isCompletionTag = d.tag && (
+    d.tag.includes('完成') ||
+    d.tag.includes('里程碑') ||
+    d.tag.includes('交付')
+  );
+  const hasArchive = fs.existsSync(path.join(ROOT, 'archives'));
+  if (isCompletionTag && hasArchive) {
+    // 任务完成时提醒归档
+    levelHint = `\n\n> 💡 **三级检查点提示**：本任务完成（标签含"完成/里程碑/交付"）。可跑 \`bash scripts/parallel/global-archive.sh "${d.title}"\` 全局归档`;
+  }
+
   // 新启动段（无 "（最新）" 标记，避免累积）
   const newSegment = `### <a id="${anchorId}"></a>📦 ${d.tag}（最新）
 
@@ -262,7 +275,7 @@ function updateQuickLoad(d) {
 标题: ${d.title}
 标签: ${d.tag}
 
-${nextTaskLine}
+${nextTaskLine}${levelHint}
 \`\`\`
 
 ---

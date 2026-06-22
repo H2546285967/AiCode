@@ -36,7 +36,8 @@
       "Bash(node scripts/orchestrator/learn-rules.js *)",
       "Bash(node scripts/orchestrator/hooks/*.js *)",
       "Bash(bash .claude/skills/left-brain/scripts/session-init.sh)",
-      "Bash(bash .claude/skills/left-brain/scripts/recall.sh \"KB-20260622-003\")"
+      "Bash(bash .claude/skills/left-brain/scripts/recall.sh \"KB-20260622-003\")",
+      "Bash(xargs grep -l -i \"claude.hub\\\\|claudeHub\\\\|claude_hub\")"
     ]
   },
   "hooks": {
