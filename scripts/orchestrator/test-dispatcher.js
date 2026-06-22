@@ -65,3 +65,6 @@ for (const r of results) {
 }
 
 process.exit(fail > 0 ? 1 : 0);
+  // v1.3 实测用例
+  { input: '请帮我讲讲 Spring Boot 的优势', expected: false, desc: '口语化：讲讲' },
+  { input: 'migrate from MySQL to PostgreSQL', expected: true, desc: '英文：migrate' },
