@@ -29,6 +29,10 @@ const TESTS = [
   { input: '瞄一下这段代码', expected: false, desc: '口语化：瞄一下' },
   { input: '帮我扫一眼 LoginController', expected: false, desc: '口语化：扫一眼' },
   { input: '聊聊 Spring Boot 的好处', expected: false, desc: '口语化：聊聊' },
+
+  // v1.3 实测新增
+  { input: '请帮我讲讲 Spring Boot 的优势', expected: false, desc: '口语化：讲讲' },
+  { input: 'migrate from MySQL to PostgreSQL', expected: true, desc: '英文：migrate' },
 ];
 
 let pass = 0, fail = 0;
@@ -65,6 +69,3 @@ for (const r of results) {
 }
 
 process.exit(fail > 0 ? 1 : 0);
-  // v1.3 实测用例
-  { input: '请帮我讲讲 Spring Boot 的优势', expected: false, desc: '口语化：讲讲' },
-  { input: 'migrate from MySQL to PostgreSQL', expected: true, desc: '英文：migrate' },

@@ -115,8 +115,9 @@ function estimateModuleCount(text) {
 function detectTaskType(text) {
   const lower = text.toLowerCase();
 
-  // v1.2: 英文部署/回滚（CI/CD 场景）
+  // v1.2: 英文部署/回滚/迁移（CI/CD 场景）
   if (/\b(deploy|rollback|rollout)\b/.test(lower)) return 'deployment';
+  if (/\b(migrate|migration)\b/.test(lower)) return 'migration';
 
   if (/解释|是什么|为什么|怎么(用|做|实现)|如何/.test(lower)) return 'explanation';
   if (/推荐|建议|区别|对比|哪个好/.test(lower)) return 'question';
