@@ -21,7 +21,7 @@ cd "$ROOT"
 
 NOW=$(date "+%Y-%m-%d %H:%M:%S")
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-SAFE_TASK=$(echo "$TASK_NAME" | tr '/\\:*?"<>+' '-' | cut -c1-30)
+SAFE_TASK=$(echo "$TASK_NAME" | tr -s ' /\\:*?"<>+' '-' | tr ' ' '-' | cut -c1-30 | sed 's/-*$//')
 
 ARCHIVE_DIR="${ROOT}/archives/${SAFE_TASK}-${TIMESTAMP}"
 SNAPSHOT_DIR="${ROOT}/.claude/snapshots"
@@ -55,8 +55,8 @@ echo "|:-----|:-----|:-----|:-----|" >> "$SNAPSHOT_INDEX"
 for snap in "$SNAPSHOT_DIR"/plan-*; do
   [ -f "$snap" ] || continue
   fname=$(basename "$snap")
-  # 提取时间戳（前 19 字符去掉 -）
-  snap_time=$(echo "$fname" | cut -c6-24 | sed 's/-/:/g' | sed 's/T/ /')
+  # 文件名 plan-2026-06-22-13-09-45.md → 提取时间 2026-06-22 13:09:45
+  snap_time=$(echo "$fname" | sed -E 's/^plan-(.{4})-(.{2})-(.{2})-(.{2})-(.{2})-(.{2}).*/\1-\2-\3 \4:\5:\6/')
   title=$(grep -m1 "^# 📋" "$snap" 2>/dev/null | sed 's/^# 📋 计划快照：//' || echo "$fname")
   echo "| 计划 | $snap_time | \`$fname\` | $title |" >> "$SNAPSHOT_INDEX"
   cp "$snap" "$ARCHIVE_DIR/"
@@ -66,14 +66,28 @@ done
 for snap in $(ls -t "$SNAPSHOT_DIR"/*.md 2>/dev/null | grep -v "plan-" | head -10); do
   [ -f "$snap" ] || continue
   fname=$(basename "$snap")
-  snap_time=$(echo "$fname" | cut -c1-19 | sed 's/T/ /' | sed 's/-/:/g' | sed 's/:/_/2g' | sed 's/_/:/g')
+  snap_time=$(echo "$fname" | cut -c1-19 | sed -E 's/(.{4})-(.{2})-(.{2})-(.{2})-(.{2})-(.{2})/\1-\2-\3 \4:\5:\6/')
   title=$(grep -m1 "^# 快照:" "$snap" 2>/dev/null | sed 's/^# 快照: //' || echo "$fname")
   echo "| 迭代 | $snap_time | \`$fname\` | $title |" >> "$SNAPSHOT_INDEX"
 done
 
 echo "📄 快照索引: $SNAPSHOT_INDEX"
 
-# 3. Git tag
+# 3.5 生成 Mermaid 任务流图（T1.3 集成）
+echo ""
+echo "🎨 生成 Mermaid 任务流图..."
+MERMAID_FILE="${ARCHIVE_DIR}/task-flow.mmd"
+if command -v node >/dev/null 2>&1; then
+  if node "${ROOT}/scripts/parallel/mermaid-generator.js" "$SNAPSHOT_INDEX" "$MERMAID_FILE" "$TASK_NAME" 2>&1; then
+    echo "🎨 Mermaid 流程图: $MERMAID_FILE"
+  else
+    echo "   （Mermaid 生成失败，不影响归档）"
+  fi
+else
+  echo "   （未找到 node，跳过 Mermaid 生成）"
+fi
+
+# 4. Git tag
 echo ""
 echo "🏷️  创建 Git tag..."
 git tag -a "archive-$SAFE_TASK-$TIMESTAMP" -m "归档: $TASK_NAME ($NOW)" 2>&1 | tail -2 || echo "   （可能不是 git 仓库，跳过）"
@@ -89,6 +103,14 @@ cat > "$REPORT_FILE" << EOF
 ## 摘要
 
 本次任务完成归档。详见 \`snapshots-index.md\` 和原始快照。
+
+## 任务流图
+
+\`\`\`mermaid
+$(cat "${ARCHIVE_DIR}/task-flow.mmd" 2>/dev/null || echo "graph LR\n  A[无流程图数据] --> B[归档完成]")
+\`\`\`
+
+> 流程图由 \`scripts/parallel/mermaid-generator.js\` 自动生成（v1.6.0+）
 
 ## 恢复指令
 

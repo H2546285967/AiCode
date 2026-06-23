@@ -1,0 +1,48 @@
+{
+  "name": "ai-workspace",
+  "version": "1.7.1",
+  "description": "可移植的个人 AI 开发工作空间 —— 自调度、自记忆、自归档、自兜底",
+  "main": "scripts/orchestrator/index.js",
+  "scripts": {
+    "test": "node scripts/orchestrator/test-dispatcher.js && node scripts/orchestrator/test-e2e.js && node scripts/orchestrator/test-llm-adapter.js && node scripts/parallel/test-mermaid.js && node scripts/orchestrator/test-failure-paths.js && node scripts/mcp/test-mcp.js && node scripts/mcp/test-mcp-failure.js && node scripts/会话快照/test-snapshot-recovery.js && node scripts/parallel/test-worktree-effect.js && node scripts/evolution/test-scanner.js",
+    "test:dispatcher": "node scripts/orchestrator/test-dispatcher.js",
+    "test:e2e": "node scripts/orchestrator/test-e2e.js",
+    "test:llm": "node scripts/orchestrator/test-llm-adapter.js",
+    "test:mermaid": "node scripts/parallel/test-mermaid.js",
+    "test:failure": "node scripts/orchestrator/test-failure-paths.js",
+    "test:mcp": "node scripts/mcp/test-mcp.js && node scripts/mcp/test-mcp-failure.js",
+    "dispatch": "node scripts/orchestrator/dispatcher.js",
+    "archive": "bash scripts/parallel/global-archive.sh",
+    "snapshot": "node scripts/会话快照/save.js",
+    "benchmark": "node benchmarks/run.js",
+    "test:evolution": "node scripts/evolution/test-scanner.js && node scripts/evolution/test-analyzer.js",
+    "evolve": "node scripts/evolution/daily-evolution.js run",
+    "evolve:scan": "node scripts/evolution/daily-evolution.js scan",
+    "evolve:analyze": "node scripts/evolution/daily-evolution.js analyze",
+    "evolve:candidates": "node scripts/evolution/daily-evolution.js candidates",
+    "evolve:log": "node scripts/evolution/daily-evolution.js log",
+    "evolve:watch": "node scripts/evolution/daily-evolution.js watch",
+    "evolve:report": "node scripts/evolution/daily-evolution.js report",
+    "evolve:implement": "node scripts/evolution/daily-evolution.js implement",
+    "evolve:status": "node scripts/evolution/daily-evolution.js status",
+    "trend": "node scripts/evolution/trend-watcher.js check",
+    "evolve:analyze-self": "node scripts/evolution/self-analyzer.js run"
+  },
+  "keywords": [
+    "claude-code",
+    "ai-workspace",
+    "agent-orchestration",
+    "mcp",
+    "memory",
+    "snapshot",
+    "worktree"
+  ],
+  "author": "韩宗辉",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}

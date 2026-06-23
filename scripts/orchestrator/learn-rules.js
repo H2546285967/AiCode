@@ -1,5 +1,5 @@
-// 规则学习模块 — 收集反馈 + 模式分析（v1.2）
 #!/usr/bin/env node
+// 规则学习模块 — 收集反馈 + 模式分析（v1.2）
 /**
  * 规则学习：从用户反馈中提取误判案例，更新规则
  *
@@ -106,6 +106,90 @@ function analyzePatterns() {
   }
 }
 
+// ==================== 反馈闭环：suggest + apply ====================
+
+function suggestKeywords() {
+  const feedbacks = loadFeedback();
+  if (feedbacks.length === 0) {
+    console.log('暂无反馈数据，无法生成建议');
+    return { dont_dispatch: [], should_dispatch: [] };
+  }
+
+  // bad = 应该派但没派 → 提取关键词加入 should_dispatch
+  // good = 不该派但派了 → 提取关键词加入 dont_dispatch
+  const shouldKeywords = {};
+  const dontKeywords = {};
+
+  for (const fb of feedbacks) {
+    if (fb.expected === true && fb.suggestedKeyword) {
+      // bad: 应该派
+      shouldKeywords[fb.suggestedKeyword] = (shouldKeywords[fb.suggestedKeyword] || 0) + 1;
+    }
+    if (fb.expected === false && fb.suggestedKeyword) {
+      // good: 不该派
+      dontKeywords[fb.suggestedKeyword] = (dontKeywords[fb.suggestedKeyword] || 0) + 1;
+    }
+  }
+
+  // 过滤：至少出现 2 次才建议
+  const shouldSuggested = Object.entries(shouldKeywords)
+    .filter(([, count]) => count >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .map(([kw]) => kw);
+
+  const dontSuggested = Object.entries(dontKeywords)
+    .filter(([, count]) => count >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .map(([kw]) => kw);
+
+  console.log('\n📊 规则学习建议');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  if (shouldSuggested.length > 0) {
+    console.log(`\n🟢 建议加入 should_dispatch（${shouldSuggested.length} 个）:`);
+    shouldSuggested.forEach(kw => console.log(`  + "${kw}" (${dontKeywords[kw] || 0 + shouldKeywords[kw]}次)`));
+  }
+  if (dontSuggested.length > 0) {
+    console.log(`\n🔴 建议加入 dont_dispatch（${dontSuggested.length} 个）:`);
+    dontSuggested.forEach(kw => console.log(`  + "${kw}" (${dontKeywords[kw]}次)`));
+  }
+  if (shouldSuggested.length === 0 && dontSuggested.length === 0) {
+    console.log('\n暂无足够反馈生成建议（需同一关键词出现 ≥2 次）');
+  }
+
+  return { dont_dispatch: dontSuggested, should_dispatch: shouldSuggested };
+}
+
+function applySuggestions() {
+  const suggestions = suggestKeywords();
+  if (suggestions.dont_dispatch.length === 0 && suggestions.should_dispatch.length === 0) {
+    console.log('\n无建议可应用');
+    return;
+  }
+
+  const kwFile = path.join(__dirname, 'learned-keywords.json');
+  let existing = { dont_dispatch: [], should_dispatch: [], updated: null };
+  try {
+    existing = JSON.parse(fs.readFileSync(kwFile, 'utf8'));
+  } catch { /* use defaults */ }
+
+  // 合并：去重
+  const mergeUnique = (arr, newItems) => {
+    const set = new Set(arr);
+    for (const item of newItems) set.add(item);
+    return Array.from(set);
+  };
+
+  existing.dont_dispatch = mergeUnique(existing.dont_dispatch, suggestions.dont_dispatch);
+  existing.should_dispatch = mergeUnique(existing.should_dispatch, suggestions.should_dispatch);
+  existing.updated = new Date().toISOString();
+
+  fs.writeFileSync(kwFile, JSON.stringify(existing, null, 2) + '\n', 'utf8');
+  console.log(`\n✅ 已写入 learned-keywords.json`);
+  console.log(`   dont_dispatch: [${existing.dont_dispatch.join(', ')}]`);
+  console.log(`   should_dispatch: [${existing.should_dispatch.join(', ')}]`);
+  console.log('\n⚡ 下次 dispatcher 运行时自动生效');
+}
+
 // CLI 入口
 const cmd = process.argv[2];
 
@@ -144,12 +228,18 @@ if (cmd === 'record') {
     suggestedKeyword: keyword,
     note: `${cmd} feedback (v1.2 简化命令)`,
   });
+} else if (cmd === 'suggest') {
+  suggestKeywords();
+} else if (cmd === 'apply') {
+  applySuggestions();
 } else {
   console.log('用法:');
   console.log('  node learn-rules.js record "<prompt>" <true|false> "[建议关键词]"');
   console.log('  node learn-rules.js bad "<prompt>" "[关键词]"   ← 应该派但没派');
   console.log('  node learn-rules.js good "<prompt>" "[关键词]" ← 不该派但派了');
   console.log('  node learn-rules.js analyze');
+  console.log('  node learn-rules.js suggest    ← 分析反馈，生成关键词建议');
+  console.log('  node learn-rules.js apply      ← 将建议写入 learned-keywords.json');
   console.log('  node learn-rules.js reset');
 }
 

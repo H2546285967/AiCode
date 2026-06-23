@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-mcp-config.json",
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "H:/AI-han/AiCode"
+      ],
+      "description": "访问工作空间文件系统（只读）",
+      "enabled": true
+    },
+    "sqlite": {
+      "command": "node",
+      "args": [
+        "H:/AI-han/AiCode/scripts/mcp/sqlite-server.js",
+        "H:/AI-han/AiCode/data/workspace.db"
+      ],
+      "description": "访问本地 SQLite 数据库（本地实现，Node 22+ 内置 sqlite）",
+      "enabled": true
+    },
+    "fetch": {
+      "command": "node",
+      "args": [
+        "H:/AI-han/AiCode/scripts/mcp/fetch-server.js"
+      ],
+      "description": "抓取网页内容（本地实现，零依赖）",
+      "enabled": true
+    }
+  }
+}

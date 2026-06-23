@@ -24,8 +24,9 @@ if (!fs.existsSync(SNAPSHOT_DIR)) {
 
 const files = fs.readdirSync(SNAPSHOT_DIR)
   .filter(f => f.endsWith('.md'))
-  .sort()
-  .reverse();
+  .map(f => ({ file: f, mtime: fs.statSync(path.join(SNAPSHOT_DIR, f)).mtime.getTime() }))
+  .sort((a, b) => b.mtime - a.mtime)
+  .map(x => x.file);
 
 if (files.length === 0) {
   console.error('❌ 没有快照');

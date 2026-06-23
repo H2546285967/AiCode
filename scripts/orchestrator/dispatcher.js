@@ -56,6 +56,19 @@ const RULES = {
   },
 };
 
+// ==================== 加载动态学习的关键词 ====================
+try {
+  const path = require('path');
+  const learnedFile = path.join(__dirname, 'learned-keywords.json');
+  const learned = JSON.parse(require('fs').readFileSync(learnedFile, 'utf8'));
+  if (Array.isArray(learned.dont_dispatch)) {
+    RULES.dont_dispatch.keywords.push(...learned.dont_dispatch);
+  }
+  if (Array.isArray(learned.should_dispatch)) {
+    RULES.should_dispatch.keywords.push(...learned.should_dispatch);
+  }
+} catch { /* no learned keywords yet, fine */ }
+
 // ==================== 工具函数 ====================
 
 // v1.2: confidence 改 0-1 数字（high=0.9, medium=0.6, low=0.3）

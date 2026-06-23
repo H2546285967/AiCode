@@ -58,6 +58,7 @@ const data = {
   title,
   tag,
   file: filename,
+  nextTaskMsg,
 };
 
 // 1. 加载最近的 session 摘要
@@ -166,7 +167,7 @@ ${d.keyFiles.map(f =>
 恢复后请先跑: bash .claude/skills/left-brain/scripts/session-summary.sh load
 确认对话历史能加载。
 
-继续任务: <填入你想继续做的事>
+继续任务: ${d.nextTaskMsg || '<填入你想继续做的事>'}
 \`\`\`
 
 ---

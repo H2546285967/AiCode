@@ -2,8 +2,14 @@
 logs/
 *.log
 *.tmp
+*.stackdump
 .DS_Store
 Thumbs.db
+
+# 动态学习数据（每次运行变化，不应入库）
+scripts/orchestrator/learned-keywords.json
+data/workspace.db
+data/github/
 
 # 编辑器
 .vscode/

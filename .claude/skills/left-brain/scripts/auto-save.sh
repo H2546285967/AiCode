@@ -71,4 +71,14 @@ if [ ! -f "$SUMMARY_FILE" ] || ! grep -q "type: session_summary" "$SUMMARY_FILE"
 fi
 
 > "${SKILL_DIR}/memory/perceive_queue.txt" 2>/dev/null
+
+# 快照清理：保留最近 30 个
+SNAP_COUNT=$(ls -1 "${SNAPSHOT_DIR}/snapshot_"*.md 2>/dev/null | wc -l)
+if [ "$SNAP_COUNT" -gt 30 ]; then
+    TO_DELETE=$((SNAP_COUNT - 30))
+    ls -1t "${SNAPSHOT_DIR}/snapshot_"*.md 2>/dev/null | tail -n "$TO_DELETE" | while read old; do
+        rm -f "$old"
+    done
+fi
+
 exit 0

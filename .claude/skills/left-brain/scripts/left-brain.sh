@@ -96,43 +96,48 @@ update_graph() {
 }
 
 graph_search() {
-    local matched_ids="$1"
-    local graph_file="${ASSOCIATIONS_DIR}/graph.json"
-    [ -f "$graph_file" ] || return
+    local matched_ids="$*"
+    local search_script="${SCRIPT_DIR}/graph-search.js"
 
     echo ""
-    echo "🔗 关联图谱扩散"
+    echo "🔗 关联图谱扩散 (2-hop)"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-    local edge_lines=$(grep -oE '"source":"[^"]*","target":"[^"]*"' "$graph_file" 2>/dev/null)
-    local hop1_ids=""
-    for mid in $matched_ids; do
-        while IFS= read -r edge; do
-            local src=$(echo "$edge" | sed 's/.*"source":"\([^"]*\)".*/\1/')
-            local tgt=$(echo "$edge" | sed 's/.*"target":"\([^"]*\)".*/\1/')
-            if [ "$src" = "$mid" ] && ! echo "$hop1_ids $matched_ids" | grep -q "$tgt"; then
-                hop1_ids="$hop1_ids $tgt"
-            fi
-            if [ "$tgt" = "$mid" ] && ! echo "$hop1_ids $matched_ids" | grep -q "$src"; then
-                hop1_ids="$hop1_ids $src"
-            fi
-        done <<< "$edge_lines"
-    done
-
-    hop1_ids=$(echo "$hop1_ids" | tr ' ' '\n' | sort -u | tr '\n' ' ')
-    local hop_count=0
-    for hid in $hop1_ids; do
-        hid=$(echo "$hid" | xargs)
-        [ -z "$hid" ] && continue
-        local hfile="${KNOWLEDGE_DIR}/${hid}.md"
-        if [ -f "$hfile" ]; then
-            local hcontent=$(grep -E '^content:' "$hfile" | sed 's/^content: //')
-            hop_count=$((hop_count + 1))
-            echo "  → $hid: $hcontent"
-        fi
-    done
-    if [ $hop_count -eq 0 ]; then
+    if [ ! -f "$search_script" ] || [ -z "$matched_ids" ]; then
         echo "  (无关联节点)"
+        return
+    fi
+
+    local results=$(node "$search_script" $matched_ids 2>/dev/null)
+    if [ -z "$results" ]; then
+        echo "  (无关联节点)"
+        return
+    fi
+
+    local hop1_count=0
+    local hop2_count=0
+    while IFS='|' read -r hop id content; do
+        if [ "$hop" = "1" ]; then
+            hop1_count=$((hop1_count + 1))
+            echo "  → $id: $content"
+        fi
+    done <<< "$results"
+
+    while IFS='|' read -r hop id content; do
+        if [ "$hop" = "2" ]; then
+            hop2_count=$((hop2_count + 1))
+            echo "    →→ $id: $content"
+        fi
+    done <<< "$results"
+
+    echo ""
+    echo "  扩散: ${hop1_count} 条直接 + ${hop2_count} 条间接"
+}
+
+update_memory_index() {
+    local rebuild_script="${SCRIPT_DIR}/rebuild-index.js"
+    if [ -f "$rebuild_script" ]; then
+        node "$rebuild_script" >/dev/null 2>&1
     fi
 }
 
@@ -145,16 +150,22 @@ remember() {
     local keywords=$(echo "$content" | grep -oE '[一-龥]{2,}|[a-zA-Z][a-zA-Z0-9]+' | head -5 | tr '\n' ',' | sed 's/,$//')
 
     local category="其他"
+    local confidence="0.80"
     if echo "$content" | grep -qE '不要|不对|错了|纠正|喜欢|讨厌|偏好|习惯'; then
         category="偏好"
+        confidence="0.95"
     elif echo "$content" | grep -qE '决定|选择|方案|确认'; then
         category="决策"
+        confidence="0.90"
     elif echo "$content" | grep -qE '时间|日期|地点|会议|年会'; then
         category="事件"
+        confidence="0.85"
     elif echo "$content" | grep -qE '人|小王|小李|领导|同事|负责'; then
         category="人物"
+        confidence="0.85"
     elif echo "$content" | grep -qE '项目|开发|代码|技术|框架|API'; then
         category="技术"
+        confidence="0.80"
     fi
 
     cat > "$file" << EOF
@@ -164,7 +175,7 @@ content: $content
 category: $category
 keywords: [$keywords]
 source: 对话自动提取
-confidence: 0.9
+confidence: $confidence
 learned_at: $timestamp
 last_accessed: $timestamp
 access_count: 0
@@ -175,6 +186,7 @@ $content
 EOF
 
     update_graph "$id" "$related_ids"
+    update_memory_index
 
     echo "✅ 已记忆: $id"
     echo "📝 内容: $content"
@@ -189,42 +201,53 @@ recall() {
     local query="$*"
     local found=0
     local matched_ids=""
+    local tmp_file=$(mktemp)
 
     echo "🧠 搜索结果: $query"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
-    echo "📌 精确匹配"
+    echo "📌 匹配结果（按访问频率排序）"
 
-    for file in "${KNOWLEDGE_DIR}"/*.md; do
-        if [ -f "$file" ] && grep -qi "$query" "$file"; then
-            found=$((found + 1))
+    local now_ts=$(date '+%Y-%m-%dT%H:%M:%S')
+
+    # 一次性 grep 找匹配文件，避免 45 次单独调用
+    local matching_files=$(grep -rl "$query" "${KNOWLEDGE_DIR}"/*.md 2>/dev/null)
+
+    # 解析每个匹配文件
+    for file in $matching_files; do
+        if [ -f "$file" ]; then
             local id=$(basename "$file" .md)
-            local content=$(head -20 "$file" | grep -E '^content:' | sed 's/^content: //')
-            local category=$(head -20 "$file" | grep -E '^category:' | sed 's/^category: //')
+            local header=$(head -15 "$file")
+            local content=$(echo "$header" | grep -E '^content:' | sed 's/^content: //')
+            local category=$(echo "$header" | grep -E '^category:' | sed 's/^category: //')
+            local ac=$(echo "$header" | grep -E '^access_count:' | sed 's/access_count: //' | tr -d ' ')
+            ac=${ac:-0}
             matched_ids="$matched_ids $id"
-            if [ "$category" = "偏好" ]; then
-                echo "  $found. ⭐ [$id] [偏好] $content"
-            else
-                echo "  $found. [$id] $content"
-            fi
+            sed -i "s/^access_count:.*/access_count: $((ac + 1))/" "$file"
+            sed -i "s/^last_accessed:.*/last_accessed: $now_ts/" "$file"
+            echo "${ac}|${id}|${category}|${content}" >> "$tmp_file"
         fi
     done
 
-    if [ $found -eq 0 ]; then
-        echo "  (无精确匹配)"
+    # 按 access_count 降序输出
+    if [ -s "$tmp_file" ]; then
+        local rank=0
+        while IFS='|' read -r ac id category rest; do
+            rank=$((rank + 1))
+            if [ "$category" = "偏好" ]; then
+                echo "  $rank. ⭐ [$id] [偏好 访问${ac}次] $rest"
+            else
+                echo "  $rank. [$id] [访问${ac}次] $rest"
+            fi
+        done < <(sort -t'|' -k1 -rn "$tmp_file")
+        local total=$(wc -l < "$tmp_file")
+        echo ""
+        echo "  共找到 ${total} 条相关知识"
+    else
+        echo "  (无匹配结果)"
     fi
 
-    echo ""
-    echo "🔗 关联搜索"
-    for file in "${KNOWLEDGE_DIR}"/*.md; do
-        if [ -f "$file" ]; then
-            local keywords=$(grep -E '^keywords:' "$file" | sed 's/^keywords: //')
-            if echo "$keywords" | grep -qi "$query"; then
-                local id=$(basename "$file" .md)
-                echo "  - $id"
-            fi
-        fi
-    done
+    rm -f "$tmp_file"
 
     if [ -n "$matched_ids" ]; then
         graph_search "$matched_ids"
@@ -335,15 +358,20 @@ dashboard() {
 
     echo ""
     echo "📏 Context 水位估算"
-    local kb_size=$((knowledge_count * 1))
+    local kb_size=0
+    if [ -d "$KNOWLEDGE_DIR" ]; then
+        kb_size=$(du -sb "$KNOWLEDGE_DIR" 2>/dev/null | cut -f1)
+        kb_size=${kb_size:-0}
+    fi
+    local kb_size_kb=$((kb_size / 1024))
     local claude_size=0
     for f in "${SKILL_DIR}/../../CLAUDE.md" "${SKILL_DIR}/../../rules"/*.md "${SKILL_DIR}/../../commands"/*.md "${SKILL_DIR}/../../agents"/*.md; do
         [ -f "$f" ] && claude_size=$((claude_size + $(wc -c < "$f") ))
     done
     local rules_kb=$((claude_size / 1024))
     echo "  📄 CLAUDE.md + rules/commands/agents: ~${rules_kb}KB"
-    echo "  🧠 知识条目: ~${kb_size}KB"
-    local total=$((rules_kb + kb_size))
+    echo "  🧠 知识库实际大小: ~${kb_size_kb}KB (${knowledge_count}条)"
+    local total=$((rules_kb + kb_size_kb))
     echo "  📊 总可用上下文: ~${total}KB"
 
     if [ $knowledge_count -gt 50 ]; then
@@ -409,6 +437,11 @@ case "$1" in
     status)
         status
         ;;
+    rebuild)
+        echo "🔄 重建索引和图谱..."
+        node "${SCRIPT_DIR}/rebuild-index.js"
+        node "${SCRIPT_DIR}/rebuild-graph.js"
+        ;;
     *)
         echo "🧠 左脑 - Claude Code 记忆增强系统"
         echo ""
@@ -422,5 +455,6 @@ case "$1" in
         echo "  list [页码]          列出所有知识"
         echo "  dashboard            显示监控面板"
         echo "  status               系统状态"
+        echo "  rebuild              重建索引和图谱"
         ;;
 esac
