@@ -1,7 +1,7 @@
 # 🚀 快速加载会话（ROOT_QUICK_LOAD）
 
 > **作用**：会话结束前一键备份，会话开头一键恢复。
-> **最后更新**：2026-06-23
+> **最后更新**：2026-06-23（v1.9：新增 `/snap-mode` 4 模式会话级切换）
 
 ---
 
@@ -11,12 +11,24 @@
 # 结束会话前（一句话备份）
 node scripts/会话快照/save.js "任务标题" "标签"
 
+# 复杂任务：开干前先关，写完一个功能再开
+/snap-mode off                    # 关闭自动保存
+/snap-mode manual                 # 只手动 save.js
+/snap-mode milestone              # 默认模式（命中完成/交付才存）
+/snap-mode auto                   # 每次 Stop hook 都存
+/snap-mode reset                  # 清除会话覆盖，回到全局配置
+
+# 强制存一次（绕过模式限制）
+/snap-save "标题" "标签"          # 实际 = save.js --force
+
 # 下次会话开头（一键恢复）
 node scripts/会话快照/load.js latest
 
 # 或按关键词匹配
 node scripts/会话快照/load.js v1.1
 ```
+
+> 💡 **状态栏实时可见**：`📸mstone` = 全局配置 · `📌off` = 会话级覆盖
 
 ---
 
@@ -26,7 +38,33 @@ node scripts/会话快照/load.js v1.1
 
 | 状态 | 时间 | 中文标签 | 标题 | 启动 |
 |:-----|:-----|:---------|:-----|:-----|
-| ⭐ **最新** | 2026-06-23 13:43 | milestone-test | 测试可配置快照 | [▶ 复制](#启动-milestone-test) |
+| ⭐ **最新** | 2026-06-23 19:09 | milestone-snap-mode-doc-v1.9.1 | v1.9.1: snap-mode 描述精简 + 文档全量同步 | [▶ 复制](#启动-milestone-snap-mode-doc-v1-9-1) |
+|                    | 2026-06-23 19:00 | auto-stop-milestone | Stop自动: v1.9 快照模式可控化：4 模式（off/manual/milestone | [▶ 复制](#启动-auto-stop-milestone) |
+|                    | 2026-06-23 18:28 | auto-stop-milestone | Stop自动: v1.9 快照模式可控化：4 模式（off/manual/milestone | [▶ 复制](#启动-auto-stop-milestone) |
+|                    | 2026-06-23 18:27 | milestone-snap-mode-v1.9 | v1.9: 快照模式可控化（/snap-mode + save.js milestone bug 修复 + 状态栏） | [▶ 复制](#启动-milestone-snap-mode-v1-9) |
+|                    | 2026-06-23 18:18 | scen-7 | 测试manual-显式 | [▶ 复制](#启动-scen-7) |
+|                    | 2026-06-23 18:18 | scen-5 | 测试auto | [▶ 复制](#启动-scen-5) |
+|                    | 2026-06-23 18:18 | scen-4-done | 测试完成 | [▶ 复制](#启动-scen-4-done) |
+|                    | 2026-06-23 18:18 | scen-2 | 测试off-force | [▶ 复制](#启动-scen-2) |
+|                    | 2026-06-23 18:17 | plain | 测试普通 | [▶ 复制](#启动-plain) |
+|                    | 2026-06-23 18:17 | scen-7 | 测试manual-显式 | [▶ 复制](#启动-scen-7) |
+|                    | 2026-06-23 18:17 | scen-5 | 测试auto | [▶ 复制](#启动-scen-5) |
+|                    | 2026-06-23 18:17 | scen-4-done | 测试完成 | [▶ 复制](#启动-scen-4-done) |
+|                    | 2026-06-23 18:17 | scen-3 | 测试普通 | [▶ 复制](#启动-scen-3) |
+|                    | 2026-06-23 18:17 | scen-2 | 测试off-force | [▶ 复制](#启动-scen-2) |
+|                    | 2026-06-23 18:16 | scen-2 | 测试off-force | [▶ 复制](#启动-scen-2) |
+|                    | 2026-06-23 18:15 | scen-clean | 测试 | [▶ 复制](#启动-scen-clean) |
+|                    | 2026-06-23 18:14 | scen-2 | 测试off-force | [▶ 复制](#启动-scen-2) |
+|                    | 2026-06-23 18:13 | verify-A | 测试1 | [▶ 复制](#启动-verify-A) |
+|                    | 2026-06-23 18:12 | scenario-B | 测试off-force | [▶ 复制](#启动-scenario-B) |
+|                    | 2026-06-23 18:12 | interval-check | 测试间隔0 | [▶ 复制](#启动-interval-check) |
+|                    | 2026-06-23 18:11 | off-force | 测试off-force | [▶ 复制](#启动-off-force) |
+|                    | 2026-06-23 18:10 | v1-测试-完成 | 测试强制 | [▶ 复制](#启动-v1-测试-完成) |
+|                    | 2026-06-23 18:09 | v1-test-完成 | 测试milestone-完成 | [▶ 复制](#启动-v1-test-完成) |
+|                    | 2026-06-23 18:09 | manual-test | 测试off-force | [▶ 复制](#启动-manual-test) |
+|                    | 2026-06-23 17:53 | test-all4fixes | 测试：四件套修复验证 | [▶ 复制](#启动-test-all4fixes) |
+|                    | 2026-06-23 17:31 | milestone,snapshot-config | 快照保存可配置化 | [▶ 复制](#启动-milestone-snapshot-config) |
+|                    | 2026-06-23 13:43 | milestone-test | 测试可配置快照 | [▶ 复制](#启动-milestone-test) |
 |                    | 2026-06-23 13:29 | docs-numbering | 核心文档编号完成 | [▶ 复制](#启动-docs-numbering) |
 |                    | 2026-06-23 12:59 | docs | 文档合并完成 | [▶ 复制](#启动-docs) |
 |                    | 2026-06-23 12:56 | docs,positioning,milestone | 文档完善：客户端 Agent 增强定位作为独立章节写入所有核心文档 | [▶ 复制](#启动-docs-positioning-milestone) |
@@ -55,7 +93,436 @@ node scripts/会话快照/load.js latest
 ```
 
 ---
-### <a id="启动-milestone-test"></a>📦 milestone-test（最新）
+### <a id="启动-milestone-snap-mode-doc-v1-9-1"></a>📦 milestone-snap-mode-doc-v1.9.1（最新）
+
+**时间**：2026-06-23 19:09:19
+**中文标签**：milestone-snap-mode-doc-v1.9.1
+**快照文件**：`.claude/snapshots/2026-06-23-19-09-19-milestone-snap-mode-doc-v1.9.1.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-19-09-19-milestone-snap-mode-doc-v1.9.1.md。
+标题: v1.9.1: snap-mode 描述精简 + 文档全量同步
+标签: milestone-snap-mode-doc-v1.9.1
+
+归档后 git commit
+```
+
+---
+
+### <a id="启动-auto-stop-milestone"></a>📦 auto-stop-milestone
+
+**时间**：2026-06-23 19:00:41
+**中文标签**：auto-stop-milestone
+**快照文件**：`.claude/snapshots/2026-06-23-19-00-41-auto-stop-milestone.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-19-00-41-auto-stop-milestone.md。
+标题: Stop自动: v1.9 快照模式可控化：4 模式（off/manual/milestone
+标签: auto-stop-milestone
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-auto-stop-milestone"></a>📦 auto-stop-milestone
+
+**时间**：2026-06-23 18:28:36
+**中文标签**：auto-stop-milestone
+**快照文件**：`.claude/snapshots/2026-06-23-18-28-36-auto-stop-milestone.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-28-36-auto-stop-milestone.md。
+标题: Stop自动: v1.9 快照模式可控化：4 模式（off/manual/milestone
+标签: auto-stop-milestone
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-milestone-snap-mode-v1-9"></a>📦 milestone-snap-mode-v1.9
+
+**时间**：2026-06-23 18:27:27
+**中文标签**：milestone-snap-mode-v1.9
+**快照文件**：`.claude/snapshots/2026-06-23-18-27-27-milestone-snap-mode-v1.9.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-27-27-milestone-snap-mode-v1.9.md。
+标题: v1.9: 快照模式可控化（/snap-mode + save.js milestone bug 修复 + 状态栏）
+标签: milestone-snap-mode-v1.9
+
+继续 v1.10 任务
+```
+
+---
+
+### <a id="启动-scen-7"></a>📦 scen-7
+
+**时间**：2026-06-23 18:18:51
+**中文标签**：scen-7
+**快照文件**：`.claude/snapshots/2026-06-23-18-18-51-scen-7.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-18-51-scen-7.md。
+标题: 测试manual-显式
+标签: scen-7
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-scen-5"></a>📦 scen-5
+
+**时间**：2026-06-23 18:18:50
+**中文标签**：scen-5
+**快照文件**：`.claude/snapshots/2026-06-23-18-18-50-scen-5.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-18-50-scen-5.md。
+标题: 测试auto
+标签: scen-5
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-scen-4-done"></a>📦 scen-4-done
+
+**时间**：2026-06-23 18:18:50
+**中文标签**：scen-4-done
+**快照文件**：`.claude/snapshots/2026-06-23-18-18-50-scen-4-done.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-18-50-scen-4-done.md。
+标题: 测试完成
+标签: scen-4-done
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-scen-2"></a>📦 scen-2
+
+**时间**：2026-06-23 18:18:49
+**中文标签**：scen-2
+**快照文件**：`.claude/snapshots/2026-06-23-18-18-49-scen-2.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-18-49-scen-2.md。
+标题: 测试off-force
+标签: scen-2
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-plain"></a>📦 plain
+
+**时间**：2026-06-23 18:17:36
+**中文标签**：plain
+**快照文件**：`.claude/snapshots/2026-06-23-18-17-36-plain.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-17-36-plain.md。
+标题: 测试普通
+标签: plain
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-scen-7"></a>📦 scen-7
+
+**时间**：2026-06-23 18:17:13
+**中文标签**：scen-7
+**快照文件**：`.claude/snapshots/2026-06-23-18-17-13-scen-7.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-17-13-scen-7.md。
+标题: 测试manual-显式
+标签: scen-7
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-scen-5"></a>📦 scen-5
+
+**时间**：2026-06-23 18:17:12
+**中文标签**：scen-5
+**快照文件**：`.claude/snapshots/2026-06-23-18-17-12-scen-5.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-17-12-scen-5.md。
+标题: 测试auto
+标签: scen-5
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-scen-4-done"></a>📦 scen-4-done
+
+**时间**：2026-06-23 18:17:11
+**中文标签**：scen-4-done
+**快照文件**：`.claude/snapshots/2026-06-23-18-17-11-scen-4-done.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-17-11-scen-4-done.md。
+标题: 测试完成
+标签: scen-4-done
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-scen-3"></a>📦 scen-3
+
+**时间**：2026-06-23 18:17:11
+**中文标签**：scen-3
+**快照文件**：`.claude/snapshots/2026-06-23-18-17-11-scen-3.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-17-11-scen-3.md。
+标题: 测试普通
+标签: scen-3
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-scen-2"></a>📦 scen-2
+
+**时间**：2026-06-23 18:17:10
+**中文标签**：scen-2
+**快照文件**：`.claude/snapshots/2026-06-23-18-17-10-scen-2.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-17-10-scen-2.md。
+标题: 测试off-force
+标签: scen-2
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-scen-2"></a>📦 scen-2
+
+**时间**：2026-06-23 18:16:14
+**中文标签**：scen-2
+**快照文件**：`.claude/snapshots/2026-06-23-18-16-14-scen-2.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-16-14-scen-2.md。
+标题: 测试off-force
+标签: scen-2
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-scen-clean"></a>📦 scen-clean
+
+**时间**：2026-06-23 18:15:33
+**中文标签**：scen-clean
+**快照文件**：`.claude/snapshots/2026-06-23-18-15-33-scen-clean.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-15-33-scen-clean.md。
+标题: 测试
+标签: scen-clean
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-scen-2"></a>📦 scen-2
+
+**时间**：2026-06-23 18:14:24
+**中文标签**：scen-2
+**快照文件**：`.claude/snapshots/2026-06-23-18-14-24-scen-2.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-14-24-scen-2.md。
+标题: 测试off-force
+标签: scen-2
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-verify-A"></a>📦 verify-A
+
+**时间**：2026-06-23 18:13:46
+**中文标签**：verify-A
+**快照文件**：`.claude/snapshots/2026-06-23-18-13-46-verify-A.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-13-46-verify-A.md。
+标题: 测试1
+标签: verify-A
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-scenario-B"></a>📦 scenario-B
+
+**时间**：2026-06-23 18:12:39
+**中文标签**：scenario-B
+**快照文件**：`.claude/snapshots/2026-06-23-18-12-39-scenario-B.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-12-39-scenario-B.md。
+标题: 测试off-force
+标签: scenario-B
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-interval-check"></a>📦 interval-check
+
+**时间**：2026-06-23 18:12:11
+**中文标签**：interval-check
+**快照文件**：`.claude/snapshots/2026-06-23-18-12-11-interval-check.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-12-11-interval-check.md。
+标题: 测试间隔0
+标签: interval-check
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-off-force"></a>📦 off-force
+
+**时间**：2026-06-23 18:11:17
+**中文标签**：off-force
+**快照文件**：`.claude/snapshots/2026-06-23-18-11-17-off-force.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-11-17-off-force.md。
+标题: 测试off-force
+标签: off-force
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-v1-测试-完成"></a>📦 v1-测试-完成
+
+**时间**：2026-06-23 18:10:26
+**中文标签**：v1-测试-完成
+**快照文件**：`.claude/snapshots/2026-06-23-18-10-26-v1-测试-完成.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-10-26-v1-测试-完成.md。
+标题: 测试强制
+标签: v1-测试-完成
+
+<填入你想继续做的事>
+
+> 💡 **三级检查点提示**：本任务完成（标签含"完成/里程碑/交付"）。可跑 `bash scripts/parallel/global-archive.sh "测试强制"` 全局归档
+```
+
+---
+
+### <a id="启动-v1-test-完成"></a>📦 v1-test-完成
+
+**时间**：2026-06-23 18:09:52
+**中文标签**：v1-test-完成
+**快照文件**：`.claude/snapshots/2026-06-23-18-09-52-v1-test-完成.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-09-52-v1-test-完成.md。
+标题: 测试milestone-完成
+标签: v1-test-完成
+
+<填入你想继续做的事>
+
+> 💡 **三级检查点提示**：本任务完成（标签含"完成/里程碑/交付"）。可跑 `bash scripts/parallel/global-archive.sh "测试milestone-完成"` 全局归档
+```
+
+---
+
+### <a id="启动-manual-test"></a>📦 manual-test
+
+**时间**：2026-06-23 18:09:51
+**中文标签**：manual-test
+**快照文件**：`.claude/snapshots/2026-06-23-18-09-51-manual-test.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-18-09-51-manual-test.md。
+标题: 测试off-force
+标签: manual-test
+
+<填入你想继续做的事>
+```
+
+---
+
+
+---
+
+
+---
+
+
+---
+
+### <a id="启动-test-all4fixes"></a>📦 test-all4fixes
+
+**时间**：2026-06-23 17:53:23
+**中文标签**：test-all4fixes
+**快照文件**：`.claude/snapshots/2026-06-23-17-53-23-test-all4fixes.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-17-53-23-test-all4fixes.md。
+标题: 测试：四件套修复验证
+标签: test-all4fixes
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-milestone-snapshot-config"></a>📦 milestone,snapshot-config
+
+**时间**：2026-06-23 17:31:57
+**中文标签**：milestone,snapshot-config
+**快照文件**：`.claude/snapshots/2026-06-23-17-31-57-milestone,snapshot-config.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-17-31-57-milestone,snapshot-config.md。
+标题: 快照保存可配置化
+标签: milestone,snapshot-config
+
+继续修复左脑/快照系统其他问题
+```
+
+---
+
+### <a id="启动-milestone-test"></a>📦 milestone-test
 
 **时间**：2026-06-23 13:43:25
 **中文标签**：milestone-test

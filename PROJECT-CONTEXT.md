@@ -2,7 +2,7 @@
 
 > **用途**：新会话启动时先读这个文件，快速了解项目全貌，避免扫描整个仓库浪费 token。
 > **更新时间**：2026-06-23
-> **版本**：v1.8
+> **版本**：v1.9（snap-mode 会话级切换 + save.js milestone 关键词修复）
 
 ---
 
@@ -17,7 +17,7 @@
 | 系统 | 入口 | 一句话 |
 |:-----|:-----|:-------|
 | 智能调度 | `/dispatch`、PreToolUse 钩子 | 复杂任务自动派 2-3 个 Agent 并行 |
-| 快照系统 | `scripts/会话快照/save.js` | 会话备份，下次 1 秒接上 |
+| 快照系统 | `scripts/会话快照/save.js` + `/snap-mode` | 4 模式可控：off/manual/milestone/auto，状态栏可见 |
 | 三级检查点 | `plan-snapshot.js` / `global-archive.sh` | 计划 → 迭代 → 归档 |
 | 左脑记忆 | `left-brain.sh remember/recall` | 跨会话知识沉淀与搜索 |
 | MCP 工具 | `.claude/mcp.json` | filesystem + sqlite + fetch 本地 server |
@@ -63,6 +63,8 @@ npm test
 
 # 快照
 node scripts/会话快照/save.js "标题" "标签" -m "下一步"
+/snap-mode off|manual|milestone|auto|reset   # 会话级切换（不改全局 config）
+/snap-save "标题" "标签"                       # 强制存一次，绕过模式
 
 # 左脑记忆
 bash .claude/skills/left-brain/scripts/left-brain.sh remember "内容"

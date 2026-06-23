@@ -2,7 +2,7 @@
 
 > 工作空间通用行为标准。所有 AI 助手和人类开发者共同遵守。
 > 完整功能说明见 `02_工作空间功能介绍.md`，操作细节见各脚本文档。
-> 最后更新：2026-06-23（v1.8：新增自我进化循环系统，AI 每日扫描 GitHub 学习并实现新能力）
+> 最后更新：2026-06-23（v1.9：快照模式可控化——`/snap-mode` 会话级切换、save.js 修复 milestone 关键词对显式调用也生效、状态栏显示当前模式）
 
 ---
 
@@ -16,7 +16,7 @@
 | **回退优于纠错** | 发现方向错误用 `/rewind`，不在错误上修复 |
 | **失败兜底** | LLM/测试/快照失败时自动降级，不崩主流程 |
 | **智能调度** | 复杂任务自动派子代理并行，主会话等完工（2-3 倍提速） |
-| **快照备份** | 重要节点用 `会话快照` 系统备份，重启 1 秒接上（save.js 自动维护索引） |
+| **快照备份** | 重要节点用 `会话快照` 系统备份，重启 1 秒接上（save.js 自动维护索引，**`/snap-mode` 会话级切换 off/manual/milestone/auto 4 模式**） |
 | **自我约束** | AI 完成改动后**自动**跑测试+存快照+写KB+更新文档，不需用户提醒 |
 | **自我进化** | AI 每天自动扫描 GitHub 学习 Claude 爆款项目，分析可行性并本地实现 |
 | **上下文分片** | `.claudeignore` 排除 2GB+ 数据，理论省 60% token |
@@ -105,9 +105,10 @@
 | 新建项目 | `/new-project` | 项目脚手架 |
 | **智能派发** | `/dispatch 任务` | 自动判断要不要派 Agent |
 | **强制并行** | `/parallel N 任务` | 强制派 N 个 Agent（1-5） |
-| **保存快照** | `node scripts/会话快照/save.js "标题" "标签"` | 结束会话前 |
+| **保存快照** | `node scripts/会话快照/save.js "标题" "标签"` 或 `/snap-save "标题" "标签"` | 结束会话前；`--force` 绕过模式 |
 | **备份对话** | `node scripts/会话快照/backup-history.js "标签"` | 重要里程碑 |
-| **加载快照** | 看 `00_ROOT_快速加载会话.md` | 下次会话开头 |
+| **切快照模式** | `/snap-mode off\|manual\|milestone\|auto\|reset` | 会话级覆盖，不动全局 config |
+| **加载快照** | `node scripts/会话快照/load.js latest` 或关键词 | 看 `00_ROOT_快速加载会话.md` |
 | **自我进化** | `/evolve run` 或 `npm run evolve` | 扫描 GitHub 爆款并评估可行性 |
 | **防闭门造车** | `/evolve watch` 或 `npm run trend` | 检查已实现的特性是否过时 |
 | **切到后台** | `Ctrl+B` | 把当前命令放到后台跑 |
@@ -141,6 +142,7 @@
 - `/compact-hint` 比自动 compact 更精准
 - `/rewind` 代替纠错，保持 context 干净
 - **会话结束前**：跑 `node scripts/会话快照/save.js "标题" "标签"` 保存快照
+- **复杂多步任务**：开干前先 `/snap-mode off` 关闭频繁保存，写完一个功能再 `/snap-mode milestone` + `/snap-save` 归档
 
 ---
 
@@ -162,7 +164,7 @@
 | Status Line | 底部实时 | `🧠N | HH:MM` 实时水位 |
 | Token 监控 | `node scripts/orchestrator/token-monitor.js` | 统计派发率 + 估算成本 |
 | 规则学习 | `node scripts/orchestrator/learn-rules.js` | 反馈收集 + 模式分析 |
-| 快照系统 | `scripts/会话快照/` | save/load/backup-history |
+| **快照系统** | `scripts/会话快照/` | save/load/backup-history + **snap-mode 会话级切换** |
 | **失败路径测试** | `test-failure-paths.js` | 12 项异常场景兜底验证 |
 | **Mermaid 归档图** | `global-archive.sh` | 自动生成分任务流图 |
 | **CI 自动回归** | `.github/workflows/test.yml` | push/PR 自动跑 81 项测试 |
@@ -178,7 +180,7 @@
 | 系统 | 一句话 | 入口 |
 |:-----|:-------|:-----|
 | **智能调度** | 复杂任务自动派 2-3 个 Agent 并行，主会话汇总 | `/dispatch 任务`、PreToolUse 钩子 |
-| **快照系统** | 会话结束前一键备份，下次 1 秒接上 | `node scripts/会话快照/save.js` |
+| **快照系统** | 4 模式可控（`/snap-mode`）：关/手动/里程碑/自动；状态栏可见 | `node scripts/会话快照/save.js` |
 | **三级检查点** | 计划 → 迭代 → 全局归档的完整闭环 | `plan-snapshot.js` / `global-archive.sh` |
 | **Git worktree** | 多 worker 在独立分支/目录并行开发 | `worktree-parallel.sh` |
 | **左脑记忆** | 跨会话知识沉淀与语义搜索 | `left-brain.sh remember/recall` |

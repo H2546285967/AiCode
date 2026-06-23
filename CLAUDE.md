@@ -12,6 +12,7 @@
 3. **项目级指令** → 如果在子目录工作，读该目录的 `CLAUDE.md`
 4. **熟悉项目** → 必读 `PROJECT-CONTEXT.md`（详细架构和系统说明，文件不大）
 5. **智能调度** → 复杂任务自动派 Agent（见下方）
+6. **禁止默认全局扫描** → 需要扫描整个仓库时（如 `Grep` 跨文件搜 TODO、`glob **`），必须先询问用户，说明原因并请求授权
 
 ---
 
@@ -122,6 +123,8 @@ AiCode/
 | 检查过时 | `/evolve watch` 或 `npm run trend` |
 | 压缩上下文 | `/compact` |
 | 重置会话 | `/clear` |
+| **切快照模式** | `/snap-mode off\|manual\|milestone\|auto\|reset` |
+| **强制存快照** | `/snap-save "标题" "标签"` |
 
 ---
 
