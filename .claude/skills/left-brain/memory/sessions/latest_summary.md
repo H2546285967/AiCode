@@ -1,14 +1,13 @@
 ---
-session_id: 20260622-120424
-saved_at: 2026-06-22 12:04:23
+session_id: 20260623-190041
+saved_at: 2026-06-23 19:00:41
 type: session_summary
+source: auto-save.sh
 ---
-# 会话摘要
-## 对话内容
-今天完成：1) 智能调度 v1.1（2-3倍提速）+ 12/12测试 2) 快照系统 + save.js 自动维护索引 3) 中文化命名 4) 三份主文档同步 5) ROOT_快速加载会话.md UX 重构 6) 时区修复 7) v1.2批次1（6项改进，RULES v1.1.0，15/15测试）。下一步：v1.2批次2（5项：英文detect/钩子日志/learn-rules去重/4工具统一/confidence 0-1）。KB索引：013-011。
-## 关键决策
-<!-- 由 AI 在保存前填充 -->
-## 待办事项
-<!-- 由 AI 在保存前填充 -->
-## 下次继续
-<!-- 由 AI 在保存前填充 -->
+# 会话摘要（Stop hook 自动保存）
+**保存时间**: 2026-06-23 19:00:41
+
+## 本次新增/修改的知识
+- [KB-20260623-016] v1.9 快照模式可控化：4 模式（off/manual/milestone/auto）+ 会话级切换 + 状态栏可见 + /snap-mode /snap-save slash 命令；修复 save.js milestone 关键词对显式调用也生效（原 bug：手动 save.js 绕过关键词检查）；新建 get-snap-mode.js 共享模式解析；auto-save.sh v3.0 改薄壳只做决策调 save.js；测试 7/7 场景全过
+## 未处理的感知队列
+(空)
