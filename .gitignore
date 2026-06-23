@@ -26,3 +26,9 @@ target/
 # 内部快照（本地会话状态，不进入 git，避免仓库膨胀）
 .claude/snapshots/
 .claude/skills/left-brain/memory/sessions/snapshots/
+
+# 会话级快照模式覆盖（/snap-mode 写入，会话结束可清）
+.claude/session-snap-mode.json
+
+# Claude HUD 插件本地配置
+.claude/settings.json

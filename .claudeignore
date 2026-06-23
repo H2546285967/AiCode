@@ -35,6 +35,9 @@ archives/
 .claude/skills/left-brain/memory/sessions/
 .claude/skills/left-brain/memory/logs/
 
+# 会话级快照模式覆盖（每个会话独立，不入 git）
+.claude/session-snap-mode.json
+
 # 依赖/构建输出
 node_modules/
 dist/

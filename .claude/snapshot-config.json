@@ -14,5 +14,12 @@
     "debug",
     "wip"
   ],
-  "manualOverride": true
+  "manualOverride": true,
+  "keyFiles": [
+    "CLAUDE.md",
+    ".claude/settings.local.json",
+    "PROJECT-CONTEXT.md",
+    "00_ROOT_快速加载会话.md",
+    ".claude/snapshot-config.json"
+  ]
 }

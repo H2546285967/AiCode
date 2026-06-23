@@ -53,46 +53,15 @@ find_related() {
 update_graph() {
     local new_id="$1"
     local related_ids="$2"
-    local graph_file="${ASSOCIATIONS_DIR}/graph.json"
+    local update_script="${SCRIPT_DIR}/graph-update.js"
 
-    if [ ! -f "$graph_file" ]; then
-        echo '{"nodes":[],"edges":[]}' > "$graph_file"
+    if [ ! -f "$update_script" ]; then
+        echo "⚠️ graph-update.js 不存在，跳过图谱更新" >&2
+        return 1
     fi
 
-    local content=$(grep -E '^content:' "${KNOWLEDGE_DIR}/${new_id}.md" | sed 's/^content: //')
-    local category=$(grep -E '^category:' "${KNOWLEDGE_DIR}/${new_id}.md" | sed 's/^category: //')
-
-    if ! grep -q "\"id\": \"${new_id}\"" "$graph_file"; then
-        local node_entry="{\"id\":\"${new_id}\",\"content\":\"${content}\",\"category\":\"${category}\"}"
-        if grep -q '"nodes":\[' "$graph_file"; then
-            if grep -q '"nodes":\[\]' "$graph_file"; then
-                sed -i "s/\"nodes\":\[/\"nodes\":[${node_entry}/" "$graph_file"
-            else
-                sed -i "s/\(\"nodes\":\[[^]]*\)\]/\1,${node_entry}]/" "$graph_file"
-            fi
-        fi
-    fi
-
-    if [ -n "$related_ids" ]; then
-        local OLD_IFS="$IFS"
-        IFS=','
-        read -ra RELATED <<< "$related_ids"
-        IFS="$OLD_IFS"
-        for rid in "${RELATED[@]}"; do
-            rid=$(echo "$rid" | xargs)
-            [ -z "$rid" ] && continue
-            if ! grep -qE "\"source\":\"${new_id}\".*\"target\":\"${rid}\"|\"source\":\"${rid}\".*\"target\":\"${new_id}\"" "$graph_file"; then
-                local edge_entry="{\"source\":\"${new_id}\",\"target\":\"${rid}\",\"type\":\"related\"}"
-                if grep -q '"edges":\[' "$graph_file"; then
-                    if grep -q '"edges":\[\]' "$graph_file"; then
-                        sed -i "s/\"edges\":\[/\"edges\":[${edge_entry}/" "$graph_file"
-                    else
-                        sed -i "s/\(\"edges\":\[[^]]*\)\]/\1,${edge_entry}]/" "$graph_file"
-                    fi
-                fi
-            fi
-        done
-    fi
+    # 使用 Node 做 JSON 操作，避免引号/换行损坏 graph.json
+    node "$update_script" "$new_id" "$related_ids"
 }
 
 graph_search() {

@@ -26,28 +26,72 @@ const SNAPSHOT_DIR = path.join(ROOT, '.claude', 'snapshots');
 const QUICK_LOAD_FILE = path.join(ROOT, '00_ROOT_快速加载会话.md');
 const LEFT_BRAIN_DIR = path.join(ROOT, '.claude', 'skills', 'left-brain', 'memory');
 const CONFIG_FILE = path.join(ROOT, '.claude', 'snapshot-config.json');
+const SESSION_OVERRIDE_FILE = path.join(ROOT, '.claude', 'session-snap-mode.json');
+const GET_MODE_JS = path.join(ROOT, '.claude', 'skills', 'left-brain', 'scripts', 'get-snap-mode.js');
 
-// 默认配置
+// 解析生效模式：session 覆盖 > snapshot-config.json > 默认 milestone
+const VALID_MODES = ['off', 'manual', 'milestone', 'auto'];
 const DEFAULT_CONFIG = {
   mode: 'milestone',
   minIntervalMinutes: 30,
   autoCleanup: { enabled: true, keepCount: 30, keepDays: 14 },
   excludeTags: ['plan', 'test', 'temp', 'debug', 'wip'],
   manualOverride: true,
+  keyFiles: [
+    'CLAUDE.md',
+    '.claude/settings.local.json',
+    'PROJECT-CONTEXT.md',
+    '00_ROOT_快速加载会话.md',
+    '.claude/snapshot-config.json',
+  ],
 };
 
 function loadConfig() {
-  if (!fs.existsSync(CONFIG_FILE)) return DEFAULT_CONFIG;
-  try {
-    const raw = fs.readFileSync(CONFIG_FILE, 'utf8');
-    return { ...DEFAULT_CONFIG, ...JSON.parse(raw) };
-  } catch (e) {
-    console.error('⚠️ 快照配置解析失败，使用默认配置:', e.message);
-    return DEFAULT_CONFIG;
+  let config = { ...DEFAULT_CONFIG };
+
+  // 优先读 session 覆盖
+  if (fs.existsSync(SESSION_OVERRIDE_FILE)) {
+    try {
+      const sessionOverride = JSON.parse(fs.readFileSync(SESSION_OVERRIDE_FILE, 'utf8'));
+      if (sessionOverride && VALID_MODES.includes(sessionOverride.mode)) {
+        // 合并全局配置，再覆盖 mode（保留全局的 minIntervalMinutes/excludeTags 等）
+        if (fs.existsSync(CONFIG_FILE)) {
+          try {
+            const global = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+            config = { ...config, ...global };
+          } catch (e) {}
+        }
+        config.mode = sessionOverride.mode;
+        config._source = 'session-snap-mode.json';
+        return config;
+      }
+    } catch (e) {
+      // session 覆盖损坏，回退到全局
+    }
   }
+
+  // 回退到全局配置
+  if (fs.existsSync(CONFIG_FILE)) {
+    try {
+      const raw = fs.readFileSync(CONFIG_FILE, 'utf8');
+      const global = JSON.parse(raw);
+      config = { ...config, ...global };
+      config._source = 'snapshot-config.json';
+    } catch (e) {
+      console.error('⚠️ 快照配置解析失败，使用默认配置:', e.message);
+    }
+  }
+  return config;
 }
 
 const config = loadConfig();
+
+// 调试模式：只输出当前生效模式，退出
+if (process.argv.includes('--show-mode')) {
+  const source = config._source || 'default';
+  console.log(`mode=${config.mode} source=${source} minIntervalMinutes=${config.minIntervalMinutes}`);
+  process.exit(0);
+}
 
 // 解析参数
 const args = process.argv.slice(2);
@@ -76,15 +120,15 @@ if (config.mode === 'off' && !force) {
 }
 
 if (config.mode === 'manual' && !isExplicitCall && !force) {
-  console.log('⏸️ 快照模式为 manual，自动调用跳过保存（显式调用 save.js 或加 --force 可保存）');
+  console.log('⏸️ 快照模式为 manual，自动调用跳过保存（显式 save.js 或 --force 可保存）');
   process.exit(0);
 }
 
-if (config.mode === 'milestone' && !isExplicitCall && !force) {
+if (config.mode === 'milestone' && !force) {
   const milestoneKeywords = ['完成', '里程碑', '交付', 'done', 'milestone', 'verified', 'completed'];
   const isMilestone = milestoneKeywords.some(k => tag.toLowerCase().includes(k));
   if (!isMilestone) {
-    console.log('⏸️ 快照模式为 milestone，非完成/里程碑标签跳过保存');
+    console.log('⏸️ 快照模式为 milestone，非完成/里程碑标签跳过保存（加 --force 可强制）');
     process.exit(0);
   }
 }
@@ -172,13 +216,8 @@ try {
   data.recentKBError = e.message;
 }
 
-// 3. 关键文件状态（动态从存在的文件读取）
-const keyFiles = [
-  'CLAUDE.md',
-  '.claude/settings.local.json',
-  'PROJECT-CONTEXT.md',
-  '00_ROOT_快速加载会话.md',
-];
+// 3. 关键文件状态（从配置读取）
+const keyFiles = config.keyFiles || DEFAULT_CONFIG.keyFiles;
 
 data.keyFiles = keyFiles.map(f => {
   const fp = path.join(ROOT, f);
@@ -188,6 +227,20 @@ data.keyFiles = keyFiles.map(f => {
   }
   return { path: f, exists: false };
 });
+
+// 3.5 Git 状态（任务状态的一部分）
+data.gitStatus = runGit('status --short', 'git status 失败');
+data.gitDiffStat = runGit('diff --stat', 'git diff 失败');
+data.recentCommits = runGit('log -5 --oneline', 'git log 失败');
+data.currentBranch = runGit('rev-parse --abbrev-ref HEAD', '获取分支失败');
+
+function runGit(args, errLabel) {
+  try {
+    return execSync(`git ${args}`, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch (e) {
+    return `(${errLabel})`;
+  }
+}
 
 // 4. 生成快照内容并保存
 const content = generateSnapshot(data);
@@ -235,6 +288,27 @@ ${d.keyFiles.map(f =>
     ? `| ${f.path} | ${f.mtime} | ${(f.size / 1024).toFixed(1)}KB |`
     : `| ${f.path} | _不存在_ | - |`
 ).join('\n')}
+
+---
+
+## 🌿 Git 状态
+
+**当前分支**: \`${d.currentBranch}\`
+
+### 未提交变更
+\`\`\`
+${d.gitStatus || '（工作区干净）'}
+\`\`\`
+
+### 变更统计
+\`\`\`
+${d.gitDiffStat || '（无差异）'}
+\`\`\`
+
+### 最近 5 条提交
+\`\`\`
+${d.recentCommits || '（无提交）'}
+\`\`\`
 
 ---
 
