@@ -20,6 +20,7 @@ bash .workspace/setup.sh
 脚本会自动：
 - 检测当前路径，写入 `.workspace/workspace.env`
 - 检查目录结构，缺失的自动创建
+- 安装 npm 依赖（`npm install`）
 - 检测已安装的 AI 工具
 - 输出适配报告
 
@@ -40,9 +41,9 @@ npm install -g @anthropic-ai/claude-code
 
 ```bash
 cd /path/to/AiCode
-bash .automation/new-project.sh test-demo -t plain --skip-dev --skip-git
-# 应该成功创建 test-demo 项目
-rm -rf "AI-【3】-项目开发/test-demo"
+npm test              # 全部测试通过
+npm run benchmark     # benchmark 能跑
+npm run test:mcp      # MCP server 正常
 ```
 
 ---
@@ -54,21 +55,26 @@ AiCode/
 ├── .workspace/              ← 适配脚本（运行一次即可）
 ├── .automation/             ← 项目自动化脚本
 ├── .ai-memory/              ← 跨 IDE 共享记忆
+├── .claude/                 ← Claude Code 配置 + MCP
 ├── AI-ClaudeCode-最佳实践精简.md        ← AI 行为约定
 ├── CLAUDE.md                ← Claude Code 指令
-│
-├── 【0】AI大模型教程/         ← 学习资料
-├── 【1】SpringAIAlibaba/     ← 学习资料
-├── 【2】langchain4j/         ← 学习资料
-├── 【3】工作资料/             ← 工作文档
-├── AI-【3】-项目开发/             ← 个人项目
-├── AI-【3】公司项目/             ← 公司项目（git clone）
-└── docs/                    ← 文档汇总
+├── 工作空间功能介绍.md       ← v1.7+ 功能介绍
+├── AI-【3】-项目开发/        ← 个人项目
+├── AI-【4】-公司项目/        ← 公司项目（git clone）
+├── archives/                ← 全局归档
+├── data/                    ← 本地数据库
+├── benchmarks/              ← 性能测试
+└── scripts/                 ← 工作空间脚本
 ```
 
 ## 使用须知
 
 - **个人项目**放 `AI-【3】-项目开发/`
-- **公司项目**放 `AI-【3】公司项目/`，每个项目独立 git 管理
+- **公司项目**放 `AI-【4】-公司项目/`，每个项目独立 git 管理
 - **AI 约定**统一在 `AI-ClaudeCode-最佳实践精简.md`，改一处全生效
+- **MCP 路径**在新机器上需更新 `.claude/mcp.json` 中的绝对路径
 - **搬家后**只需运行 `setup.sh`，所有路径自动适配
+
+## 发布检查
+
+详见根目录 `PUBLISH-CHECKLIST.md`。

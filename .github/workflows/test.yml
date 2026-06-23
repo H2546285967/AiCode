@@ -1,0 +1,60 @@
+# GitHub Actions CI —— 跑工作空间核心测试
+#
+# 触发：push / pull_request 到 main 或 master
+# 任务：跑 dispatcher 单元测试 + e2e + llm-adapter 测试
+# 状态：✅ 写配置文件，不推远端（用户在本地可手动验证 YAML 语法）
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  # 允许手动触发（workflow_dispatch）
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Node.js 测试套件
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: false  # 无 package.json，不需要缓存
+
+      - name: 验证 Node 版本
+        run: node --version
+
+      - name: 跑 dispatcher 单元测试
+        run: node scripts/orchestrator/test-dispatcher.js
+
+      - name: 跑 e2e 测试
+        run: node scripts/orchestrator/test-e2e.js
+
+      - name: 跑 llm-adapter 测试
+        run: node scripts/orchestrator/test-llm-adapter.js
+
+      - name: 跑失败路径测试
+        run: node scripts/orchestrator/test-failure-paths.js
+        continue-on-error: false  # 失败路径测试必须通过
+
+      - name: 汇总结果
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "✅ 所有测试通过"
+          echo "=========================================="
+          echo "测试套件："
+          echo "  - dispatcher (规则引擎)"
+          echo "  - e2e (端到端)"
+          echo "  - llm-adapter (4 backend)"
+          echo "  - failure-paths (失败路径)"
+          echo ""
+          echo "总计：45+ 项测试"

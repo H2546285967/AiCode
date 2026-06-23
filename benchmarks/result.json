@@ -1,0 +1,58 @@
+{
+  "timestamp": "2026-06-22T15:26:26.501Z",
+  "env": {
+    "node": "v24.16.0",
+    "platform": "win32",
+    "osRelease": "10.0.19045",
+    "arch": "x64",
+    "cpu": "12th Gen Intel(R) Core(TM) i5-12400F",
+    "cpuCount": 12,
+    "totalMemoryGB": "31.8",
+    "shell": "I:\\Git\\Git\\usr\\bin\\bash.exe",
+    "gitBash": "MINGW64",
+    "timestamp": "2026-06-22T15:26:26.501Z"
+  },
+  "serial": {
+    "mode": "serial",
+    "total": 93597,
+    "tasks": [
+      {
+        "name": "file-bench",
+        "elapsed": 625,
+        "output": "file-bench: 100 files, 99000 chars"
+      },
+      {
+        "name": "sqlite-bench",
+        "elapsed": 76056,
+        "output": "sqlite-bench: 1000 rows"
+      },
+      {
+        "name": "fetch-bench",
+        "elapsed": 16915,
+        "output": "fetch-bench: 3 urls, 930 chars"
+      }
+    ]
+  },
+  "parallel": {
+    "mode": "parallel",
+    "total": 74810,
+    "tasks": [
+      {
+        "name": "file-bench",
+        "elapsed": 465,
+        "output": "file-bench: 100 files, 99000 chars"
+      },
+      {
+        "name": "sqlite-bench",
+        "elapsed": 74753,
+        "output": "sqlite-bench: 1000 rows"
+      },
+      {
+        "name": "fetch-bench",
+        "elapsed": 15416,
+        "output": "fetch-bench: 3 urls, 930 chars"
+      }
+    ]
+  },
+  "improvement": "20%"
+}

@@ -26,7 +26,9 @@ node scripts/会话快照/load.js v1.1
 
 | 状态 | 时间 | 中文标签 | 标题 | 启动 |
 |:-----|:-----|:---------|:-----|:-----|
-| ⭐ **最新** | 2026-06-23 07:40 | P0-done | P0 完成：recall排序 + graph 2-hop + ROOT索引修复 | [▶ 复制](#启动-P0-done) |
+| ⭐ **最新** | 2026-06-23 10:26 | evolution,docs,milestone | v1.8 文档同步：最佳实践+功能介绍+CLAUDE 已更新自我进化系统 | [▶ 复制](#启动-evolution-docs-milestone) |
+|                    | 2026-06-23 08:06 | evolution,milestone,verified | v1.8 最终验证：自我进化系统完整可用 | [▶ 复制](#启动-evolution-milestone-verified) |
+|                    | 2026-06-23 07:40 | P0-done | P0 完成：recall排序 + graph 2-hop + ROOT索引修复 | [▶ 复制](#启动-P0-done) |
 |                    | 2026-06-23 05:59 | evolution,milestone,completed | v1.8 完成：自我进化系统全量实现+验证 | [▶ 复制](#启动-evolution-milestone-completed) |
 |                    | 2026-06-23 04:58 | evolution,milestone | v1.8: 自我进化循环系统完成 | [▶ 复制](#启动-evolution-milestone) |
 |                    | 2026-06-23 02:40 | P0-3-test | 快照索引修复测试 | [▶ 复制](#启动-P0-3-test) |
@@ -46,7 +48,39 @@ node scripts/会话快照/load.js latest
 ```
 
 ---
-### <a id="启动-P0-done"></a>📦 P0-done（最新）
+### <a id="启动-evolution-docs-milestone"></a>📦 evolution,docs,milestone（最新）
+
+**时间**：2026-06-23 10:26:30
+**中文标签**：evolution,docs,milestone
+**快照文件**：`.claude/snapshots/2026-06-23-10-26-30-evolution,docs,milestone.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-10-26-30-evolution,docs,milestone.md。
+标题: v1.8 文档同步：最佳实践+功能介绍+CLAUDE 已更新自我进化系统
+标签: evolution,docs,milestone
+
+自我进化系统已写入核心技术文档，下次 AI 熟悉工作空间时能重点识别此能力
+```
+
+---
+
+### <a id="启动-evolution-milestone-verified"></a>📦 evolution,milestone,verified
+
+**时间**：2026-06-23 08:06:46
+**中文标签**：evolution,milestone,verified
+**快照文件**：`.claude/snapshots/2026-06-23-08-06-46-evolution,milestone,verified.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-23-08-06-46-evolution,milestone,verified.md。
+标题: v1.8 最终验证：自我进化系统完整可用
+标签: evolution,milestone,verified
+
+data/github 目录重建，扫描/评估数据已恢复，npm test 全过
+```
+
+---
+
+### <a id="启动-P0-done"></a>📦 P0-done
 
 **时间**：2026-06-23 07:40:41
 **中文标签**：P0-done

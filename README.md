@@ -1,6 +1,38 @@
-# 个人 AI 工作空间
+# Claude Code 增强工程
 
-> 可移植、自包含的个人开发工作空间——拷贝到任何机器，运行 `setup.sh` 即可用
+> 一个**会自己调度、自己记忆、自己归档、自己兜底**的 Claude Code 工作空间。101 项测试全过，实测提速 20%。
+
+[![CI](https://github.com/<USER>/<REPO>/actions/workflows/test.yml/badge.svg)](https://github.com/<USER>/<REPO>/actions/workflows/test.yml)
+
+---
+
+## 🚀 5 分钟快速开始
+
+**复制这 3 条命令：**
+
+```bash
+git clone https://github.com/<USER>/<REPO>.git && cd AiCode
+bash .workspace/setup.sh     # 一键适配当前环境
+npm test                     # 跑 101 项测试，确认环境正常
+```
+
+然后启动 Claude Code：
+
+```bash
+claude
+```
+
+**就这样。** Claude Code 会自动读取 `CLAUDE.md` 加载行为约定和左脑记忆系统。
+
+### 你会获得什么能力
+
+| 能力 | 效果 |
+|:-----|:-----|
+| 🧠 智能调度 | 复杂任务自动派 2-3 个 Agent 并行，提速 2-3 倍 |
+| 💾 快照系统 | 会话结束一键备份，下次 1 秒接上 |
+| 📝 左脑记忆 | 跨会话知识沉淀，自动回忆 |
+| 🔧 MCP 工具 | 本地 filesystem + sqlite + fetch |
+| ✅ 自我约束 | AI 完成改动后自动跑测试、存快照、写 KB |
 
 ---
 
@@ -34,41 +66,39 @@ git clone <公司仓库地址>
 ```
 AiCode/
 │
-├── AI-【0】-打破信息茧房/        AI 工具说明文档（agent-reach、last30days、aihot）
-├── AI-【2】-学习/                学习资料
-│   ├── 【0】AI大模型教程/        教程手册
-│   ├── 【1】原工作资料/          前公司项目文档
-│   ├── 【2】AI智能体框架学习/    SpringAIAlibaba + LangChain4j（28 个可运行 demo）
-│   └── *.md                     学习笔记、面试题、能力评估
+├── AI-ClaudeCode-最佳实践精简.md       AI 行为约定 + 最佳实践说明
+├── CLAUDE.md                            根级指令（记忆系统 + 行为规则）
+├── README.md                            本文件
 │
-├── AI-【3】-项目开发/             个人项目开发目录
-│   ├── CLAUDE.md                 Claude Code 自动读取
-│   ├── AGENTS.md                 ZCode / 通用指令
-│   ├── .cursorrules              Cursor 自动读取
-│   ├── .lingma/instructions.md   通义灵码自动读取
-│   ├── .qoderrules               Qoder 自动读取
-│   ├── .minimaxrc                MiniMax Code 自动读取
-│   └── 项目快速开发与迭代.md      操作指南（首次创建 + 迭代 + 提示词构建）
+├── .workspace/                          工作空间适配
+│   ├── setup.sh                         一键适配脚本（搬机器后运行一次）
+│   ├── workspace.env                    动态路径（setup.sh 生成）
+│   └── README.md                        移植指南
 │
-├── AI-【4】-公司项目/             公司项目（git clone 放这里，独立管理）
+├── .automation/                         项目自动化
+│   ├── new-project.sh                   一键创建项目脚手架
+│   ├── templates/                       模板文件
+│   └── README.md                        使用文档
 │
-├── AI-ClaudeCode-最佳实践精简.md             AI 行为约定 + 最佳实践说明
-├── CLAUDE.md                     根级指令（记忆系统 + 行为规则）
+├── .claude/                             Claude Code 配置 + 命令 + 子代理 + 左脑记忆
+│   ├── rules/                           行为规则
+│   ├── skills/left-brain/               左脑记忆系统
+│   ├── commands/                        常用命令
+│   └── agents/                          专业子代理
 │
-├── .automation/                  项目自动化
-│   ├── new-project.sh            一键创建项目脚手架
-│   ├── templates/                模板文件（7 个）
-│   └── README.md                 使用文档
+├── scripts/                             核心自动化脚本
+│   ├── orchestrator/                    智能调度器
+│   ├── parallel/                        worktree 并行 + Mermaid 生成
+│   ├── mcp/                             本地 MCP server
+│   └── 会话快照/                         快照保存/加载
 │
-├── .workspace/                   工作空间适配
-│   ├── setup.sh                  一键适配脚本（搬机器后运行一次）
-│   ├── workspace.env             动态路径（setup.sh 生成）
-│   └── README.md                 移植指南
-│
-├── .ai-memory/                   跨 IDE 共享记忆
-├── .claude/                      Claude Code 配置 + 命令
-└── .Codex/                       Codex 记忆
+├── benchmarks/                          真实任务性能基准
+├── data/                                SQLite 工作空间数据库
+├── archives/                            全局归档
+└── .github/                             CI 配置
 ```
+
+> 个人学习资料、项目代码、其他 AI 工具配置已移出到 `H:/AI-han/AiCode-Personal/`，本仓库只保留 Claude Code 增强工程核心。
 
 ---
 
@@ -127,3 +157,27 @@ cd <项目名>
 - 入职新公司时整体迁移
 - 跨 AI 工具协作开发
 - 面试准备（学习资料 + 项目经验）
+
+---
+
+## 测试环境与基线
+
+> 以下环境是当前 `npm test` 和 `npm run benchmark` 的跑通基线，供迁移后对照。
+
+| 项目 | 当前环境 |
+|:-----|:---------|
+| OS | Windows 10 Pro (10.0.19045) |
+| Shell | Git Bash |
+| Node.js | v24.16.0 |
+| Git | 2.49+ |
+| Claude Code | 最新版 |
+| 网络 | 可访问 example.com、npm registry |
+
+### 当前测试基线
+
+```text
+npm test: 101/101 通过
+npm run benchmark: 并行比串行快 20%（3 个 IO 型任务，详见 benchmarks/result.md）
+```
+
+> 注意：benchmark 数字会随机器、网络、磁盘 IO 波动。建议在新机器上跑 `npm test` 和 `npm run benchmark` 重新建立基线。

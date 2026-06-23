@@ -1,13 +1,13 @@
 # 个人 AI 工作空间
 
-> 可移植的个人开发工作空间。开始前按顺序执行启动步骤。
-> **上下文分片**（v1.4）：`.claudeignore` 已排除 ~12 个大目录，AI 不要主动读这些路径，除非用户明确要求。
+> 可移植的 Claude Code 增强工程。开始前按顺序执行启动步骤。
+> **上下文分片**（v1.4）：`.claudeignore` 已排除大文件/归档目录，AI 不要主动读这些路径，除非用户明确要求。
 
 ---
 
 ## 启动必读
 
-1. **了解结构** → 读 `README.md`（**勿读** `AI-【0-4】/`，已被 .claudeignore 排除）
+1. **了解结构** → 读 `README.md`
 2. **遵守约定** → 读 `AI-ClaudeCode-最佳实践精简.md` 或 `.claude/rules/` 下规则文件
 3. **项目级指令** → 如果在子目录工作，读该目录的 `CLAUDE.md`
 4. **智能调度** → 复杂任务自动派 Agent（见 `AI-ClaudeCode-最佳实践精简.md` 第三节）
@@ -18,24 +18,32 @@
 
 ```
 AiCode/
-├── AI-【0】-AI规则与范式/    ← 范式、规则、最佳实践
-├── AI-【1】-打破信息茧房/    ← agent-reach、aihot 等
-├── AI-【2】-学习/            ← 教程、面试题
-├── AI-【3】-项目开发/        ← 个人项目开发
-├── AI-【4】-公司项目/        ← 公司项目（git clone）
-│
 ├── AI-ClaudeCode-最佳实践精简.md     ← 行为约定 + 最佳实践
-├── CLAUDE.md                ← 本文件（导航）
-├── README.md                ← 工作空间说明
+├── Claude工程实践操作手册.md          ← 详细版操作手册（待与精简版合并）
+├── CLAUDE.md                          ← 本文件（导航）
+├── README.md                          ← 工作空间说明
 │
-├── .automation/             ← 自动化脚本
-├── .ai-memory/              ← 跨 IDE 共享记忆
-└── .claude/                 ← Claude Code 配置
-    ├── rules/               ← 拆分规则（详见下方）
-    ├── skills/left-brain/   ← 🧠 左脑记忆系统
-    ├── commands/            ← 常用命令
-    └── agents/              ← 专业子代理
+├── .automation/                       ← 自动化脚本
+├── .workspace/                        ← 工作空间适配
+├── .claude/                           ← Claude Code 配置
+│   ├── rules/                         ← 拆分规则（详见下方）
+│   ├── skills/left-brain/             ← 🧠 左脑记忆系统
+│   ├── commands/                      ← 常用命令
+│   └── agents/                        ← 专业子代理
+│
+├── scripts/                           ← 核心自动化脚本
+│   ├── evolution/                     ← 🧬 自我进化系统（v1.8：每日扫描 GitHub 学习新能力）
+│   ├── orchestrator/                  ← 智能调度器
+│   ├── parallel/                      ← worktree 并行
+│   ├── mcp/                           ← 本地 MCP server
+│   └── 会话快照/                       ← 快照保存/加载
+│
+├── benchmarks/                        ← 真实任务性能基准
+├── data/                              ← SQLite 工作空间数据库
+└── archives/                          ← 全局归档
 ```
+
+> 个人学习资料、项目代码、其他 AI 工具配置已移出到 `H:/AI-han/AiCode-Personal/`。
 
 ---
 
@@ -47,6 +55,8 @@ AiCode/
 | 记忆知识 | `left-brain.sh remember "..."` |
 | 搜索知识 | `left-brain.sh recall "关键词"` |
 | 查看状态 | `left-brain.sh dashboard` |
+| 自我进化 | `/evolve run` 或 `npm run evolve` |
+| 检查过时 | `/evolve watch` 或 `npm run trend` |
 | 压缩上下文 | `/compact` |
 | 重置会话 | `/clear` |
 
