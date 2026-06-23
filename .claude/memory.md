@@ -1,80 +1,100 @@
 # 项目记忆库
 
-> 最后更新：2026-06-17
-> 定位：Claude Code 专用记忆（L2 工具层）。通用信息看 L1：`.ai-memory/PROJECT_CONTEXT.md`
+> 最后更新：2026-06-23
+> 定位：Claude Code 专用记忆（AiCode 工程层）。用户背景等通用信息看左脑知识库。
 
 ---
 
 ## 核心信息
-- **项目路径**：H:\AI-han\AiCode（非 git 仓库，Win32）
-- **用户**：韩宗辉，10 年 Java 后端，济南求职中
-- **目标岗位**：Java 高级后端 / AI 应用开发 / AI 智能体开发（三种都投）
-- **求职渠道**：BOSS 直聘 + 智联招聘
-- **Python**：能看懂不能写
-- **当前重心**：补 AI 理论（RAG/Agent）+ 优化面试准备
 
-## 仓颉智能体项目（生产经验，面试核心资产）
-- **真实角色**：应用层开发维护（非架构师，非从零搭建）
-- **技术栈**：Java 8 + Spring Boot 2.6.13 + Camunda BPMN + SSE
-- **做过的（面试能讲）**：
-  - SSE 流式输出对接（处理过流式与下游节点冲突）
-  - Camunda 自定义节点开发（文本提取节点）
-  - 节点间变量赋值（流程变量 key-value）
-  - NL2SQL 算法接口对接（按文档调用 + CURL 定位）
-  - LakeSearch 知识库系统维护（数据权限 + 知识库 CRUD）
-  - 对话流维护（会话管理 + 消息存储）
-- **接触过没深入**：分块配置、Embedding/Rerank、topK/temperature、向量检索、Prompt 模板、多模型路由
+- **项目路径**：`H:\AI-han\AiCode`
+- **GitHub 仓库**：https://github.com/hanzonghui/AiCode
+- **当前分支**：`main`
+- **工程定位**：可移植的 Claude Code 增强工作空间
+- **当前版本**：v1.8（2026-06-23 已全量提交并推送到 GitHub）
 
-## 技术能力评级
-- ⭐⭐⭐⭐⭐ Java 微服务架构、Spring Boot
-- ⭐⭐⭐⭐ SSE 流式输出、Camunda 工作流、跨系统接口对接
-- ⭐⭐⭐ 对话系统维护
-- ⭐⭐ Agent 编排（只有 BPMN 经验）
-- ⭐ RAG 深度、向量数据库、模型微调、评估体系
+---
 
-## 学习进度
-- ✅ Spring AI Alibaba — 18 模块全部完成（教学级 demo）
-- ✅ LangChain4j — 14 模块全部完成（含 RAG 和 MCP，课程学完但未深入研究）
-- 2026-06-11：配置 Claude Code 成本控制策略（/compact、/clear、.claudeignore）
-- 2026-06-17：ZCode 熟悉目录，梳理三层记忆架构并更新记忆文件；7号文档 Q3/Q4/Q8/Q12/Q13 五道🔴题全部深化
-- 2026-06-19：微服务面试题 B 方案深化（Saga/限流算法/Nacos长轮询/优雅上下线/Service Mesh + 仓颉关联）；同步 LangChain4j 进度为 14 模块全完
+## 核心功能模块
 
-## 面试准备状态（2026-06-17 逐题核对确认）
-- 7 号文档共 **13 道面试题**（与全景图一致）
-- 🟢 项目有涉及：**8 道（62%）** — Q1 RAG项目、Q2 分块、Q5 参数、Q6 Token、Q7 向量库选型、Q9 SSE、Q10 Camunda、Q11 Agent
-- 🔴 需要补理论：**5 道（38%）** — Q3 RAG优化、Q4 RAG评估、Q8 向量相似度、Q12 ReAct、Q13 多Agent
-- ⚠️ 纠错：旧 memory 写"13🟢/5🔴"、文档概览自述"13🟢/5🔴"均不准确；emoji 全文统计为 9🟢/6🔴（含图例行），实际题数分布为 8🟢/5🔴
+| 模块 | 一句话作用 | 入口 |
+|:-----|:----------|:-----|
+| **智能调度器** | 自动分析任务复杂度，按需派发 1-3 个子代理 | `/dispatch`、`/parallel` |
+| **左脑记忆系统** | 跨会话自动记忆 + 知识图谱 + 语义搜索 | `/remember`、`/status`、`left-brain.sh` |
+| **自我进化系统** | 每日扫描 GitHub 爆款 Claude 项目并自动实现 | `/evolve run`、`/evolve watch` |
+| **并行执行** | 基于 git worktree 多分支同时干活 | `scripts/parallel/worktree-parallel.sh` |
+| **本地 MCP** | 本地 filesystem/sqlite/fetch 工具 | `scripts/mcp/` |
+| **会话快照** | 一键保存/恢复会话上下文 | `scripts/会话快照/` |
+| **项目自动化** | 一句话创建项目脚手架 | `/new-project` |
+| **自动化工作流** | 测试→简化→审查→提交 | `/go`、`/qa`、`/code-review` |
+
+---
 
 ## 关键决策
-- 使用 MIMO 计费，需严格控制 Token 成本
-- 日常简单任务用免费 Qoder，重任务交给 Claude
-- 三层记忆架构：L1 通用层(.ai-memory) / L2 工具层(.claude) / L3 项目层(.lingma)
-- 工作流：5 轮对话后主动提醒 /compact；切换任务前建议 /clear
 
-## 已完成模块
-- RAG 模块（学习级，非优化级）
-- 工作流编排（Camunda 实战）
+- **成本控制**：每 5 轮对话建议 `/compact`；大文件/归档目录已加入 `.claudeignore`
+- **任务隔离**：新任务建议 `/clear` 或开新 session
+- **Git 工作流**：小 commit、功能分组、最终 squash merge
+- **自我约束**：改动后按级别自动收尾（测试 + 快照 + KB + 文档）
+- **外部学习**：每日/定期运行 `/evolve`，防止闭门造车
+- **数据管理**：`data/workspace.db` 和 `data/github/` 为运行时数据，已加入 `.gitignore`，不提交
+
+---
+
+## 常用命令
+
+```bash
+# 智能调度
+/dispatch <任务>
+/parallel <N> <任务>
+
+# 记忆系统
+left-brain.sh remember "..."
+left-brain.sh recall "关键词"
+left-brain.sh dashboard
+
+# 自我进化
+npm run evolve:scan      # 只扫描 GitHub
+npm run evolve:analyze   # 只分析候选
+npm run evolve           # 完整流程
+npm run trend            # 检查已实现特性是否过时
+
+# 测试与归档
+npm test
+npm run benchmark
+npm run archive
+
+# 会话快照
+node scripts/会话快照/save.js "标题" "标签"
+```
+
+---
+
+## 当前状态（2026-06-23）
+
+- ✅ v1.8 功能全部完成，101/101 测试通过
+- ✅ 本地 3 个 commit 已推送到 GitHub `hanzonghui/AiCode`
+- ✅ `.claudeignore` 已排除大文件/归档目录
+- ⏳ `data/github/` 待生成（运行 `npm run evolve:scan`）
+- ⏳ `.claude/memory.md` 已更新为当前工程专用内容
+
+---
 
 ## TODO
-- [ ] 继续补 RAG 优化方法论（多路召回 / Rerank / Query 改写 / 混合检索）
-- [ ] 学 Agent 编排（ReAct / Plan-and-Execute / Multi-Agent）
-- [ ] LangChain4j RAG/MCP 模块深入研究（课程已学完，需结合仓颉实践深挖）
-- [x] 核对面试题数量（7 号文档 vs memory）— 已纠正为 8🟢/5🔴
-- [ ] 把仓颉经验翻译成通用 AI 术语（P0）
 
-## 踩坑记录
-- 待记录
+- [ ] 观察 30 天后 `access_count` 是否被使用，如无使用考虑删除
+- [ ] 验证自我进化系统首次扫描结果
+- [ ] 根据实际使用频率裁剪不常用功能
+- [ ] 将 `test-analyzer.js` 纳入 `npm test`
 
-## 文档索引（快速定位）
-- 总纲：`0、项目全景图谱.md`
-- 自我评估：`1、个人现状分析与能力评估报告.md`
-- 项目经验：`2、仓颉智能体项目—之前工作中开发维护的项目.md`
-- 学习笔记：`3、SpringAIAlibaba...md`、`4、LangChain4j...md`
-- 学习方向：`5、AI智能体完整学习与实施方案.md`
-- 技能全景：`6、AI智能体—技能全景与学习路线.md`
-- 面试题对照：`7、AI智能体—面试高频问题与回答框架.md`
-- 记忆规范：`8、AI助手全局通用记忆规范.md`
-- 工具分工：`9、工具分工与文件体系评价.md`
-- 面试题补充：`微服务架构-高频面试题.md`（6/14 新增）
-- 新增目录：`AI-0-打破信息茧房/`（6/15 新增）
-- 项目源码：`【3】工作资料/code/仓颉智能体/nlp-agent/`
+---
+
+## 文档索引
+
+- 总纲：`README.md`、`CLAUDE.md`
+- 行为约定：`AI-ClaudeCode-最佳实践精简.md`
+- 自我约束：`scripts/orchestrator/自我约束规范.md`
+- 工作空间说明：`工作空间功能介绍.md`
+- 进化系统设计：`自我进化循环系统设计.md`
+- 下一步计划：`下一步优化计划.md`
+- 左脑系统：`.claude/skills/left-brain/memory/MEMORY.md`
