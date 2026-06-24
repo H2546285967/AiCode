@@ -45,6 +45,9 @@ target/
 # 自动化修复 proposals（auto-fix 写入，等用户 /ok）
 .claude/skills/left-brain/memory/fix-proposals.json
 
+# Plan 执行日志（plan-bridge 写入）
+.claude/skills/left-brain/memory/plan-execution-log.json
+
 # 会话级快照模式覆盖（/snap-mode 写入，会话结束可清）
 .claude/session-snap-mode.json
 

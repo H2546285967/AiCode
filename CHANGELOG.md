@@ -53,9 +53,40 @@ v1.9.1 是 v1.9 之后的"**智能增量首发版**"，围绕用户终极愿景"
 
 ### 下一步
 
-- 增量 B 方案 A：planner agent 完整升级（按 plan 自动派子任务）
 - 增量 C 方案 B/C：后台 cron 通知 + 进化系统联动
 - 增量 D 增强：自动写测试 / 自动 npm update（v2.0）
+
+---
+
+## [v1.9.3] - 2026-06-24
+
+### 🟢 Added - Planner 完整升级（增量 B 方案 A）
+
+让 /ok 之后**自动按 plan.steps 派 Agent 执行**。增量 B 协议不再"半成品"——批准即干活。
+
+**协议增强**（CLAUDE.md）：
+- 每个 step 下可加可选行：`agent: <类型>` + `files: <逗号分隔>`
+- 缺省 fallback（向后兼容）：agent 默认 `claude`，files 从 step 文本自动提取
+- 老 plan 仍能正常解析（50/50 老测试通过）
+
+**核心引擎**：`scripts/orchestrator/planning/plan-bridge.js`
+- 找 status=approved 的 plan
+- 逐 step 调 `claude -p --model <model> "<prompt>"` 启子会话
+- prompt 构造：agent 类型 + plan.task + step.text + step.files
+- 状态机：pending → approved → executing → done（部分失败变 partial）
+- 单 step 失败 → 记 error + 继续下个（不全盘崩）
+- 永不 throw
+
+**入口**：
+- `/plan-execute` 命令（`.claude/commands/plan-execute.md`）
+- `npm run plan:execute`
+- `npm run plan:list-approved` / `plan:log`
+
+**日志**：`.claude/skills/left-brain/memory/plan-execution-log.json`（gitignore 排除）
+
+**测试**：
+- `test-plan-bridge.js` 44/44 通过
+- `test-plan-detect.js` 50/50 向后兼容验证通过
 
 ---
 

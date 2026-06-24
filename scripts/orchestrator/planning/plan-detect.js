@@ -81,46 +81,117 @@ function parsePlanBlock(blockContent) {
 
   const lines = blockContent.split('\n');
   let currentSection = null;
+  let currentStep = null;  // 当前正在构造的 step 对象
+
+  function commitStep() {
+    if (currentStep && currentStep.text) {
+      // 解析 files 字段（逗号分隔）成数组
+      if (currentStep._filesRaw) {
+        currentStep.files = currentStep._filesRaw
+          .split(/[,，]/)
+          .map(f => f.trim())
+          .filter(Boolean);
+        delete currentStep._filesRaw;
+      }
+      plan.steps.push({
+        text: currentStep.text,
+        ...(currentStep.agent && { agent: currentStep.agent }),
+        ...(currentStep.files && currentStep.files.length > 0 && { files: currentStep.files }),
+      });
+    }
+    currentStep = null;
+  }
 
   for (const line of lines) {
     const trimmed = line.trim();
 
     // 提取字段
     if (/^任务[：:]/.test(trimmed)) {
+      commitStep();
       plan.task = trimmed.replace(/^任务[：:]\s*/, '');
       currentSection = null;
     } else if (/^目标[：:]/.test(trimmed)) {
+      commitStep();
       plan.goal = trimmed.replace(/^目标[：:]\s*/, '');
       currentSection = null;
     } else if (/^预计改动[：:]/.test(trimmed)) {
+      commitStep();
       plan.estimated_changes = trimmed.replace(/^预计改动[：:]\s*/, '');
       currentSection = null;
     } else if (/^预计风险[：:]/.test(trimmed)) {
+      commitStep();
       plan.estimated_risk = trimmed.replace(/^预计风险[：:]\s*/, '');
       currentSection = null;
     } else if (/^回退方案[：:]/.test(trimmed)) {
+      commitStep();
       plan.rollback = trimmed.replace(/^回退方案[：:]\s*/, '');
       currentSection = null;
     } else if (/^步骤[：:]/.test(trimmed)) {
+      commitStep();
       currentSection = 'steps';
     } else if (currentSection === 'steps') {
       // 匹配 "1. xxx" 或 "1) xxx"
-      const m = trimmed.match(/^\d+[.)、]\s*(.+)$/);
-      if (m) {
-        plan.steps.push(m[1]);
+      const stepMatch = trimmed.match(/^\d+[.)、]\s*(.+)$/);
+      if (stepMatch) {
+        // 新 step：提交上一个，开启新的
+        commitStep();
+        currentStep = { text: stepMatch[1] };
+      } else if (/^agent[：:]\s*/i.test(trimmed)) {
+        // agent: explorer
+        if (currentStep) {
+          currentStep.agent = trimmed.replace(/^agent[：:]\s*/i, '').trim();
+        }
+      } else if (/^files[：:]\s*/i.test(trimmed)) {
+        // files: a.js, b.js
+        if (currentStep) {
+          currentStep._filesRaw = trimmed.replace(/^files[：:]\s*/i, '').trim();
+        }
       } else if (trimmed && !/^[A-Za-z一-龥]+[：:]/.test(trimmed)) {
         // 步骤延续（下一行是上一行的说明）
-        if (plan.steps.length > 0) {
-          plan.steps[plan.steps.length - 1] += ' ' + trimmed;
+        if (currentStep) {
+          currentStep.text += ' ' + trimmed;
         }
       }
     }
   }
 
+  // 别忘了最后一个 step
+  commitStep();
+
   // 必须同时有 task 和至少 1 个 step 才算有效 plan
   if (!plan.task || plan.steps.length === 0) return null;
 
   return plan;
+}
+
+/**
+ * Fallback：从 step.text 提取文件路径（当 step.files 缺失时）
+ * @param {string} text
+ * @returns {string[]}
+ */
+function extractFilesFromText(text) {
+  if (!text) return [];
+  // 匹配常见文件路径（含扩展名）
+  const matches = text.match(/[\w./\\-]+\.(js|ts|md|json|sh|py|yaml|yml|toml|css|html|sql)\b/g);
+  if (!matches) return [];
+  // 去重
+  return [...new Set(matches)];
+}
+
+/**
+ * 应用 fallback：如果 step 缺 agent/files，从 text 推断
+ * @param {object} step
+ * @returns {object} 填充后的 step
+ */
+function applyFallback(step) {
+  const result = { ...step };
+  if (!result.agent) {
+    result.agent = 'claude';  // 默认通用 agent
+  }
+  if (!result.files || result.files.length === 0) {
+    result.files = extractFilesFromText(result.text);
+  }
+  return result;
 }
 
 /**
@@ -299,6 +370,8 @@ if (require.main === module) {
 module.exports = {
   extractPlanBlocks,
   parsePlanBlock,
+  extractFilesFromText,
+  applyFallback,
   detectPlans,
   approveLatest,
   cancelLatest,

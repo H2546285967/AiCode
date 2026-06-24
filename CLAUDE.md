@@ -173,6 +173,40 @@ AiCode/
 [/plan]
 ```
 
+### plan 协议增强（v1.9.3+ 增量 B 方案 A）
+
+每个步骤下可加可选行让 plan-bridge 知道派什么 Agent：
+
+```
+[plan]
+任务: 重构 dispatcher
+目标: 拆成 3 个子模块
+步骤:
+  1. 读 dispatcher.js 现状
+     agent: explorer        # 可选：explorer/planner/qa-reviewer/claude/code-reviewer
+     files: dispatcher.js   # 可选：逗号分隔文件路径
+  2. 拆成 3 个子模块
+     agent: planner
+     files: dispatcher.js, sub-router.js
+  3. 写测试
+     agent: qa-reviewer
+     files: test-dispatcher.js
+预计改动: 5 个文件 / 200 行
+预计风险: 中
+回退方案: git revert <commit>
+[/plan]
+```
+
+**字段缺省 fallback**（向后兼容老格式）：
+- 缺 `agent:` → 默认 `claude`（通用 Agent）
+- 缺 `files:` → 从 step 文本正则提取 `*.js` `*.md` 等文件路径
+
+**执行流程**（v1.9.3+）：
+1. /ok 批准 → plan 状态变 approved
+2. `/plan-execute` 或 `npm run plan:execute` → 调 plan-bridge 引擎
+3. 按 step 顺序调 `claude -p` 子会话派 Agent 执行
+4. 单步失败不阻塞，全完变 done，部分失败变 partial
+
 ### 用户响应
 
 | 用户输入 | 含义 | Claude 动作 |
