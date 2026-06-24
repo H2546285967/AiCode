@@ -28,6 +28,10 @@ target/
 .claude/snapshots/
 .claude/skills/left-brain/memory/sessions/snapshots/
 
+# MemOS 动态数据（每日扫描生成）
+.claude/skills/left-brain/memory/memos-tier.json
+.claude/skills/left-brain/memory/logs/memos-evolution.jsonl
+
 # 会话级快照模式覆盖（/snap-mode 写入，会话结束可清）
 .claude/session-snap-mode.json
 
