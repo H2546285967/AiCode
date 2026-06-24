@@ -48,6 +48,9 @@ target/
 # Plan 执行日志（plan-bridge 写入）
 .claude/skills/left-brain/memory/plan-execution-log.json
 
+# 自主模式状态（autonomous.js 写入，会话级开关）
+.claude/skills/left-brain/memory/autonomous-state.json
+
 # 会话级快照模式覆盖（/snap-mode 写入，会话结束可清）
 .claude/session-snap-mode.json
 

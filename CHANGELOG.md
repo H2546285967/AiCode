@@ -90,6 +90,37 @@ v1.9.1 是 v1.9 之后的"**智能增量首发版**"，围绕用户终极愿景"
 
 ---
 
+## [v2.0.0] - 2026-06-24
+
+### 🟢 Added - 自主演进模式开关（v2.0 P0-1）
+
+让 Claude 拥有**自主决策能力**。用户可启动开关 → 离开电脑前打开 → Claude 自主选下一个增量做，不逐步确认。
+
+**核心引擎**：`scripts/orchestrator/autonomous.js`
+- `enable()` / `disable()` / `toggle()` / `isEnabled()` / `getState()`
+- 状态文件：`.claude/skills/left-brain/memory/autonomous-state.json`
+- CLI 子命令：on / off / toggle / status / is-enabled
+
+**入口**：
+- `/autonomous` 命令（`.claude/commands/autonomous.md`）
+- `/autonomous-stop` 命令（`.claude/commands/autonomous-stop.md`）
+- `npm run autonomous:on` / `autonomous:off` / `autonomous:status`
+
+**顶部展示**：session-init Step 7 显式显示开关状态
+- 🤖 自主模式: ON（开启于 2026/6/24 17:11）
+- 🙋 正常模式: OFF（逐步确认）
+
+**安全边界**：
+- ✅ 自主做：智能增量深化、bug 修、文档、commit
+- ⚠️ 慎做：修改 AI 工作目录（commit 前先 snapshot）
+- ❌ 不做：push、删分支、删文件、改主目录外文件
+
+**测试**：`scripts/orchestrator/test-autonomous.js` 38/38 通过
+
+**意义**：v2.0 路线（个人开发的智能增强）第一项交付，让用户能放心离开，Claude 自己继续推进智能演进。
+
+---
+
 ## [v1.9.2] - 2026-06-24
 
 ### 🟢 Added - 自动化修复（智能增量 D）
