@@ -148,12 +148,13 @@ AiCode/
 | 文件 | 作用 |
 |:-----|:-----|
 | `auto-perceive.md` | 自动感知、纠正学习规则 |
-| `behavior.md` | 文件读取、输出控制、任务切换 |
+| `behavior.md` | 文件读取、输出控制、任务切换、子代理调度 |
 | `session-memory.md` | 会话记忆、智能丢弃 |
-| `cost-control.md` | 成本控制 + Git/PR 工作流 |
+| `cost-control.md` | 成本控制 + Git 工作流（个人工程） |
 | `daily-maintenance.md` | 每日更新、Changelog |
 | `self-discipline.md` | 改动后自动收尾（测试/快照/KB/文档） |
 | `doc-sync.md` | 里程碑/增量后同步 04/03/CLAUDE/CHANGELOG，防漂移 |
+| `git-branch.md` | **个人工程默认在 main 工作**，需切换/创建/删除分支必须先问用户 |
 ---
 
 ## 🧠 智能任务规划协议（v1.9.1 增量 B）
