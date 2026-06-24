@@ -1,5 +1,6 @@
 # 临时文件
 logs/
+coverage/
 *.log
 *.tmp
 *.stackdump

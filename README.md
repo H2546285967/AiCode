@@ -1,8 +1,8 @@
 # Claude Code 增强工程
 
-> 一个**会自己调度、自己记忆、自己归档、自己兜底、自己进化**的 Claude Code 工作空间。**122 项测试全过**，实测提速 20%。
+> 一个**会自己调度、自己记忆、自己归档、自己兜底、自己进化**的 Claude Code 工作空间。**15 个测试文件 / 181 项断言全过**（见下方"测试数据"章节），实测并行加速 20%。
 >
-> **定位**：我们不增强 Claude 大模型本身，而是增强 **Claude Code 客户端 Agent** —— 通过调度、记忆、工具、工作流、自动化，让同样的 Claude 模型发挥出 5-10 倍效率。
+> **定位**：我们不增强 Claude 大模型本身，而是增强 **Claude Code 客户端 Agent** —— 通过调度、记忆、工具、工作流、自动化，让同样的 Claude 模型发挥出 2-5 倍效率。
 
 [![CI](https://github.com/<USER>/<REPO>/actions/workflows/test.yml/badge.svg)](https://github.com/<USER>/<REPO>/actions/workflows/test.yml)
 
@@ -15,7 +15,7 @@
 ```bash
 git clone https://github.com/<USER>/<REPO>.git && cd AiCode
 bash .workspace/setup.sh     # 一键适配当前环境
-npm test                     # 跑 101 项测试，确认环境正常
+npm test                     # 跑 15 个测试文件 / 181 项断言，确认环境正常
 ```
 
 然后启动 Claude Code：
@@ -292,8 +292,28 @@ cd <项目名>
 ### 当前测试基线
 
 ```text
-npm test: 101/101 通过
+npm test: 181/181 通过（15 个测试文件，含 metrics + logger + dashboard + permissions + test-analyzer + mcp-integration 新增）
 npm run benchmark: 并行比串行快 20%（3 个 IO 型任务，详见 benchmarks/result.md）
 ```
 
+### 测试数据（v1.9.0 公开化）
+
+| 指标 | 数值 | 备注 |
+|:-----|:-----|:-----|
+| 测试文件数 | 15 | 全部 15 个测试文件本地 + CI 全过 |
+| 断言总数 | 181 | 动态生成（各测试文件 check() 累加） |
+| 测试矩阵 | ubuntu + windows × Node 18 + 20 + 22 | GitHub Actions 自动跑 |
+| 代码覆盖率 | 78.86% 语句 / 69.6% 分支 / 76.81% 函数 | `npm run test:coverage` 实时生成 |
+| dispatcher.js 覆盖率 | 32.62% | 规则引擎大量分支未覆盖（v1.9.1 改进） |
+| mcp 覆盖率 | 80.7% | 含 fetch-server / sqlite-server / _shared（v1.9 接入 _shared 后） |
+| 新增模块覆盖率 | metrics.js 94.76% / dashboard.js 94.65% / logger.js 82.6% / permissions.js 78.1% | v1.9 新增模块高覆盖 |
+
+**怎么复现**：
+```bash
+npm test                  # 跑 12 个测试文件
+npm run test:coverage     # 生成 coverage/ 报告（HTML + 文本 + JSON）
+open coverage/index.html  # 看 HTML 详细报告
+```
+
 > 注意：benchmark 数字会随机器、网络、磁盘 IO 波动。建议在新机器上跑 `npm test` 和 `npm run benchmark` 重新建立基线。
+> 注意：覆盖率是 v1.9.0 首次公开，未来每个版本会在此表更新。

@@ -23,8 +23,10 @@ AiCode/
 ├── CLAUDE.md                          ← ⭐ 启动必读（新会话第一件事）
 ├── PROJECT-CONTEXT.md                 ← ⭐ 要熟悉项目必读（详细架构和系统说明）
 ├── 01_AI-ClaudeCode-最佳实践精简.md     ← 行为约定 + 最佳实践
-├── Claude工程实践操作手册.md          ← 详细版操作手册（待与精简版合并）
 ├── README.md                          ← 工程说明与安装
+├── CHANGELOG.md                       ← ⭐ 版本变更记录
+├── 03_版本迭代计划.md                  ← ⭐ 当前路线图
+├── 05_工程能力评估_全局专家视角.md      ← ⭐ 全局专家评估
 │
 ├── .automation/                       ← 自动化脚本
 ├── .workspace/                        ← 工作空间适配
@@ -36,9 +38,9 @@ AiCode/
 │
 ├── scripts/                           ← 核心自动化脚本
 │   ├── evolution/                     ← 🧬 自我进化系统（v1.8：每日扫描 GitHub 学习新能力）
-│   ├── orchestrator/                  ← 智能调度器
+│   ├── orchestrator/                  ← 智能调度器（v1.9：+ metrics + logger + permissions + withRetry）
 │   ├── parallel/                      ← worktree 并行
-│   ├── mcp/                           ← 本地 MCP server
+│   ├── mcp/                           ← 本地 MCP server（v1.9：+ _shared 统一错误）
 │   └── 会话快照/                       ← 快照保存/加载
 │
 ├── benchmarks/                        ← 真实任务性能基准
@@ -184,5 +186,8 @@ left-brain.sh status             # 状态
 | `PROJECT-CONTEXT.md` | ⭐ 要熟悉项目必读（详细架构和系统说明） |
 | `01_AI-ClaudeCode-最佳实践精简.md` | 行为约定 + 最佳实践 |
 | `02_工作空间功能介绍.md` | 完整功能说明 + 操作指南 |
+| `03_版本迭代计划.md` | ⭐ **当前路线图（v1.2 修订）**：v1.9 基础设施补齐 + v2.0 团队能力 |
 | `04_自我进化循环系统设计.md` | v1.8 自我进化系统完整设计 |
+| `05_工程能力评估_全局专家视角.md` | ⭐ **全局专家评估（v1.1 修订）**：当前 L2 / 目标 L4 |
+| `CHANGELOG.md` | ⭐ **版本变更记录（v1.9.0 已发版）** |
 | `README.md` | 工程说明与安装 |

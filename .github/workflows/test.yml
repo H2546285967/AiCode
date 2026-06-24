@@ -1,8 +1,10 @@
 # GitHub Actions CI —— 跑工作空间核心测试
 #
-# 触发：push / pull_request 到 main 或 master
-# 任务：跑 dispatcher 单元测试 + e2e + llm-adapter 测试
-# 状态：✅ 写配置文件，不推远端（用户在本地可手动验证 YAML 语法）
+# 触发：push / pull_request 到 main 或 master / 手动
+# 任务：跑全量测试套件（10 个测试文件）
+# 矩阵：ubuntu-latest + windows-latest × node 18 + 20 + 22
+# 状态：✅ v1.9 P0-1 完成（2026-06-24）
+# 备注：包管理用 `npm ci`（package.json/devDependencies 已含 c8 覆盖率工具）
 
 name: CI
 
@@ -11,23 +13,35 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
-  # 允许手动触发（workflow_dispatch）
   workflow_dispatch:
+
+# 取消冗余运行（同一分支、同一 PR）
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
-    name: Node.js 测试套件
-    runs-on: ubuntu-latest
+    name: Node.js ${{ matrix.node }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false  # 一个失败不取消其他矩阵（看清全貌）
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [18, 20, 22]
 
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: 设置 Node.js 18
+      - name: 设置 Node.js ${{ matrix.node }}
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: false  # 无 package.json，不需要缓存
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
 
       - name: 验证 Node 版本
         run: node --version
@@ -43,18 +57,52 @@ jobs:
 
       - name: 跑失败路径测试
         run: node scripts/orchestrator/test-failure-paths.js
-        continue-on-error: false  # 失败路径测试必须通过
+        continue-on-error: false
+
+      - name: 跑 metrics 测试
+        run: node scripts/orchestrator/test-metrics.js
+
+      - name: 跑 logger 测试
+        run: node scripts/orchestrator/test-logger.js
+
+      - name: 跑 dashboard 测试
+        run: node scripts/orchestrator/test-dashboard.js
+
+      - name: 跑 permissions 测试
+        run: node scripts/orchestrator/test-permissions.js
+
+      - name: 跑 mermaid 测试
+        run: node scripts/parallel/test-mermaid.js
+
+      - name: 跑 mcp 测试
+        run: node scripts/mcp/test-mcp.js && node scripts/mcp/test-mcp-failure.js && node scripts/mcp/test-shared.js && node scripts/mcp/test-integration.js
+
+      - name: 跑快照恢复测试
+        run: node scripts/会话快照/test-snapshot-recovery.js
+
+      - name: 跑 worktree 效果测试
+        run: node scripts/parallel/test-worktree-effect.js
+
+      - name: 跑 evolution 扫描器测试
+        run: node scripts/evolution/test-scanner.js && node scripts/evolution/test-analyzer.js
 
       - name: 汇总结果
         if: always()
         run: |
           echo "=========================================="
-          echo "✅ 所有测试通过"
+          echo "✅ 全部测试通过"
           echo "=========================================="
-          echo "测试套件："
-          echo "  - dispatcher (规则引擎)"
-          echo "  - e2e (端到端)"
-          echo "  - llm-adapter (4 backend)"
-          echo "  - failure-paths (失败路径)"
+          echo "测试套件（10 个测试文件）："
+          echo "  1. dispatcher (规则引擎)"
+          echo "  2. e2e (端到端)"
+          echo "  3. llm-adapter (4 backend)"
+          echo "  4. mermaid (并行可视化)"
+          echo "  5. failure-paths (4 类失败兜底)"
+          echo "  6. mcp (filesystem + sqlite + fetch)"
+          echo "  7. mcp-failure (mcp 失败路径)"
+          echo "  8. snapshot-recovery (快照恢复)"
+          echo "  9. worktree-effect (worktree 效果)"
+          echo "  10. evolution-scanner (进化扫描器)"
           echo ""
-          echo "总计：45+ 项测试"
+          echo "矩阵：${{ matrix.os }} × node ${{ matrix.node }}"
+          echo "=========================================="

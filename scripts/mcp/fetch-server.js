@@ -7,13 +7,25 @@
  * 工具：
  *   - fetch { url: string, maxLength?: number }
  *
+ * v1.9 接入 _shared.js：
+ *   - safeCall 包装 fetch handler
+ *   - 自动接入 metrics（counter + timing）
+ *   - 自动接入 logger（debug/warn）
+ *   - 错误消息统一格式 "[local-fetch-server/fetch] ..."
+ *   - URL 白名单检查保持原样（在 safeCall 内执行，违规返回 isError）
+ *
  * @since v1.7.0 (2026-06-22)
+ * @changed v1.9.0 (2026-06-24) 接入 _shared.js 统一错误处理
  */
 
 const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
 const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js');
 
 const { ListToolsRequestSchema, CallToolRequestSchema } = require('@modelcontextprotocol/sdk/types.js');
+
+// v1.9 P0-3 接入：统一 server 名（影响 metrics / logs 标签）
+process.env.MCP_SERVER_NAME = 'local-fetch-server';
+const { safeCall } = require('./_shared');
 
 // ============================================================
 // 安全配置
@@ -126,23 +138,22 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 });
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  if (request.params.name !== 'fetch') {
-    throw new Error(`未知工具: ${request.params.name}`);
+  const { name, arguments: args } = request.params;
+
+  if (name !== 'fetch') {
+    throw new Error(`未知工具: ${name}`);
   }
 
-  const { url, maxLength = 5000 } = request.params.arguments;
+  const { url, maxLength = 5000 } = args;
 
-  const check = checkUrlAllowed(url);
-  if (!check.allowed) {
-    return {
-      content: [
-        { type: 'text', text: `请求被拒绝: ${check.reason}` },
-      ],
-      isError: true,
-    };
-  }
+  // URL 白名单检查（在 safeCall 内执行，违规返回 isError）
+  return safeCall('fetch', args, async () => {
+    const check = checkUrlAllowed(url);
+    if (!check.allowed) {
+      // 业务错误：抛错让 safeCall 捕获并格式化为统一错误
+      throw new Error(`请求被拒绝: ${check.reason}`);
+    }
 
-  try {
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; ai-workspace-fetch/1.0)',
@@ -174,18 +185,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 
     return {
-      content: [
-        { type: 'text', text },
-      ],
+      content: [{ type: 'text', text }],
     };
-  } catch (e) {
-    return {
-      content: [
-        { type: 'text', text: `抓取失败: ${e.message}` },
-      ],
-      isError: true,
-    };
-  }
+  });
 });
 
 const transport = new StdioServerTransport();

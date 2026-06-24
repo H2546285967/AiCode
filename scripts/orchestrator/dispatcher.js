@@ -256,8 +256,27 @@ if (require.main === module) {
     process.exit(1);
   }
 
+  // v1.9 P0-4: 接入 metrics（仅 CLI 模式，内部调用零开销）
+  // v1.9 P1-1: 接入结构化日志
+  const t0 = Date.now();
   const result = decide(taskText);
   console.log(JSON.stringify(result, null, 2));
+
+  try {
+    const Metrics = require('./metrics');
+    Metrics.increment('dispatcher.decision', 1, { dispatch: String(result.dispatch) });
+    Metrics.timing('dispatcher.decision', Date.now() - t0);
+
+    const { createLogger } = require('./logger');
+    const log = createLogger('dispatcher');
+    log.info({ dispatch: result.dispatch, agents: result.agents, confidence: result.confidence }, 'decision made');
+
+    // v1.9 P1-3: 权限检查（占位接入，验证骨架可用）
+    const { can } = require('./permissions');
+    if (!can(process.env.USER_ROLE || 'admin', 'dispatcher.decide')) {
+      process.stderr.write('[dispatcher] 权限不足：当前角色不能调用 dispatcher\n');
+    }
+  } catch { /* metrics/log 失败不影响主流程 */ }
 }
 
 module.exports = { decide, estimateFileCount, estimateModuleCount, detectTaskType };

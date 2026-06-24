@@ -8,7 +8,14 @@
  *   - query { sql: string }
  *   - execute { sql: string }
  *
+ * v1.9 接入 _shared.js：
+ *   - safeCall 包装所有 tool handler
+ *   - 自动接入 metrics（counter + timing）
+ *   - 自动接入 logger（debug/warn）
+ *   - 错误消息统一格式 "[local-sqlite-server/<tool>] ..."
+ *
  * @since v1.7.0 (2026-06-22)
+ * @changed v1.9.0 (2026-06-24) 接入 _shared.js 统一错误处理
  */
 
 const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
@@ -17,6 +24,10 @@ const { ListToolsRequestSchema, CallToolRequestSchema } = require('@modelcontext
 const sqlite = require('node:sqlite');
 const fs = require('node:fs');
 const path = require('node:path');
+
+// v1.9 P0-3 接入：统一 server 名（影响 metrics / logs 标签）
+process.env.MCP_SERVER_NAME = 'local-sqlite-server';
+const { safeCall } = require('./_shared');
 
 const dbPath = process.argv[2];
 if (!dbPath) {
@@ -75,27 +86,28 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
-  try {
-    if (name === 'query') {
+
+  if (name === 'query') {
+    return safeCall('query', args, () => {
       const stmt = db.prepare(args.sql);
       const rows = stmt.all();
       return {
         content: [{ type: 'text', text: JSON.stringify(rows, null, 2) }],
       };
-    }
-    if (name === 'execute') {
+    });
+  }
+
+  if (name === 'execute') {
+    return safeCall('execute', args, () => {
       const result = db.exec(args.sql);
       return {
         content: [{ type: 'text', text: `执行成功，影响行数: ${result}` }],
       };
-    }
-    throw new Error(`未知工具: ${name}`);
-  } catch (e) {
-    return {
-      content: [{ type: 'text', text: `SQL 错误: ${e.message}` }],
-      isError: true,
-    };
+    });
   }
+
+  // 未知工具：直接抛（safeCall 也会接，但显式抛更清晰）
+  throw new Error(`未知工具: ${name}`);
 });
 
 const transport = new StdioServerTransport();

@@ -1,16 +1,22 @@
 {
   "name": "ai-workspace",
-  "version": "1.7.1",
+  "version": "1.9.0",
   "description": "可移植的个人 AI 开发工作空间 —— 自调度、自记忆、自归档、自兜底",
   "main": "scripts/orchestrator/index.js",
   "scripts": {
-    "test": "node scripts/orchestrator/test-dispatcher.js && node scripts/orchestrator/test-e2e.js && node scripts/orchestrator/test-llm-adapter.js && node scripts/parallel/test-mermaid.js && node scripts/orchestrator/test-failure-paths.js && node scripts/mcp/test-mcp.js && node scripts/mcp/test-mcp-failure.js && node scripts/会话快照/test-snapshot-recovery.js && node scripts/parallel/test-worktree-effect.js && node scripts/evolution/test-scanner.js",
+    "test": "node scripts/orchestrator/test-dispatcher.js && node scripts/orchestrator/test-e2e.js && node scripts/orchestrator/test-llm-adapter.js && node scripts/parallel/test-mermaid.js && node scripts/orchestrator/test-failure-paths.js && node scripts/orchestrator/test-metrics.js && node scripts/orchestrator/test-logger.js && node scripts/orchestrator/test-dashboard.js && node scripts/orchestrator/test-permissions.js && node scripts/mcp/test-mcp.js && node scripts/mcp/test-mcp-failure.js && node scripts/mcp/test-shared.js && node scripts/mcp/test-integration.js && node scripts/会话快照/test-snapshot-recovery.js && node scripts/parallel/test-worktree-effect.js && node scripts/evolution/test-scanner.js && node scripts/evolution/test-analyzer.js",
+    "test:evolution": "node scripts/evolution/test-scanner.js && node scripts/evolution/test-analyzer.js",
+    "test:coverage": "c8 --reporter=text --reporter=html --reporter=json-summary --reports-dir=coverage --include='scripts/**/*.js' --exclude='**/test-*.js' npm test",
     "test:dispatcher": "node scripts/orchestrator/test-dispatcher.js",
     "test:e2e": "node scripts/orchestrator/test-e2e.js",
     "test:llm": "node scripts/orchestrator/test-llm-adapter.js",
     "test:mermaid": "node scripts/parallel/test-mermaid.js",
     "test:failure": "node scripts/orchestrator/test-failure-paths.js",
-    "test:mcp": "node scripts/mcp/test-mcp.js && node scripts/mcp/test-mcp-failure.js",
+    "test:metrics": "node scripts/orchestrator/test-metrics.js",
+    "test:logger": "node scripts/orchestrator/test-logger.js",
+    "test:dashboard": "node scripts/orchestrator/test-dashboard.js",
+    "test:permissions": "node scripts/orchestrator/test-permissions.js",
+    "test:mcp": "node scripts/mcp/test-mcp.js && node scripts/mcp/test-mcp-failure.js && node scripts/mcp/test-shared.js && node scripts/mcp/test-integration.js",
     "dispatch": "node scripts/orchestrator/dispatcher.js",
     "archive": "bash scripts/parallel/global-archive.sh",
     "snapshot": "node scripts/会话快照/save.js",
@@ -43,6 +49,7 @@
     "node": ">=18.0.0"
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0"
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "c8": "^11.0.0"
   }
 }
