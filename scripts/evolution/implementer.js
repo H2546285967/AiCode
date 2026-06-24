@@ -435,4 +435,17 @@ if (require.main === module) {
   })
 }
 
-module.exports = { implementCandidate, rollback, status, markAsEvolved }
+module.exports = {
+  implementCandidate,
+  rollback,
+  status,
+  markAsEvolved,
+  // 暴露给 auto-implement.js 复用（增量 F / M7）
+  createBranch,
+  mergeBranch,
+  deleteBranch,
+  hasUncommittedChanges,
+  runTests,
+  getCurrentBranch,
+  gitExec,
+}

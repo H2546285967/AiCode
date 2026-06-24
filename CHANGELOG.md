@@ -118,6 +118,64 @@
 
 ---
 
+## [v2.2.0] - 2026-06-24
+
+### 🧬 Added - 增量 F：进化闭环 auto-implement（M7 完成 · 自主模式）
+
+**背景**：04 路线图增量 F 计划中项。L4 持续进化升级，从"看新闻"变"自动长技能"。
+**模式**：本次继续在 `🤖 自主模式 ON` 下完成（M7）。
+
+### Added - auto-implement.js 闭环引擎
+- 路径：`scripts/evolution/auto-implement.js`（约 380 行）
+- **复用 implementer.js 工具**（不重复造轮子：createBranch/mergeBranch/deleteBranch/runTests/gitExec）
+- 入口：`npm run evolve:auto` + `node auto-implement.js run --auto`
+
+### Added - 4 道安全闸门
+1. **composite_score ≥ 7.0**（实用性+可行性+独立性+风险度+新鲜度 综合分）
+2. **effort 必须 ∈ {small}**（medium/large 自动拒绝）
+3. **suggestion 必须是 adopt/adapt**（skip 自动拒绝）
+4. **路径黑名单**（.claude/ / dispatcher.js / autonomous.js / package.json / CLAUDE.md / 04 / CHANGELOG 任何触碰直接拒）
+5. **禁用依赖黑名单**（@anthropic-ai / openai / @xenova/transformers / tensorflow / pytorch）
+
+### Added - 失败保护
+- 连续失败 3 次 → 写 anomaly + 自动停
+- 单次失败 → 自动回滚分支 + 切回 master
+- `npm run evolve:auto:reset` 命令重置连续失败计数
+
+### Added - 双源候选加载
+- 源 1：`data/github/candidates.json`（GitHub 趋势评估后的候选）
+- 源 2：`data/evolution/auto-tasks.json`（自建任务，支持 `add-task` 命令）
+
+### Added - 干跑模式
+- `--dry-run` 输出完整计划但**不实际执行**（适合审阅）
+- 命令：`npm run evolve:auto:dry`
+
+### Added - test-auto-implement.js 测试
+- 路径：`scripts/evolution/test-auto-implement.js`
+- **27/27 全过**
+- 覆盖：4 道安全闸门、路径黑名单、双源加载、CLI、连续失败保护、dry-run
+
+### Changed - implementer.js
+- `module.exports` 暴露 createBranch/mergeBranch/deleteBranch/hasUncommittedChanges/runTests/getCurrentBranch/gitExec 供 auto-implement 复用
+
+### Changed - package.json
+- 新增 5 个 npm script：`evolve:auto` / `evolve:auto:dry` / `evolve:auto:list` / `evolve:auto:status` / `evolve:auto:reset`
+- `test:evolution` 追加 test-auto-implement
+- `npm test` 链追加 auto-implement 测试
+
+### Files（增量 F / M7）
+- 新增：`scripts/evolution/auto-implement.js`（约 380 行）
+- 新增：`scripts/evolution/test-auto-implement.js`（约 250 行）
+- 修改：`scripts/evolution/implementer.js`（exports 扩展）
+- 修改：`package.json`（5 个 npm script + test 链）
+- 快照：`.claude/snapshots/2026-06-24-23-27-59-milestone-M7.md`
+
+### 关联
+- 04 路线图增量 F / M7
+- 下一个增量：M8 跨会话状态续接（增量 G，1 天）
+
+---
+
 ## [v1.9.1] - 2026-06-24
 
 ### 🧠 Changed - 智能演进：自我反思 + 智能规划（增量 A + B）
