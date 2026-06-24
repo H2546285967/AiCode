@@ -28,4 +28,7 @@ fi
 # Proactive scan（v1.9.1 增量 C）
 node scripts/orchestrator/proactive/proactive-scan.js scan 2>/dev/null || true
 
+# Auto-fix（v1.9.2 增量 D）保守模式：只动 uncommitted（自动 commit）+ 其他生成 proposal
+node scripts/orchestrator/proactive/auto-fix.js --auto 2>/dev/null || true
+
 exit 0

@@ -55,6 +55,33 @@ v1.9.1 是 v1.9 之后的"**智能增量首发版**"，围绕用户终极愿景"
 
 - 增量 B 方案 A：planner agent 完整升级（按 plan 自动派子任务）
 - 增量 C 方案 B/C：后台 cron 通知 + 进化系统联动
+- 增量 D 增强：自动写测试 / 自动 npm update（v2.0）
+
+---
+
+## [v1.9.2] - 2026-06-24
+
+### 🟢 Added - 自动化修复（智能增量 D）
+
+让 Claude 不只发现问题（C 增量），还自动修可逆项 + 提议复杂项。
+
+**核心引擎**：`scripts/orchestrator/proactive/auto-fix.js`
+- 4 个可修维度：uncommitted / test-coverage / deps-outdated / candidate-pending
+- 不可修 3 个：ci-status / todo-accumulate / stale-files
+
+**双触发**：
+- **保守模式（`--auto`）**：SessionStart 跑，**只动 uncommitted** 自动 commit
+- **完整模式**（`/autofix` 命令）：4 项全跑，复杂项生成 proposal
+
+**安全约束**（关键）：
+- AI 工作目录文件（`scripts/orchestrator/` / `scripts/evolution/` / `.claude/`）默认跳过自动 commit
+- `.env` / `.key` / `node_modules` 绝不自动 commit
+- 改动 > 50 文件要求手动 review
+- 任意 fix 失败 → 记日志 + 继续（不阻塞）
+
+**Proposal 落盘**：`.claude/skills/left-brain/memory/fix-proposals.json`（gitignore 排除）
+
+**测试**：`scripts/orchestrator/proactive/test-auto-fix.js` 35/35 通过
 
 ---
 

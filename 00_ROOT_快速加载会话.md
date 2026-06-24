@@ -38,7 +38,12 @@ node scripts/会话快照/load.js v1.1
 
 | 状态 | 时间 | 中文标签 | 标题 | 启动 |
 |:-----|:-----|:---------|:-----|:-----|
-| ⭐ **最新** | 2026-06-24 05:55 | 05工程评估,战略,自增强闭环 | v1.9 战略评估文档 | [▶ 复制](#启动-05工程评估-战略-自增强闭环) |
+| ⭐ **最新** | 2026-06-24 15:08 | v1.9.1,increment-A-B-C,all-done,new-window | v1.9.1 三大智能增量 A+B+C 全部完成，新窗口开始 | [▶ 复制](#启动-v1-9-1-increment-A-B-C-all-done-new-window) |
+|                    | 2026-06-24 15:04 | v1.9.1,increment-C,proactive-scan,milestone | v1.9.1 增量 C 主动发现问题完成 | [▶ 复制](#启动-v1-9-1-increment-C-proactive-scan-milestone) |
+|                    | 2026-06-24 14:07 | v1.9.1 三大智能增量 A-B 完成，准备做 C | --force | [▶ 复制](#启动-v1-9-1-三大智能增量-A-B-完成-准备做-C) |
+|                    | 2026-06-24 10:10 | v1.9.1 dispatcher 测试完成 | --force | [▶ 复制](#启动-v1-9-1-dispatcher-测试完成) |
+|                    | 2026-06-24 09:28 | milestone,v1.9.0,完成,基础设施 | v1.9.0 基础设施补齐完成发版 | [▶ 复制](#启动-milestone-v1-9-0-完成-基础设施) |
+|                    | 2026-06-24 05:55 | 05工程评估,战略,自增强闭环 | v1.9 战略评估文档 | [▶ 复制](#启动-05工程评估-战略-自增强闭环) |
 |                    | 2026-06-23 19:09 | milestone-snap-mode-doc-v1.9.1 | v1.9.1: snap-mode 描述精简 + 文档全量同步 | [▶ 复制](#启动-milestone-snap-mode-doc-v1-9-1) |
 |                    | 2026-06-23 19:00 | auto-stop-milestone | Stop自动: v1.9 快照模式可控化：4 模式（off/manual/milestone | [▶ 复制](#启动-auto-stop-milestone) |
 |                    | 2026-06-23 18:28 | auto-stop-milestone | Stop自动: v1.9 快照模式可控化：4 模式（off/manual/milestone | [▶ 复制](#启动-auto-stop-milestone) |
@@ -94,7 +99,93 @@ node scripts/会话快照/load.js latest
 ```
 
 ---
-### <a id="启动-05工程评估-战略-自增强闭环"></a>📦 05工程评估,战略,自增强闭环（最新）
+### <a id="启动-v1-9-1-increment-A-B-C-all-done-new-window"></a>📦 v1.9.1,increment-A-B-C,all-done,new-window（最新）
+
+**时间**：2026-06-24 15:08:16
+**中文标签**：v1.9.1,increment-A-B-C,all-done,new-window
+**快照文件**：`.claude/snapshots/2026-06-24-15-08-16-v1.9.1,increment-A-B-C,all-done,new-window.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-24-15-08-16-v1.9.1,increment-A-B-C,all-done,new-window.md。
+标题: v1.9.1 三大智能增量 A+B+C 全部完成，新窗口开始
+标签: v1.9.1,increment-A-B-C,all-done,new-window
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-v1-9-1-increment-C-proactive-scan-milestone"></a>📦 v1.9.1,increment-C,proactive-scan,milestone
+
+**时间**：2026-06-24 15:04:25
+**中文标签**：v1.9.1,increment-C,proactive-scan,milestone
+**快照文件**：`.claude/snapshots/2026-06-24-15-04-25-v1.9.1,increment-C,proactive-scan,milestone.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-24-15-04-25-v1.9.1,increment-C,proactive-scan,milestone.md。
+标题: v1.9.1 增量 C 主动发现问题完成
+标签: v1.9.1,increment-C,proactive-scan,milestone
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-v1-9-1-三大智能增量-A-B-完成-准备做-C"></a>📦 v1.9.1 三大智能增量 A-B 完成，准备做 C
+
+**时间**：2026-06-24 14:07:41
+**中文标签**：v1.9.1 三大智能增量 A-B 完成，准备做 C
+**快照文件**：`.claude/snapshots/2026-06-24-14-07-41-v1.9.1 三大智能增量 A-B 完成，准备做 C.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-24-14-07-41-v1.9.1 三大智能增量 A-B 完成，准备做 C.md。
+标题: --force
+标签: v1.9.1 三大智能增量 A-B 完成，准备做 C
+
+下一步：实现增量 C（主动发现问题）。已完成：增量 A 自我反思（commit 1c9484e）+ 增量 B 智能规划（commit 5761116）。当前在 feat/memos 分支。待做：proactive-scan.js 7 维度检测 + 接入 evolution-hook.sh + session-init Step 6。
+
+> 💡 **三级检查点提示**：本任务完成（标签含"完成/里程碑/交付"）。可跑 `bash scripts/parallel/global-archive.sh "--force"` 全局归档
+```
+
+---
+
+### <a id="启动-v1-9-1-dispatcher-测试完成"></a>📦 v1.9.1 dispatcher 测试完成
+
+**时间**：2026-06-24 10:10:44
+**中文标签**：v1.9.1 dispatcher 测试完成
+**快照文件**：`.claude/snapshots/2026-06-24-10-10-44-v1.9.1 dispatcher 测试完成.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-24-10-10-44-v1.9.1 dispatcher 测试完成.md。
+标题: --force
+标签: v1.9.1 dispatcher 测试完成
+
+下一步：跑 npm run evolve 验证基础链路
+
+> 💡 **三级检查点提示**：本任务完成（标签含"完成/里程碑/交付"）。可跑 `bash scripts/parallel/global-archive.sh "--force"` 全局归档
+```
+
+---
+
+### <a id="启动-milestone-v1-9-0-完成-基础设施"></a>📦 milestone,v1.9.0,完成,基础设施
+
+**时间**：2026-06-24 09:28:47
+**中文标签**：milestone,v1.9.0,完成,基础设施
+**快照文件**：`.claude/snapshots/2026-06-24-09-28-47-milestone,v1.9.0,完成,基础设施.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-24-09-28-47-milestone,v1.9.0,完成,基础设施.md。
+标题: v1.9.0 基础设施补齐完成发版
+标签: milestone,v1.9.0,完成,基础设施
+
+v1.9.0 已发布到 GitHub (commit b9c2313, tag v1.9.0)。后续可选：开始 v1.9.1 / v2.0 工作（dispatcher.js 覆盖率提升 / 多用户左脑 / 审计日志）
+
+> 💡 **三级检查点提示**：本任务完成（标签含"完成/里程碑/交付"）。可跑 `bash scripts/parallel/global-archive.sh "v1.9.0 基础设施补齐完成发版"` 全局归档
+```
+
+---
+
+### <a id="启动-05工程评估-战略-自增强闭环"></a>📦 05工程评估,战略,自增强闭环
 
 **时间**：2026-06-24 05:55:31
 **中文标签**：05工程评估,战略,自增强闭环
