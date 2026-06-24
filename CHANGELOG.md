@@ -7,12 +7,12 @@
 
 ## [v1.9.1] - 2026-06-24
 
-### 🧠 Changed - 智能演进：自我反思（增量 A）
+### 🧠 Changed - 智能演进：自我反思 + 智能规划（增量 A + B）
 
 v1.9.1 是 v1.9 之后的"**智能增量首发版**"，围绕用户终极愿景"让 Claude 日常开发越来越智能、越来越主动"启动。
-**核心理念**：把"用户当裁判"改为"AI 写完代码自己检查"。
+**核心理念**：把"用户当裁判"改为"AI 写完代码自己检查"，把"AI 拍脑袋干"改为"先出 plan 用户批准"。
 
-### Added - 自我反思引擎（4 个内置规则）
+### Added - 增量 A：自我反思引擎（4 个内置规则）
 
 | 规则 | 触发 | 检测 |
 |:-----|:-----|:-----|
@@ -21,32 +21,40 @@ v1.9.1 是 v1.9 之后的"**智能增量首发版**"，围绕用户终极愿景"
 | `todo-scan` | Edit/Write *.js | TODO/FIXME/XXX/HACK 标记 |
 | `doc-version` | Edit/Write *.md | 过时版本号（v1.0/v1.5/v1.2 等）|
 
-### Changed
+### Added - 增量 B：智能任务规划协议
 
-- **PostToolUse hook** 从占位改为调用 `self-reflect.js`（永不阻塞主流程）
-- **`session-init.sh`** Step 5 顶部展示最近 5 条反思反馈
-- **04 自我进化循环系统设计文档**：升级为"自我进化+智能演进纲领"，加入核心使命 + 三大智能增量路线
+**核心理念**：复杂任务先出 `[plan]...[/plan]` 块，用户 `/ok` 批准后才执行。
 
-### Files
+- **CLAUDE.md 规范**：复杂任务判定标准 + plan 输出格式模板
+- **`/ok` 命令**：批准 pending-plans.json 最新 plan
+- **`/no` 命令**：取消 pending plan
+- **planner agent 升级**：严格按 plan 步骤顺序执行
 
-- 新增：`scripts/orchestrator/reflection/self-reflect.js`（核心引擎）
+### Files（增量 A + B）
+
+- 新增：`scripts/orchestrator/reflection/self-reflect.js`（291 行）
 - 新增：`scripts/orchestrator/reflection/test-self-reflect.js`（38/38 通过）
-- 修改：`.claude/skills/left-brain/scripts/posttool-hook.sh`（接入自检）
-- 修改：`.claude/skills/left-brain/scripts/session-init.sh`（顶部展示反馈）
-- 修改：`04_自我进化循环系统设计.md`（增量 A 标完成）
-- 修改：`package.json`（npm test 接入）
-- 修改：`.gitignore`（排除 reflections.jsonl）
+- 新增：`scripts/orchestrator/planning/plan-detect.js`（245 行）
+- 新增：`scripts/orchestrator/planning/test-plan-detect.js`（50/50 通过）
+- 新增：`.claude/commands/ok.md` / `no.md`
+- 修改：`.claude/skills/left-brain/scripts/posttool-hook.sh`（同时跑 A+B 两个引擎）
+- 修改：`.claude/skills/left-brain/scripts/session-init.sh`（Step 5 反思展示）
+- 修改：`CLAUDE.md`（加智能任务规划协议章节）
+- 修改：`.claude/agents/planner.md`（加 plan 实施指引）
+- 修改：`04_自我进化循环系统设计.md`（增量 A + B 标完成）
+- 修改：`package.json`（npm test 接入 2 个新测试）
+- 修改：`.gitignore`（排除 reflections.jsonl + pending-plans.json）
 
 ### 真实运行效果
 
-- 捕获 2 条反思：console.log 残留 + TODO×1
+- A：捕获 2 条反思（console.log + TODO×1）
+- B：捕获 1 个 plan（"测试"任务，1 步骤），写入 pending-plans.json
 - Step 5 顶部正确显示反思条目
-- npm test 全部通过（19 个测试文件）
 
 ### 下一步
 
-- 增量 B：智能任务规划（planner 升级 + plan/act 协议）
-- 增量 C：主动发现问题（SessionStart anomaly scan）
+- 增量 C：主动发现问题（SessionStart anomaly scan + 启动时主动报告）
+- 增量 B 方案 A：planner agent 完整升级（按 plan 自动派子任务）
 
 ---
 

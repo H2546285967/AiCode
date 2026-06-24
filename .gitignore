@@ -35,6 +35,9 @@ target/
 # 自我反思反馈队列（PostToolUse 写入，会话级别）
 .claude/skills/left-brain/memory/reflections.jsonl
 
+# 智能任务规划 pending plan（PostToolUse 写入，用户 /ok 或 /no 处理）
+.claude/skills/left-brain/memory/pending-plans.json
+
 # 会话级快照模式覆盖（/snap-mode 写入，会话结束可清）
 .claude/session-snap-mode.json
 
