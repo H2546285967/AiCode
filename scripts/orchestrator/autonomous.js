@@ -32,7 +32,8 @@ const path = require('path');
 
 // ── 配置 ─────────────────────────────────────────────
 
-const WORKSPACE_ROOT = path.join(__dirname, '..', '..', '..');
+// scripts/orchestrator/autonomous.js → 上两级到工程根 H:\AI-han\AiCode
+const WORKSPACE_ROOT = path.join(__dirname, '..', '..');
 const SKILL_DIR = path.join(WORKSPACE_ROOT, '.claude', 'skills', 'left-brain');
 const MEMORY_DIR = path.join(SKILL_DIR, 'memory');
 const STATE_FILE = path.join(MEMORY_DIR, 'autonomous-state.json');

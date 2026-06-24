@@ -18,14 +18,18 @@
  *   - index.js 统一入口串联 4 工具
  *   - learn-rules prompt hash 去重
  *   - 钩子写日志文件
+ * @changed v2.5.0 (2026-06-25) M9:
+ *   - 加 scoreComplexity(task) → 0-10 数字
+ *   - 阈值: <4 不派 / 4-7 灰区 / >7 直接派
+ *   - decide() 返回加 complexity_score + complexity_band
  */
 
 // ==================== 规则配置（内联，避免 YAML 依赖）====================
 
 const RULES = {
-  version: '1.2.0',
-  updated: '2026-06-22',
-  changelog: 'v1.2.0: 英文detect+confidence数字化+统一入口+去重+钩子日志',
+  version: '2.5.0',
+  updated: '2026-06-25',
+  changelog: 'v2.5.0: 加 scoreComplexity 0-10 复杂度评分（M9）',
 
   // 强信号：不派子代理
   dont_dispatch: {
@@ -53,6 +57,21 @@ const RULES = {
     module_estimate_min: 2,
     task_types: ['bug_fix', 'refactor', 'feature_full', 'migration', 'multi_module'],
     max_agents: 3,  // 你设定：最多 2-3 个
+  },
+
+  // v2.5.0 M9: 复杂度评分阈值（0-10 数字打分）
+  scoring: {
+    no_dispatch_max: 3,   // <4 不派
+    gray_zone_max: 7,      // 4-7 灰区
+    // >7 直接派
+    weights: {
+      file: 0.6,           // 每个文件 +0.6 分
+      module: 1.2,         // 每个模块 +1.2 分
+      strong_keyword: 3,   // should_dispatch 关键词 +3
+      weak_keyword: 1.5,   // dont_dispatch 关键词 -1.5（抑制）
+      task_type_dispatch: 2,  // 强任务类型（bug_fix 等）+2
+      task_type_alone: -1,    // 单人处理类型（explanation 等）-1
+    },
   },
 };
 
@@ -146,9 +165,77 @@ function detectTaskType(text) {
   return 'unknown';
 }
 
+/**
+ * v2.5.0 M9: 任务复杂度评分（0-10 数字）
+ *
+ * 设计：
+ *   - 加性打分（不是 max），多信号叠加反映真实复杂度
+ *   - 文件/模块是基础分（量级信号）
+ *   - 关键词和任务类型是调节分（语义信号）
+ *   - 抑制信号（dont_dispatch 关键词、单人处理类型）拉低分数
+ *   - 钳制到 0-10
+ *
+ * 阈值（scoring 段配置）：
+ *   score ≤ 3           → 'no_dispatch'  (不值得派)
+ *   4 ≤ score ≤ 7       → 'gray_zone'     (灰区)
+ *   score ≥ 8           → 'dispatch'      (直接派)
+ *
+ * @param {string} text 用户任务文本
+ * @returns {{ score: number, band: 'no_dispatch'|'gray_zone'|'dispatch', breakdown: object }}
+ */
+function scoreComplexity(text) {
+  const w = RULES.scoring.weights;
+
+  // 基础分：文件数 + 模块数
+  const fileCount = estimateFileCount(text);
+  const moduleCount = estimateModuleCount(text);
+  let score = fileCount * w.file + moduleCount * w.module;
+
+  // 调节分：强信号关键词
+  const dispatchKw = matchKeywords(text, RULES.should_dispatch.keywords);
+  if (dispatchKw) score += w.strong_keyword;
+
+  // 抑制：dont_dispatch 关键词
+  const dontKw = matchKeywords(text, RULES.dont_dispatch.keywords);
+  if (dontKw) score -= w.weak_keyword;
+
+  // 调节分：任务类型
+  const taskType = detectTaskType(text);
+  if (RULES.should_dispatch.task_types.includes(taskType)) {
+    score += w.task_type_dispatch;
+  }
+  if (RULES.dont_dispatch.task_types.includes(taskType)) {
+    score -= w.task_type_alone;
+  }
+
+  // 钳制到 0-10
+  score = Math.max(0, Math.min(10, Math.round(score * 10) / 10));
+
+  // 分档
+  let band;
+  if (score <= RULES.scoring.no_dispatch_max) band = 'no_dispatch';
+  else if (score <= RULES.scoring.gray_zone_max) band = 'gray_zone';
+  else band = 'dispatch';
+
+  return {
+    score,
+    band,
+    breakdown: {
+      fileCount,
+      moduleCount,
+      dispatchKeyword: dispatchKw,
+      dontKeyword: dontKw,
+      taskType,
+    },
+  };
+}
+
 // ==================== 核心决策 ====================
 
 function decide(taskText) {
+  // v2.5.0 M9: 先算复杂度评分（三档信号）
+  const complexity = scoreComplexity(taskText);
+
   // === 优先级最高：先检查"明确不派"的强约束（"快速/简单/只改"等） ===
   // 这些词的意图是"别搞复杂"，优先级必须高于任务类型判断
   const dontKw = matchKeywords(taskText, RULES.dont_dispatch.keywords);
@@ -159,6 +246,8 @@ function decide(taskText) {
       reason: `命中"不派子代理"关键词: "${dontKw}"（用户明确要求简单处理）`,
       layer: 1,
       confidence: confidence('high'),
+      complexity_score: complexity.score,
+      complexity_band: complexity.band,
     };
   }
 
@@ -171,6 +260,8 @@ function decide(taskText) {
       reason: `命中"派子代理"关键词: "${dispatchKw}"`,
       layer: 1,
       confidence: confidence('high'),
+      complexity_score: complexity.score,
+      complexity_band: complexity.band,
     };
   }
 
@@ -184,6 +275,8 @@ function decide(taskText) {
       reason: `预估涉及 ${fileCount} 个文件（≥${RULES.should_dispatch.file_estimate_min}）`,
       layer: 1,
       confidence: confidence('high'),
+      complexity_score: complexity.score,
+      complexity_band: complexity.band,
     };
   }
 
@@ -194,6 +287,8 @@ function decide(taskText) {
       reason: `预估涉及 ${moduleCount} 个模块`,
       layer: 1,
       confidence: confidence('high'),
+      complexity_score: complexity.score,
+      complexity_band: complexity.band,
     };
   }
 
@@ -205,6 +300,8 @@ function decide(taskText) {
       reason: `任务类型 "${taskType}" 通常需要多角度分析`,
       layer: 1,
       confidence: confidence('medium'),
+      complexity_score: complexity.score,
+      complexity_band: complexity.band,
     };
   }
 
@@ -218,6 +315,8 @@ function decide(taskText) {
       reason: `预估只涉及 ${fileCount} 个文件（≤${RULES.dont_dispatch.file_estimate_max}），不值得派`,
       layer: 1,
       confidence: confidence('medium'),
+      complexity_score: complexity.score,
+      complexity_band: complexity.band,
     };
   }
 
@@ -228,6 +327,8 @@ function decide(taskText) {
       reason: `任务类型 "${taskType}" 由主会话处理`,
       layer: 1,
       confidence: confidence('high'),
+      complexity_score: complexity.score,
+      complexity_band: complexity.band,
     };
   }
 
@@ -244,6 +345,8 @@ function decide(taskText) {
       agents: 2,
       hint: '灰区任务，保守派 2 个 Agent',
     },
+    complexity_score: complexity.score,
+    complexity_band: complexity.band,
   };
 }
 
@@ -279,4 +382,11 @@ if (require.main === module) {
   } catch { /* metrics/log 失败不影响主流程 */ }
 }
 
-module.exports = { decide, estimateFileCount, estimateModuleCount, detectTaskType };
+module.exports = {
+  decide,
+  estimateFileCount,
+  estimateModuleCount,
+  detectTaskType,
+  scoreComplexity,  // v2.5.0 M9
+  RULES,
+};

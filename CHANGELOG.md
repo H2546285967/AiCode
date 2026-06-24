@@ -7,6 +7,43 @@
 
 ## [Unreleased] - 路线图更新（v2.x 预览）
 
+### ✅ M9：任务复杂度评分（智能调度优化）- 已完成
+
+**目标**：dispatcher 加 0-10 数字评分，让派/不派决策有量化依据
+
+### Added - scoreComplexity(task)
+- 位置：`scripts/orchestrator/dispatcher.js`（v2.5.0）
+- 函数：`scoreComplexity(text) → { score, band, breakdown }`
+- 三档阈值（`RULES.scoring`）：
+  - `score ≤ 3` → `no_dispatch`（不值得派）
+  - `4 ≤ score ≤ 7` → `gray_zone`（灰区，保守派 2 Agent）
+  - `score ≥ 8` → `dispatch`（直接派）
+- 加性打分：
+  - 文件数 × 0.6 + 模块数 × 1.2（基础分）
+  - should_dispatch 关键词 +3（强信号）
+  - dont_dispatch 关键词 -1.5（抑制）
+  - 强任务类型（bug_fix / refactor / migration 等）+2
+  - 单人处理类型（explanation / question / single_edit）-1
+- 钳制到 0-10
+- `decide()` 所有 return 路径加 `complexity_score` + `complexity_band` 字段
+- 测试：`test-dispatcher-scoring.js` **43/43 通过**（10 维度：返回结构/分数范围/三档阈值/灰区/边界钳制/关键词影响/任务类型影响/decide 集成/分数一致性/CLI 输出）
+
+### 🐛 Fixed - autonomous.js 状态文件路径 bug（v2.3.1 patch）
+- **症状**：`/autonomous on` 报告 ON 但磁盘文件**没生成**，跨会话丢失状态
+- **根因**：`autonomous.js` 第 35 行 `WORKSPACE_ROOT = path.join(__dirname, '..', '..', '..')` — `__dirname` 已是 `scripts/orchestrator/`，**三级** `..` 走到了工程**外** `H:\AI-han\`，文件写到 `H:\AI-han\.claude/...`（用户主目录）
+- **修复**：三级改两级
+- **回归测试**：`test-autonomous.js` 加 4 个路径断言（路径必须在工程内、CLI on 后磁盘可见），41/41 全过
+- **对照**：`state-snapshot.js` 路径是 4 级 `..`（因为 `__dirname` 多一层），那个是对的
+
+### Files
+- 修改：`scripts/orchestrator/dispatcher.js`、`scripts/orchestrator/autonomous.js`、`scripts/orchestrator/test-autonomous.js`
+- 新增：`scripts/orchestrator/test-dispatcher-scoring.js`
+- 修改：`package.json`（`test` 和 `test:dispatcher` 加新测试）
+
+---
+
+## [Unreleased] - 路线图更新（v2.x 预览）
+
 ### 📋 Changed - 04 自我演进路线扩展（文档先行）
 
 **背景**：用户 2026-06-24 评审"团队能力"非当前主力，聚焦"让 Claude 越来越智能"核心目标。同步把 v2.x 待做的 3 个智能增量写入 04 文档，明晰 L1→L5 路径。

@@ -146,6 +146,28 @@ section('状态文件');
   assert(typeof content.enabled === 'boolean', '状态文件含 enabled 字段');
 }
 
+// 回归 v2.4.1 bug：路径必须落在工程内 .claude/skills/left-brain/memory/，不要写到上层 H:\AI-han\.claude
+{
+  const expectedUnder = path.join(__dirname, '..', '..', '.claude', 'skills', 'left-brain', 'memory');
+  assert(
+    path.dirname(STATE_FILE) === expectedUnder,
+    'STATE_FILE 落在工程内 memory 目录',
+    `actual=${path.dirname(STATE_FILE)}, expected=${expectedUnder}`
+  );
+  // 关键反断言：不要写到 H:\AI-han\.claude 或更上层（autonomous.js 旧 bug 是 WORKSPACE_ROOT 多走了一级 ../..）
+  const workspaceRoot = path.resolve(__dirname, '..', '..');
+  assert(
+    STATE_FILE.startsWith(workspaceRoot + path.sep),
+    'STATE_FILE 在工程根之内',
+    `STATE_FILE=${STATE_FILE}, workspaceRoot=${workspaceRoot}`
+  );
+  // CLI on 后磁盘文件确实出现在 STATE_FILE 路径（不只是内存可见）
+  clearState();
+  execFileSync('node', ['autonomous.js', 'on', 'path-bug-regression'], { cwd: __dirname, stdio: 'pipe' });
+  assert(fs.existsSync(STATE_FILE), 'CLI on 后 STATE_FILE 实际写到磁盘');
+  disable();
+}
+
 // ==================== 8. CLI 入口 ====================
 section('CLI 入口');
 
