@@ -53,8 +53,32 @@ v1.9.1 是 v1.9 之后的"**智能增量首发版**"，围绕用户终极愿景"
 
 ### 下一步
 
-- 增量 C：主动发现问题（SessionStart anomaly scan + 启动时主动报告）
 - 增量 B 方案 A：planner agent 完整升级（按 plan 自动派子任务）
+- 增量 C 方案 B/C：后台 cron 通知 + 进化系统联动
+
+---
+
+## [v1.9.1] - 2026-06-24
+
+### 🟢 Added - 主动发现问题（智能增量 C）
+
+让 Claude "自己看项目状态"，用户不问也能主动发现问题。
+
+**核心引擎**：`scripts/orchestrator/proactive/proactive-scan.js`
+- 7 维度独立检测：ci-status / uncommitted / todo-accumulate / test-coverage / deps-outdated / stale-files / candidate-pending
+- 单维度失败不拖垮其他（独立 try/catch）
+- 5 分钟缓存（`.last-scan.json`），不每次重扫
+- 永不 throw 契约
+
+**入口**：
+- `evolution-hook.sh` —— SessionStart 追加 proactive-scan 调用
+- `session-init.sh` Step 6 —— 顶部展示 anomaly 清单（仿 Step 5 自我反思格式）
+
+**输出**：
+- 顶部 1 行总结（🔴X / 🟡Y / 🟢Z）+ 详细列表
+- 落盘到 `.claude/skills/left-brain/memory/anomalies.json`（gitignore 排除）
+
+**测试**：`scripts/orchestrator/proactive/test-proactive-scan.js` 35/35 通过
 
 ---
 

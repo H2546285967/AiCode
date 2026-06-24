@@ -78,5 +78,33 @@ else
     echo "  ✨ 无历史反馈（上次会话自检全过，或还没触发过）"
 fi
 echo ""
+
+echo "🔍 Step 6: 主动发现问题（v1.9.1+ 智能增量 C）"
+ANOMALY_FILE="${SKILL_DIR}/memory/anomalies.json"
+if [ -f "$ANOMALY_FILE" ] && [ -s "$ANOMALY_FILE" ]; then
+    # 用 node 解析并格式化（避免 jq/grep 转义坑）
+    node -e "
+const fs = require('fs');
+const data = JSON.parse(fs.readFileSync(process.argv[1], 'utf8'));
+const s = data;
+if (!s || s.total === 0) {
+  console.log('  ✨ 项目状态健康（7 维度全过）');
+  process.exit(0);
+}
+const parts = [];
+if (s.error > 0) parts.push('🔴' + s.error);
+if (s.warning > 0) parts.push('🟡' + s.warning);
+if (s.info > 0) parts.push('🟢' + s.info);
+console.log('  📋 主动扫描结果: ' + s.total + ' 项问题（' + parts.join(' / ') + '）');
+for (const f of s.findings || []) {
+  const icon = f.severity === 'error' ? '🔴' : f.severity === 'warning' ? '🟡' : '🟢';
+  console.log('    ' + icon + ' [' + f.dimension + '] ' + f.message);
+  if (f.hint) console.log('       💡 ' + f.hint);
+}
+" "$ANOMALY_FILE" 2>/dev/null
+else
+    echo "  ✨ 暂无主动扫描结果（运行 evolution-hook 或 proactive-scan.js scan 生成）"
+fi
+echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "✅ 初始化完成！"

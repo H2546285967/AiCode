@@ -25,4 +25,7 @@ else
   echo "🧬 进化系统: 首次启动 (已扫描候选)"
 fi
 
+# Proactive scan（v1.9.1 增量 C）
+node scripts/orchestrator/proactive/proactive-scan.js scan 2>/dev/null || true
+
 exit 0
