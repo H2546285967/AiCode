@@ -50,7 +50,9 @@
       "WebFetch(domain:docs.claude.com)",
       "Bash(where claude-hud *)",
       "Bash(bash *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "PowerShell(bash .claude/skills/left-brain/scripts/session-summary.sh load)",
+      "PowerShell(bash .claude/skills/left-brain/scripts/session-summary.sh list 2>&1 | Select-Object -First 20)"
     ]
   },
   "hooks": {

@@ -107,11 +107,6 @@ else
 fi
 echo ""
 
-echo "🚀 Step 7: 自主模式状态（v2.0 P0-1）"
-AUTONOMOUS_STATUS=$(node scripts/orchestrator/autonomous.js status 2>/dev/null || echo "  ⚠️ 自主模式状态未知")
-echo "$AUTONOMOUS_STATUS" | while IFS= read -r line; do
-    echo "  $line"
-done
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "✅ 初始化完成！"
