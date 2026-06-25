@@ -5,7 +5,45 @@
 
 ---
 
-## [Unreleased] - LLM-judge 闸门 / M12 双轨制（v2.0.3）
+## [Unreleased]
+
+> **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
+> 本段仅作占位，下个增量/发版再追加条目。
+
+---
+
+## [v2.2.2] - 2026-06-25
+
+**主题**：autonomous-runner 子会话 prompt 强化（commit 历史 · Windows 兼容续）
+
+> **说明**：本段为 2026-06-25 `/audit` v1.0.0 清理 Unreleased 段时，从 v2.0.3 内容里拆出。
+> 解决 spawn 修复后子会话能启动但不调 `complete-stage` 的问题。
+
+### 🐛 Fixed - autonomous-runner 子会话不调 complete-stage
+
+**症状**：spawn 修复后，子会话能正常启动且 `code=0` 退出，但 runner 仍判失败（连续 6 次）—— `stage.status` 仍 `in_progress`。
+
+**根因**：`buildStagePrompt` 设计不严，把"读上下文"和"调 complete-stage"混在一起。子会话（`claude -p`）把我传入的 prompt 误读为"用户的半句话消息"，走了 SessionStart 启动协议 + 等用户指令，**完全没按 prompt 清单的第 3 步调 `complete-stage`**。
+
+**修复**（v2.2.1 → v2.2.2）：
+- prompt 开头加 `⚠️⚠️⚠️ 强制上下文` 声明：明确"非对话 / 没有用户 / 不能发问"
+- 任务清单 5 步化（顺序化 + 编号）+ 移到顶部
+- 第 4 步（`complete-stage`）显式标 `⚠️ 关键：漏掉 runner 会判失败`
+- 显式禁用：`不要走 SessionStart 启动协议 / 不要问"用户要我做什么"`
+- 测试：`testBuildStagePrompt` 新增 6 项断言（⚠️、claude -p、不能发问、5 步清单、第 4 步关键）
+- 测试 8/8 通过
+
+**Files**：
+- 修改 `scripts/orchestrator/autonomous-runner.js`（`buildStagePrompt` 重写）
+- 修改 `scripts/orchestrator/test-autonomous-runner.js`（`testBuildStagePrompt` 增强断言）
+
+---
+
+## [v2.2.1] - 2026-06-25
+
+**主题**：autonomous-runner Windows spawn ENOENT 修复
+
+> **说明**：本段为 2026-06-25 `/audit` v1.0.0 清理 Unreleased 段时，从 v2.0.3 内容里拆出。
 
 ### 🐛 Fixed - autonomous-runner Windows spawn ENOENT
 
@@ -24,6 +62,14 @@
 **Files**：
 - 修改 `scripts/orchestrator/autonomous-runner.js`（spawn + 新增 resolveClaudeBin + 文档注释）
 - 修改 `scripts/orchestrator/test-autonomous-runner.js`（+ 1 测试用例）
+
+---
+
+## [v2.0.3] - 2026-06-25
+
+**主题**：M12 LLM-judge 闸门 + auto-implement 双轨制（commit 4b188ef）
+
+> **说明**：本段为 2026-06-25 `/audit` v1.0.0 清理 Unreleased 段时从顶部迁出。原段还夹带 v2.2.1 / v2.2.2 修复，已分别拆出到对应版本号段。
 
 ### 🧠 Added - M12 LLM-judge 闸门：auto-implement 智能判定
 

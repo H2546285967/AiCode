@@ -215,8 +215,17 @@ function scanDeclaredButUnfinished() {
     for (const s of sections) {
       const title = s.replace(/^###\s+/, '').replace(/[📚🔍🤖⚙️🛠🔄📅]/g, '').trim();
       if (title.length > 5 && title.length < 120) {
-        // 判断状态：含 "未完成/未闭环/🆕" 等关键词 → 计划中
-        const isPlanned = /(M\d+|P0-\d+|P1-\d+|计划中|未完成|未闭环|待)/.test(unreleased.split('### ' + s.replace(/^###\s+/, ''))[0] || '');
+        // 1) 先看是否"已交付"——三类信号任一即视为已交付
+        const sectionBody = unreleased.split('### ' + s.replace(/^###\s+/, ''))[0] || unreleased;
+        const isDelivered =
+          // a) 含 commit hash / 已发版版本号 → 表明已提交
+          /\bcommit\s+[0-9a-f]{7,}\b|v\d+\.\d+\.\d+\s*→\s*v\d+\.\d+\.\d+|\(v\d+\.\d+\.\d+\)/.test(sectionBody) ||
+          // b) 段标题/正文含"已交付 / 通过 / 修复 / 全部通过"等正向词
+          /(已交付|已发版|✅|已修复|全部通过|\d+\/\d+\s*(通过|全过|pass)|回归\s*0)/.test(s) ||
+          // c) 段体出现 "vX.Y.Z → vX.Y.W" 表明是发版说明而非计划
+          /v\d+\.\d+\.\d+\s*→/.test(sectionBody);
+        // 2) 再看是否"计划中"——但若同时是"已交付"则跳过
+        const isPlanned = !isDelivered && /(M\d+|P0-\d+|P1-\d+|计划中|未完成|未闭环|待)/.test(sectionBody);
         if (isPlanned) {
           findings.push({
             source: 'CHANGELOG Unreleased',
