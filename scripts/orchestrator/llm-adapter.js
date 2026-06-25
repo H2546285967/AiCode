@@ -76,6 +76,79 @@ class HeuristicAdapter {
       tokens: { prompt: p.length, completion: 40 },
     };
   }
+
+  /**
+   * 启发式 judge（零成本 fallback）
+   * 根据 candidate 字段 + criteria 阈值返回 accept/reject/skip 判定
+   * 判定逻辑：score >= criteria.minComposite && effort ∈ criteria.allowedEffort → accept
+   * 对 null/非对象 candidate 永不抛错（返回 reject 兜底）
+   */
+  async judge(candidate, criteria = {}) {
+    const minComposite = criteria.minComposite ?? 7.0;
+    const allowedEffort = criteria.allowedEffort ?? ['small'];
+    const forbiddenDeps = criteria.forbiddenDeps ?? [];
+
+    // null/非对象兜底
+    if (!candidate || typeof candidate !== 'object') {
+      return {
+        verdict: 'reject',
+        score: 0,
+        reasons: [`heuristic: candidate 无效 (${typeof candidate})`],
+        backend: this.name,
+      };
+    }
+
+    const score = candidate.composite_score || candidate.score || 0;
+    const effort = (candidate.estimated_effort || candidate.effort || 'medium').toLowerCase();
+    const desc = `${candidate.name || ''} ${candidate.description || ''} ${candidate.summary || ''}`.toLowerCase();
+
+    // 禁止依赖一票否决
+    for (const dep of forbiddenDeps) {
+      if (desc.includes(dep.toLowerCase())) {
+        return {
+          verdict: 'reject',
+          score,
+          reasons: [`heuristic: 包含禁止依赖 "${dep}"`],
+          backend: this.name,
+        };
+      }
+    }
+
+    if (score < minComposite) {
+      return {
+        verdict: 'reject',
+        score,
+        reasons: [`heuristic: composite ${score} < ${minComposite}`],
+        backend: this.name,
+      };
+    }
+
+    if (!allowedEffort.includes(effort)) {
+      return {
+        verdict: 'skip',
+        score,
+        reasons: [`heuristic: effort "${effort}" 不在 [${allowedEffort.join(',')}]，需要人工确认`],
+        backend: this.name,
+      };
+    }
+
+    const sug = candidate.suggestion || 'adopt';
+    if (!['adopt', 'adapt'].includes(sug)) {
+      return {
+        verdict: 'skip',
+        score,
+        reasons: [`heuristic: suggestion "${sug}" 非 adopt/adapt`],
+        backend: this.name,
+      };
+    }
+
+    return {
+      verdict: 'accept',
+      score,
+      reasons: [`heuristic: score ${score} >= ${minComposite}, effort=${effort}, sug=${sug}`],
+      backend: this.name,
+    };
+  }
 }
 
 // ==================== Anthropic Adapter（接口预留）====================
@@ -108,6 +181,14 @@ class AnthropicAdapter {
       '  启用方式：npm install @anthropic-ai/sdk，用 messages.create 实现 generate'
     );
   }
+
+  async judge(candidate, criteria = {}) {
+    throw new Error(
+      '[AnthropicAdapter] judge 未启用\n' +
+      '  启用方式：npm install @anthropic-ai/sdk，用 messages.create 实现 judge\n' +
+      '  Prompt 模板建议：给定 candidate JSON + criteria，输出 {verdict, score, reasons} JSON'
+    );
+  }
 }
 
 // ==================== Ollama Adapter（本地模型，接口预留）====================
@@ -135,6 +216,13 @@ class OllamaAdapter {
       '  启用方式：POST ' + this.baseUrl + '/api/generate'
     );
   }
+
+  async judge(candidate, criteria = {}) {
+    throw new Error(
+      '[OllamaAdapter] judge 未启用\n' +
+      '  启用方式：POST ' + this.baseUrl + '/api/generate，prompt 包含 candidate JSON + criteria'
+    );
+  }
 }
 
 // ==================== CLI Adapter（通过子进程调 Claude CLI，接口预留）====================
@@ -159,6 +247,13 @@ class CliAdapter {
     throw new Error(
       '[CliAdapter] generate 未启用\n' +
       '  启用方式：用 child_process.spawn 调 ' + this.command + ' -p "<prompt>" 并解析 stdout'
+    );
+  }
+
+  async judge(candidate, criteria = {}) {
+    throw new Error(
+      '[CliAdapter] judge 未启用\n' +
+      '  启用方式：用 child_process.spawn 调 ' + this.command + ' -p "<judge prompt>" 并解析 stdout JSON'
     );
   }
 }
@@ -220,6 +315,23 @@ async function generateWithFallback(prompt, opts = {}) {
   }
 }
 
+/**
+ * 带降级的 judge 方法（M12 LLM-judge 闸门，推荐使用）
+ *   - judge 候选是否值得自动实现
+ *   - 返回 { verdict: 'accept'|'reject'|'skip', score, reasons, backend }
+ *   - 任何 adapter 抛错 → 自动 fallback 到 HeuristicAdapter.judge
+ *   - 永不抛错给调用方
+ */
+async function judgeCandidateWithFallback(candidate, criteria = {}, opts = {}) {
+  const adapter = createAdapter();
+  try {
+    return await adapter.judge(candidate, criteria, opts);
+  } catch (e) {
+    process.stderr.write(`[llm-adapter] ${adapter.name} 判定失败，降级到 heuristic: ${e.message}\n`);
+    return new HeuristicAdapter().judge(candidate, criteria, opts);
+  }
+}
+
 module.exports = {
   HeuristicAdapter,
   AnthropicAdapter,
@@ -228,4 +340,5 @@ module.exports = {
   createAdapter,
   scoreWithFallback,
   generateWithFallback,
+  judgeCandidateWithFallback,
 };
