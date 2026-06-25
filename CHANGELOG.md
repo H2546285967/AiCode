@@ -5,6 +5,56 @@
 
 ---
 
+## [Unreleased] - LLM-judge 闸门 / M12 双轨制（v2.0.3）
+
+### 🧠 Added - M12 LLM-judge 闸门：auto-implement 智能判定
+
+**背景**：增量 F（M7 v2.2.0）已实现 auto-implement 闭环，但"该不该学"的判定完全靠硬阈值（composite ≥ 7.0 / effort = small / 路径黑名单），本质是规则过滤而非智能判断。这导致"7.0 阈值的候选里 80% 不值得学、6.5 阈值里可能藏着好货"。
+
+**目标**：在硬阈值闸门前加一道 LLM-judge，让模型真正评估"这个能力对 AiCode 智能演进有没有价值"。硬阈值保留为安全兜底。
+
+**实现路径**：A 方案（独立 `judgeCandidate()` 接口，与 score/generate 风格完全对称）
+
+### Added - llm-adapter judge 接口
+- 4 个 adapter 全部加 `async judge(candidate, criteria)` 方法
+  - HeuristicAdapter.judge 真实实现：基于 composite / effort / suggestion / forbiddenDeps 规则返回 accept/reject/skip
+  - AnthropicAdapter / OllamaAdapter / CliAdapter 暂 throw（与 score/generate 行为一致）→ 工厂降级到 Heuristic
+- 顶层函数 `judgeCandidateWithFallback(candidate, criteria, opts)`：与 `scoreWithFallback` / `generateWithFallback` 完全对称
+- 永不抛错契约：null / 非对象 candidate 兜底返回 reject；LLM 不可用 → 工厂降级
+- 返回结构：`{verdict: 'accept'|'reject'|'skip', score, reasons, backend}`（与 score/generate 形态一致）
+
+### Changed - auto-implement 双轨制
+- `evaluateSafety` 改 `async` + **双轨制**：
+  1. 先调 `judgeCandidateWithFallback` —— LLM `reject` → 一票否决（不再走硬阈值）
+  2. `accept` / `skip` / 任何 LLM 失败情况 → 走原 `evaluateSafetyHard` 兜底
+- 保留原 `evaluateSafetyHard`（纯同步）作为纯硬阈值版本，便于测试 / 旧调用方独立调用
+- 返回结构新增 `source: 'llm'|'hard'`，可观测"哪道闸门实际拒了"
+- `listExecutable` / `implementOne` / `run` 全部 await 化（向后兼容：所有调用方测试同步修复）
+
+### Test
+- `scripts/orchestrator/test-judge-candidate.js` **新建 · 26/26 通过**
+  - 6 段：接口契约 4 项 + Heuristic 判定 6 项 + Anthropic throw 1 项 + WithFallback 6 项（null 兜底 2 项 + criteria 自定义 3 项）+ 字段别名 1 项
+- `scripts/evolution/test-auto-implement.js` **26/26 通过**（原 24 项硬阈值断言全保留 + 新增 2 项 source 字段验证）
+  - reason 关键字兼容旧 `forbidden dep` 和新 `禁止依赖`（向后兼容）
+- `scripts/orchestrator/test-llm-adapter.js` 回归 **23/23** 无影响
+- **总计 75/75 全过，0 回归**
+- package.json：`test` 链 + `test:llm` 链都纳入 `test-judge-candidate.js`
+
+### Files
+- 新增：`scripts/orchestrator/test-judge-candidate.js`（~130 行）
+- 修改：`scripts/orchestrator/llm-adapter.js`（+95 行：4 adapter.judge + judgeCandidateWithFallback + null 兜底）
+- 修改：`scripts/evolution/auto-implement.js`（evaluateSafety async + 双轨制 + 保留 evaluateSafetyHard）
+- 修改：`scripts/evolution/test-auto-implement.js`（await 化 + reason 关键字兼容 + source 字段断言）
+- 修改：`package.json`（version 2.0.2 → 2.0.3 + test 链纳入 judge 测试）
+
+### 关联
+- 命中 04 文档 §0.4 增量 M12（v2.0.3 新增）
+- 关联 04 文档 §12 里程碑表 M12 ✅
+- 符合"最高指令"：让 Claude 能"真学聪明"——判断从规则升级为 LLM，是 L4 真正的智能闸门
+- 关联增量 M15 效果 metric（30 天后量化 LLM-judge 价值）
+
+---
+
 ## [Unreleased] - 工程自查能力 /audit skill（v2.0.2）
 
 ### 🔍 Added - 增量 P0-6：工程自查/审计（Self-Audit）
