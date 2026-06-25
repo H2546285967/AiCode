@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * handoff.js 单元测试（v3.0.4 M21）
+ * handoff.js 单元测试（v3.0.4 M21 + M22）
  *
  * 覆盖：
  *   1. buildHandoffPrompt — 4 段拼装（摘要/待办/下阶段/约束）
@@ -10,9 +10,12 @@
  *   5. handoff() 主流程 — dry-run 不写 / 真实写
  *   6. 错误兜底 — 缺 title
  *   7. 标签默认值
- *   8. 接 M15 evo 评价（task=handoff.run）
+ *   8. CLI 真跑
+ *   9. evo 评价事件
+ *  10. M22 --auto / enqueueNext — next 入队 + auto 标记
  *
  * @since v3.0.4 (2026-06-26) M21
+ * @updated v3.0.4 (2026-06-26) M22
  */
 
 const fs = require('fs');
@@ -31,11 +34,26 @@ function check(name, cond, detail) {
   else { fail++; fails.push(name); console.log(`❌ ${name}${detail ? '  → ' + detail : ''}`); }
 }
 
-// 备份 autonomous-state.json + snapshot
+// 备份 autonomous-state.json + snapshot + evolution-plan.json
 const planStatePath = path.join(__dirname, '..', '..', '.claude', 'skills', 'left-brain', 'memory', 'autonomous-state.json');
 const snapshotPath = path.join(__dirname, '..', '..', '.claude', 'skills', 'left-brain', 'memory', 'sessions', 'latest_state.json');
+const evolutionPlanPath = path.join(__dirname, '..', '..', '.claude', 'skills', 'left-brain', 'memory', 'evolution-plan.json');
 const stateBackup = fs.existsSync(planStatePath) ? fs.readFileSync(planStatePath, 'utf8') : null;
 const snapBackup = fs.existsSync(snapshotPath) ? fs.readFileSync(snapshotPath, 'utf8') : null;
+const planBackup = fs.existsSync(evolutionPlanPath) ? fs.readFileSync(evolutionPlanPath, 'utf8') : null;
+
+// 清理之前测试残留的临时 next 条目
+function cleanupTestNextEntries() {
+  if (!fs.existsSync(evolutionPlanPath)) return;
+  const plan = JSON.parse(fs.readFileSync(evolutionPlanPath, 'utf8'));
+  const testIds = ['M22: 下一阶段', 'M22-TEST-NEXT', 'M22-CLI-NEXT', 'M22-dry-run-next'];
+  const before = plan.next.length;
+  plan.next = plan.next.filter(x => !testIds.includes(x.id));
+  if (plan.next.length !== before) {
+    fs.writeFileSync(evolutionPlanPath, JSON.stringify(plan, null, 2));
+  }
+}
+cleanupTestNextEntries();
 
 // ==================== 1. buildHandoffPrompt 4 段 ====================
 console.log('── 1. buildHandoffPrompt 4 段 ──');
@@ -118,17 +136,35 @@ console.log('\n── 6. handoff() 真实写 ──');
   // 清理 awaiting_handoff 再测
   clearAwaitingHandoff();
 
-  const result = handoff('M21 真实写测试', { nextTitle: 'M22: 下一阶段' });
+  const uniqueNext = 'M22-TEST-NEXT';
+  const result = handoff('M21 真实写测试', { nextTitle: uniqueNext });
   check('真实写返回 saved=true', result.saved === true);
   check('真实写返回 snapshotPath', result.snapshotPath === snapshotPath);
+  check('真实写返回 enqueued=true', result.enqueued === true, `got ${result.enqueued}`);
 
   const state = JSON.parse(fs.readFileSync(planStatePath, 'utf8'));
   check('真实写标 awaiting_handoff', state.awaiting_handoff === true);
-  check('真实写 next_action', state.next_action === 'M22: 下一阶段');
+  check('真实写 next_action', state.next_action === uniqueNext);
+
+  const plan = JSON.parse(fs.readFileSync(evolutionPlanPath, 'utf8'));
+  check('真实写把 next 入队 evolution-plan.json', plan.next.some(x => x.id === uniqueNext));
+  const queued = plan.next.find(x => x.id === uniqueNext);
+  if (queued) {
+    check('入队 note 不是 "-n"', queued.note !== '-n', `note=${queued.note}`);
+  }
 }
 
-// ==================== 7. 错误兜底（缺 title） ====================
-console.log('\n── 7. 错误兜底 ──');
+// ==================== 7. handoff() 重复入队不重复 ====================
+console.log('\n── 7. 重复入队不重复 ──');
+
+{
+  const uniqueNext = 'M22-TEST-NEXT';
+  const result = handoff('重复入队测试', { nextTitle: uniqueNext });
+  check('重复入队返回 enqueued=false', result.enqueued === false, `got ${result.enqueued}`);
+}
+
+// ==================== 8. 错误兜底（缺 title） ====================
+console.log('\n── 8. 错误兜底 ──');
 
 {
   let threw = false;
@@ -149,16 +185,16 @@ console.log('\n── 7. 错误兜底 ──');
   check('空 title 抛错', threw2);
 }
 
-// ==================== 8. 标签默认值 ====================
-console.log('\n── 8. 标签默认值 ──');
+// ==================== 9. 标签默认值 ====================
+console.log('\n── 9. 标签默认值 ──');
 
 {
   const r1 = saveSnapshot('标签测试', 'next', undefined);
   check('默认标签 = handoff', r1.saved === true);
 }
 
-// ==================== 9. CLI 真跑 ====================
-console.log('\n── 9. CLI 真跑 ──');
+// ==================== 10. CLI 真跑 ====================
+console.log('\n── 10. CLI 真跑 ──');
 
 {
   const { spawnSync } = require('child_process');
@@ -168,8 +204,8 @@ console.log('\n── 9. CLI 真跑 ──');
   check('CLI 输出含"DRY-RUN"', r.stdout.includes('DRY-RUN'));
 }
 
-// ==================== 10. evo 评价事件 ====================
-console.log('\n── 10. evo 评价事件 ──');
+// ==================== 11. evo 评价事件 ====================
+console.log('\n── 11. evo 评价事件 ──');
 
 {
   let lines = [];
@@ -185,6 +221,44 @@ console.log('\n── 10. evo 评价事件 ──');
   }
 }
 
+// ==================== 12. M22 --auto 模式 ====================
+console.log('\n── 12. M22 --auto 模式 ──');
+
+{
+  const uniqueNext = 'M22-CLI-NEXT';
+  // 先确保没残留
+  if (fs.existsSync(evolutionPlanPath)) {
+    const plan = JSON.parse(fs.readFileSync(evolutionPlanPath, 'utf8'));
+    plan.next = plan.next.filter(x => x.id !== uniqueNext);
+    fs.writeFileSync(evolutionPlanPath, JSON.stringify(plan, null, 2));
+  }
+
+  const { spawnSync } = require('child_process');
+  // --auto + --dry-run：验证参数解析与入队，但不真 spawn claude
+  const r = spawnSync('node', [
+    path.join(__dirname, 'handoff.js'),
+    'CLI auto 测试', uniqueNext, '--auto', '--dry-run',
+  ], { encoding: 'utf8' });
+
+  check('M22 CLI --auto --dry-run 退出 0', r.status === 0, `status=${r.status}, stderr=${r.stderr}`);
+  check('M22 CLI 输出含 接续 prompt', r.stdout.includes('接续 prompt'));
+  check('M22 CLI 输出含 DRY-RUN', r.stdout.includes('DRY-RUN'));
+
+  // dry-run 不应写文件，所以 next 不该入队
+  const planAfter = JSON.parse(fs.readFileSync(evolutionPlanPath, 'utf8'));
+  check('M22 --dry-run 不入队', !planAfter.next.some(x => x.id === uniqueNext));
+
+  // 非 dry-run 的 auto 调用：只验证返回结构，不真 spawn（避免测试中拉起子会话）
+  clearAwaitingHandoff();
+  const result = handoff('M22 auto 测试', { nextTitle: 'M22-dry-run-next', auto: true });
+  check('M22 handoff() auto 标记', result.auto === true);
+  check('M22 handoff() spawnedClaude 标记', result.spawnedClaude === true);
+  check('M22 handoff() 入队成功', result.enqueued === true, `got ${result.enqueued}`);
+
+  const planFinal = JSON.parse(fs.readFileSync(evolutionPlanPath, 'utf8'));
+  check('M22 handoff() next 真入队', planFinal.next.some(x => x.id === 'M22-dry-run-next'));
+}
+
 // ==================== 清理 + 总结 ====================
 
 // 恢复 backups
@@ -192,9 +266,11 @@ if (stateBackup !== null) fs.writeFileSync(planStatePath, stateBackup);
 else if (fs.existsSync(planStatePath)) fs.unlinkSync(planStatePath);
 if (snapBackup !== null) fs.writeFileSync(snapshotPath, snapBackup);
 else if (fs.existsSync(snapshotPath)) fs.unlinkSync(snapshotPath);
+if (planBackup !== null) fs.writeFileSync(evolutionPlanPath, planBackup);
+else if (fs.existsSync(evolutionPlanPath)) fs.unlinkSync(evolutionPlanPath);
 
 console.log('');
-console.log(`📊 M21 handoff 测试: ${pass}/${pass + fail} 通过, ${fail} 失败`);
+console.log(`📊 M21+M22 handoff 测试: ${pass}/${pass + fail} 通过, ${fail} 失败`);
 if (fail > 0) {
   console.log('失败项:');
   fails.forEach(f => console.log(`  - ${f}`));

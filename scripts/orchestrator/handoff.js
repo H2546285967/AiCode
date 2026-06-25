@@ -24,7 +24,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execFileSync } = require('child_process');
+const { execFileSync, spawn } = require('child_process');
 
 // ── 配置 ─────────────────────────────────────────────
 
@@ -198,10 +198,79 @@ function clearAwaitingHandoff() {
 }
 
 /**
+ * 把 nextTitle 实际入队到 evolution-plan.json
+ * @param {string} id
+ * @param {string} title
+ * @param {string} note
+ * @returns {boolean} 是否真入队
+ */
+function enqueueNext(id, title, note) {
+  try {
+    const planPath = AUTONOMOUS_STATE_FILE.replace('autonomous-state.json', 'evolution-plan.json');
+    const plan = JSON.parse(fs.readFileSync(planPath, 'utf8'));
+    // 已存在不重复入队
+    if (plan.next.find(x => x.id === id) || (plan.current && plan.current.id === id)) {
+      return false;
+    }
+    const result = execFileSync('node', [
+      path.join(WORKSPACE_ROOT, 'scripts', 'orchestrator', 'evolution-lock.js'),
+      'queue', id, title, note || `handoff: ${title}`,
+    ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], cwd: WORKSPACE_ROOT });
+    return result.includes('已加入 next 队列') || !result.includes('已存在');
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * 启动新 claude 子进程，自动接续下一阶段
+ * 参考 autonomous-runner.js 的 spawn 模式
+ */
+function spawnClaudeContinuation(prompt, nextTitle) {
+  return new Promise((resolve) => {
+    // 优先用 CLAUDE_BIN 环境变量
+    let claudeBin = process.env.CLAUDE_BIN || 'claude';
+    if (process.platform === 'win32' && claudeBin === 'claude') {
+      const roaming = process.env.APPDATA && path.join(process.env.APPDATA, 'npm', 'claude.cmd');
+      if (roaming && fs.existsSync(roaming)) claudeBin = roaming;
+    }
+
+    log('INFO', `启动新子会话自动接续: ${nextTitle}`);
+    log('INFO', `  bin: ${claudeBin}`);
+
+    const child = spawn(claudeBin, ['-p', prompt], {
+      cwd: WORKSPACE_ROOT,
+      stdio: 'inherit',
+      shell: true,
+    });
+
+    child.on('exit', (code, signal) => {
+      log('INFO', `子会话结束: code=${code}, signal=${signal}`);
+      resolve({ code, signal });
+    });
+
+    child.on('error', (err) => {
+      log('ERROR', `启动子会话失败: ${err.message}`);
+      if (err.code === 'ENOENT') {
+        log('ERROR', `  找不到 '${claudeBin}'`);
+        log('ERROR', `  修复: 1) npm i -g @anthropic-ai/claude-code`);
+        log('ERROR', `       2) 或设置 CLAUDE_BIN 环境变量`);
+      }
+      resolve({ code: -1, signal: null, error: err.message });
+    });
+  });
+}
+
+function log(level, message) {
+  const ts = new Date().toLocaleString('zh-CN');
+  console.log(`[${ts}] [${level}] ${message}`);
+}
+
+/**
  * 主入口
  */
 function handoff(title, opts = {}) {
-  const { nextTitle, dryRun = false, tags = ['handoff'] } = opts;
+  const { nextTitle, dryRun = false, auto = false, tags = ['handoff'] } = opts;
 
   if (!title) {
     throw new Error('必须提供 title（例："M20: decision-assistant.js"）');
@@ -227,39 +296,53 @@ function handoff(title, opts = {}) {
   // 4. 更新 autonomous-state.json
   markAwaitingHandoff(nextTitle || title, title);
 
-  return {
+  // 5. v3.0.4 M22: --auto 模式 — 实际入队 next + spawn 新子进程
+  const enqueued = enqueueNext(
+    nextTitle || 'M-next',
+    nextTitle || title,
+    `handoff from "${title}"`
+  );
+
+  const result = {
     saved: true,
     snapshotPath: SNAPSHOT_FILE,
     autonomousStatePath: AUTONOMOUS_STATE_FILE,
     prompt,
+    enqueued,
+    auto,
   };
+
+  if (auto && !dryRun) {
+    result.spawnedClaude = true; // 同步标记
+  }
+
+  return result;
 }
 
 // ── CLI ───────────────────────────────────────────────
 
 function showHelp() {
   console.log(`
-handoff.js — 会话切换助手（v3.0.4 M21）
+handoff.js — 会话切换助手（v3.0.4 M21 + v3.0.4 M22 --auto）
 
 用法:
-  node handoff.js "标题" [next-title]         # 强制存快照 + 生成接续 prompt
-  node handoff.js "标题" --dry-run            # 只打印 prompt 不写
+  node handoff.js "标题" [next-title]               # 强制存快照 + 生成 prompt
+  node handoff.js "标题" --dry-run                  # 只打印 prompt 不写
+  node handoff.js "标题" "next" --auto              # 全自动：存快照 + 入队 + spawn 新子进程
 
 参数:
   第一个 (必填)   当前会话标题（写快照用）
   第二个 (可选)   下一阶段标题（默认 = 第一个）
+  --auto / -a     全自动模式（入队 next + spawn 新子进程接续）
   --dry-run       只打印接续 prompt，不写快照
   --tags "tag1 tag2"  自定义快照标签
-
-示例:
-  node handoff.js "M19 完成" "M20: decision-assistant.js"
-  node handoff.js "决策讨论完成" --dry-run
-  node handoff.js "M20 完成" "M21: /handoff 命令" --tags "milestone handoff"
 
 输出:
   1. 自动存快照到 .claude/skills/left-brain/memory/sessions/latest_state.json
   2. 标记 autonomous-state.json.awaiting_handoff = true
-  3. 输出"接续 prompt"（下一个新会话直接粘进去）
+  3. 实际入队 evolution-plan.json next（如果 ID 不存在）
+  4. 输出"接续 prompt"
+  5. --auto 时直接 spawn claude -p 新子进程（不需手动 /clear）
 `);
 }
 
@@ -271,16 +354,17 @@ function main() {
   }
 
   const dryRun = args.includes('--dry-run');
+  const auto = args.includes('--auto') || args.includes('-a');
   const tagsIdx = args.indexOf('--tags');
   const tags = tagsIdx !== -1 ? args[tagsIdx + 1].split(/\s+/) : ['handoff'];
 
   // 解析位置参数
-  const positional = args.filter(a => !a.startsWith('--') && !tags.includes(a));
+  const positional = args.filter(a => !a.startsWith('--') && !a.startsWith('-') && !tags.includes(a));
   const title = positional[0];
   const nextTitle = positional[1] || title;
 
   try {
-    const result = handoff(title, { nextTitle, dryRun, tags });
+    const result = handoff(title, { nextTitle, dryRun, auto, tags });
 
     if (dryRun) {
       console.log('━'.repeat(60));
@@ -295,17 +379,31 @@ function main() {
     console.log('✅ 会话交接完成');
     console.log(`   快照：${result.snapshotPath}`);
     console.log(`   状态：${result.autonomousStatePath}`);
+    console.log(`   next 入队：${result.enqueued ? '✅' : '⏭️ 已存在'}`);
     console.log('');
     console.log('━'.repeat(60));
-    console.log('📋 接续 prompt（粘到新会话第一句）');
+    console.log('📋 接续 prompt（新子会话第一句）');
     console.log('━'.repeat(60));
     console.log(result.prompt);
     console.log('━'.repeat(60));
-    console.log('');
-    console.log('💡 建议操作：');
-    console.log('   1. 在 Claude Code UI 点击 "New Chat" / 输入 /clear');
-    console.log('   2. 新会话第一句：粘上面的接续 prompt');
-    console.log('   3. session-init.sh 会自动加载 latest_state.json');
+
+    if (auto) {
+      console.log('');
+      console.log('🚀 --auto 模式：正在启动新子会话自动接续...');
+      spawnClaudeContinuation(result.prompt, nextTitle || title).then((r) => {
+        if (r.error) {
+          console.error(`❌ 子会话启动失败: ${r.error}`);
+          process.exit(1);
+        }
+        console.log(`✅ 子会话结束 (code=${r.code})`);
+      });
+    } else {
+      console.log('');
+      console.log('💡 建议操作：');
+      console.log('   1. 加 --auto 一条命令完成（推荐）');
+      console.log('   2. 手动：在 Claude Code UI 点击 "New Chat"');
+      console.log('   3. 手动：输入 /clear 后粘上面 prompt');
+    }
   } catch (e) {
     console.error(`❌ handoff 失败: ${e.message}`);
     process.exit(1);

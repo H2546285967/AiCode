@@ -148,17 +148,18 @@ AiCode/
 
 ---
 
-## 🤝 会话交接助手（v3.0.4 M21 · 用户接续 vs 机器接续）
+## 🤝 会话交接助手（v3.0.4 M21 + M22 · 用户接续 vs 机器接续）
 
 > **场景**：上下文超长想 `/clear` 切换新会话 / 深夜编程次日继续 / 想换 Claude Code 窗口。
-> **答**：`/handoff` 命令自动存快照 + 生成 4 段接续 prompt，你粘到新会话第一句即可接续。
+> **答**：`/handoff` 命令自动存快照 + 生成 4 段接续 prompt，你粘到新会话第一句即可接续；加 `--auto` 直接 spawn 新子会话。
 > **不破坏**：`/autonomous`（机器接续）/ `/snap-save`（纯存档）/ `/clear` / `/compact`（内建）。
 
 ### 3 种"接续"路径对比
 
 | 路径 | 谁接续 | 何时用 | 命令 |
 |:-----|:-------|:------|:-----|
-| **用户接续** | 你自己 | 现在收尾，下次自己继续 | `/handoff "标题" "下一阶段"` |
+| **用户接续（手动）** | 你自己 | 现在收尾，下次自己继续 | `/handoff "标题" "下一阶段"` |
+| **用户接续（自动）** | 你自己 | 一条命令自动开新窗口继续 | `/handoff "标题" "下一阶段" --auto` |
 | **机器接续** | autonomous-runner | 离开几小时让 runner 循环跑 | `/autonomous always` + `npm run autonomous:runner` |
 | **纯存档** | （不接续）| 仅保存，不继续 | `/snap-save "标题" "milestone-X"` |
 
@@ -170,23 +171,24 @@ node scripts/orchestrator/handoff.js "当前标题" "下一阶段标题"
 
 # 预览（不真写，看 prompt 再决定）
 node scripts/orchestrator/handoff.js "当前标题" --dry-run
+
+# 全自动：存快照 + 入队 next + spawn 新子会话接续
+node scripts/orchestrator/handoff.js "今天完成 M21" "M20: decision-assistant.js" --auto
 ```
 
 ### 完整流程
 
 ```
 当前会话（你正在看的）
-  ↓ /handoff "今天完成 M21" "M20: decision-assistant.js"
+  ↓ /handoff "今天完成 M21" "M20: decision-assistant.js" [--auto]
   ↓
 ✅ 自动存快照（.claude/skills/left-brain/memory/sessions/latest_state.json）
 ✅ 标 awaiting_handoff=true
+✅ next 入队 evolution-plan.json（ID 不重复）
 ✅ 输出 4 段接续 prompt（30+ 行 markdown）
   ↓
-复制 prompt
-  ↓
-Claude Code → New Chat（或输入 /clear）
-  ↓
-新会话第一句：粘 prompt
+手动：复制 prompt → New Chat / /clear → 粘贴
+自动 (--auto)：直接 spawn claude -p 新子会话，不需要你复制粘贴
   ↓
 session-init.sh 自动加载 latest_state.json
   ↓
@@ -206,8 +208,8 @@ session-init.sh 自动加载 latest_state.json
 
 - 完整命令定义：`.claude/commands/handoff.md`
 - 核心引擎：`scripts/orchestrator/handoff.js`
-- 测试：`scripts/orchestrator/test-handoff.js`（36/36 通过）
-- 复用：`session-summary.sh save --force`（v1.8）+ `autonomous-state.json` schema（v2.2.0）
+- 测试：`scripts/orchestrator/test-handoff.js`（48/48 通过）
+- 复用：`session-summary.sh save --force`（v1.8）+ `autonomous-state.json` schema（v2.2.0）+ `evolution-lock.js queue`
 - 与 M16/M19 无关（独立的"用户接续"工具，与"机器接续"互补）
 
 ---

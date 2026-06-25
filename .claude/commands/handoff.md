@@ -3,7 +3,7 @@ name: handoff
 description: 🚀 会话交接 — 自动存快照 + 生成接续 prompt
 ---
 
-# 🚀 会话交接助手（v3.0.4 M21）
+# 🚀 会话交接助手（v3.0.4 M21 + M22）
 
 > **作用**：当前会话收尾时，自动保存进度并生成"下个会话第一句 prompt"，实现无缝上下文切换。
 > **典型场景**：上下文太长 / 想 /clear 但不想丢状态 / 想换 Claude Code 窗口继续。
@@ -12,7 +12,8 @@ description: 🚀 会话交接 — 自动存快照 + 生成接续 prompt
 
 ```bash
 node scripts/orchestrator/handoff.js "当前标题" "下一阶段标题"
-node scripts/orchestrator/handoff.js "当前标题" --dry-run    # 预览
+node scripts/orchestrator/handoff.js "当前标题" --dry-run                  # 预览
+node scripts/orchestrator/handoff.js "当前标题" "下一阶段" --auto           # 全自动接续
 ```
 
 参数：
@@ -27,14 +28,16 @@ node scripts/orchestrator/handoff.js "当前标题" --dry-run    # 预览
 | 选项 | 说明 |
 |:-----|:-----|
 | `--dry-run` | 只打印接续 prompt，不写快照（默认安全）|
+| `--auto` / `-a` | 全自动：入队 next + spawn 新 `claude -p` 子会话接续 |
 | `--tags "tag1 tag2"` | 自定义快照标签（默认 `handoff`）|
 
 ## 自动执行的动作
 
 1. **存快照**（强制）：调 `session-summary.sh save --force`
 2. **更新状态**：写 `autonomous-state.json.awaiting_handoff = true` + `next_action = <下一阶段>`
-3. **生成接续 prompt**：4 段拼装（会话摘要 / 待办 / 下阶段 / 约束）
-4. **打印**：CLI 输出 prompt 直接粘到新会话
+3. **next 入队**：把下一阶段写入 `evolution-plan.json` next 队列（ID 不重复）
+4. **生成接续 prompt**：4 段拼装（会话摘要 / 待办 / 下阶段 / 约束）
+5. **--auto 时 spawn 新子会话**：直接启动 `claude -p <prompt>`，不需要手动 /clear 粘贴
 
 ## 下个会话怎么接续
 
@@ -53,6 +56,7 @@ node scripts/orchestrator/handoff.js "当前标题" --dry-run    # 预览
 |:-----|:-----|
 | 上线前收尾 | `/handoff "M20 完成" "M21: /handoff 命令"` |
 | 想换 Claude Code 窗口 | `/handoff "决策完成" --dry-run` 先看 prompt |
+| **一条命令自动接续** | `/handoff "M20 完成" "M21: /handoff 命令" --auto` |
 | 离开几小时 | `/handoff "当前会话结束" "下一会话待定"` + `/autonomous always` |
 | 完成里程碑 | `/handoff "v3.0.4 完成" "v3.0.5 待规划" --tags "milestone handoff"` |
 
