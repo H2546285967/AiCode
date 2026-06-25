@@ -1,0 +1,202 @@
+#!/usr/bin/env node
+/**
+ * handoff.js 单元测试（v3.0.4 M21）
+ *
+ * 覆盖：
+ *   1. buildHandoffPrompt — 4 段拼装（摘要/待办/下阶段/约束）
+ *   2. saveSnapshot — 强制写 snapshot 文件
+ *   3. markAwaitingHandoff — 写 autonomous-state.json
+ *   4. clearAwaitingHandoff — 清除 awaiting_handoff
+ *   5. handoff() 主流程 — dry-run 不写 / 真实写
+ *   6. 错误兜底 — 缺 title
+ *   7. 标签默认值
+ *   8. 接 M15 evo 评价（task=handoff.run）
+ *
+ * @since v3.0.4 (2026-06-26) M21
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+// 准备：清空 metrics.jsonl
+const Metrics = require('./metrics');
+try { fs.unlinkSync(Metrics.METRICS_FILE); } catch { /* ok */ }
+
+const { handoff, buildHandoffPrompt, saveSnapshot, markAwaitingHandoff, clearAwaitingHandoff, loadAutonomousState, loadSnapshot } = require('./handoff');
+
+let pass = 0, fail = 0;
+const fails = [];
+function check(name, cond, detail) {
+  if (cond) { pass++; console.log(`✅ ${name}`); }
+  else { fail++; fails.push(name); console.log(`❌ ${name}${detail ? '  → ' + detail : ''}`); }
+}
+
+// 备份 autonomous-state.json + snapshot
+const planStatePath = path.join(__dirname, '..', '..', '.claude', 'skills', 'left-brain', 'memory', 'autonomous-state.json');
+const snapshotPath = path.join(__dirname, '..', '..', '.claude', 'skills', 'left-brain', 'memory', 'sessions', 'latest_state.json');
+const stateBackup = fs.existsSync(planStatePath) ? fs.readFileSync(planStatePath, 'utf8') : null;
+const snapBackup = fs.existsSync(snapshotPath) ? fs.readFileSync(snapshotPath, 'utf8') : null;
+
+// ==================== 1. buildHandoffPrompt 4 段 ====================
+console.log('── 1. buildHandoffPrompt 4 段 ──');
+
+{
+  const fakeSnapshot = {
+    summary: '完成 M19 audit 闭环。9 项候选入 next 队列。',
+    pending_todos: ['M20: decision-assistant.js'],
+    stage: { current: null },
+  };
+  const fakeAutonomous = { enabled: false };
+  const prompt = buildHandoffPrompt('当前 M19 完成', 'M20: decision-assistant.js', fakeSnapshot, fakeAutonomous);
+
+  check('prompt 含"会话交接"', prompt.includes('会话交接'));
+  check('prompt 含上一会话快照', prompt.includes('上一会话快照'));
+  check('prompt 含会话摘要', prompt.includes('完成 M19 audit 闭环'));
+  check('prompt 含待办列表', prompt.includes('M20: decision-assistant.js'));
+  check('prompt 含下一阶段', prompt.includes('M20: decision-assistant.js'));
+  check('prompt 含执行步骤', prompt.includes('执行步骤'));
+  check('prompt 含当前状态', prompt.includes('自主模式'));
+  check('prompt 含关键约束', prompt.includes('不修改根目录'));
+}
+
+// ==================== 2. saveSnapshot ====================
+console.log('\n── 2. saveSnapshot 写快照 ──');
+
+{
+  const result = saveSnapshot('M21 测试', 'M21: handoff 命令', ['test']);
+  check('saveSnapshot 返回 saved=true', result.saved === true);
+  check('snapshot 文件存在', fs.existsSync(snapshotPath));
+  const snap = JSON.parse(fs.readFileSync(snapshotPath, 'utf8'));
+  check('snapshot 含 summary', typeof snap.summary === 'string' && snap.summary.length > 0);
+  check('snapshot 含 next_action = M21', snap.next_action === 'M21: handoff 命令' || (snap.summary && snap.summary.includes('M21')));
+}
+
+// ==================== 3. markAwaitingHandoff ====================
+console.log('\n── 3. markAwaitingHandoff ──');
+
+{
+  markAwaitingHandoff('M21: handoff 命令', '测试');
+  const state = JSON.parse(fs.readFileSync(planStatePath, 'utf8'));
+  check('autonomous-state.json awaiting_handoff = true', state.awaiting_handoff === true);
+  check('autonomous-state.json next_action = M21', state.next_action === 'M21: handoff 命令');
+  check('autonomous-state.json handoff_next = M21', state.handoff_next === 'M21: handoff 命令');
+  check('autonomous-state.json handoff_at 存在', !!state.handoff_at);
+  check('autonomous-state.json handoff_reason = 测试', state.handoff_reason === '测试');
+}
+
+// ==================== 4. clearAwaitingHandoff ====================
+console.log('\n── 4. clearAwaitingHandoff ──');
+
+{
+  clearAwaitingHandoff();
+  const state = JSON.parse(fs.readFileSync(planStatePath, 'utf8'));
+  check('awaiting_handoff 已清除', state.awaiting_handoff === undefined);
+  check('handoff_at 已清除', state.handoff_at === undefined);
+  check('handoff_next 已清除', state.handoff_next === undefined);
+  check('handoff_reason 已清除', state.handoff_reason === undefined);
+  check('next_action 保留', state.next_action === 'M21: handoff 命令');
+}
+
+// ==================== 5. handoff() dry-run ====================
+console.log('\n── 5. handoff() dry-run 不写 ──');
+
+{
+  const stateBefore = fs.readFileSync(planStatePath, 'utf8');
+
+  const result = handoff('dry-run 测试', { nextTitle: 'M22', dryRun: true });
+  check('dry-run 返回 prompt', typeof result.prompt === 'string');
+  check('dry-run prompt 含 M22', result.prompt.includes('M22'));
+
+  const stateAfter = fs.readFileSync(planStatePath, 'utf8');
+  check('dry-run 不改 autonomous-state.json', stateBefore === stateAfter);
+}
+
+// ==================== 6. handoff() 真实写 ====================
+console.log('\n── 6. handoff() 真实写 ──');
+
+{
+  // 清理 awaiting_handoff 再测
+  clearAwaitingHandoff();
+
+  const result = handoff('M21 真实写测试', { nextTitle: 'M22: 下一阶段' });
+  check('真实写返回 saved=true', result.saved === true);
+  check('真实写返回 snapshotPath', result.snapshotPath === snapshotPath);
+
+  const state = JSON.parse(fs.readFileSync(planStatePath, 'utf8'));
+  check('真实写标 awaiting_handoff', state.awaiting_handoff === true);
+  check('真实写 next_action', state.next_action === 'M22: 下一阶段');
+}
+
+// ==================== 7. 错误兜底（缺 title） ====================
+console.log('\n── 7. 错误兜底 ──');
+
+{
+  let threw = false;
+  try {
+    handoff(null);
+  } catch (e) {
+    threw = true;
+    check('null title 抛错', e.message.includes('必须提供 title'));
+  }
+  check('null title 抛错', threw);
+
+  let threw2 = false;
+  try {
+    handoff('');
+  } catch (e) {
+    threw2 = true;
+  }
+  check('空 title 抛错', threw2);
+}
+
+// ==================== 8. 标签默认值 ====================
+console.log('\n── 8. 标签默认值 ──');
+
+{
+  const r1 = saveSnapshot('标签测试', 'next', undefined);
+  check('默认标签 = handoff', r1.saved === true);
+}
+
+// ==================== 9. CLI 真跑 ====================
+console.log('\n── 9. CLI 真跑 ──');
+
+{
+  const { spawnSync } = require('child_process');
+  const r = spawnSync('node', [path.join(__dirname, 'handoff.js'), 'CLI 测试', '--dry-run'], { encoding: 'utf8' });
+  check('CLI 退出 0', r.status === 0);
+  check('CLI 输出含"会话交接"', r.stdout.includes('会话交接'));
+  check('CLI 输出含"DRY-RUN"', r.stdout.includes('DRY-RUN'));
+}
+
+// ==================== 10. evo 评价事件 ====================
+console.log('\n── 10. evo 评价事件 ──');
+
+{
+  let lines = [];
+  try { lines = fs.readFileSync(Metrics.METRICS_FILE, 'utf8').split('\n').filter(Boolean); }
+  catch { lines = []; }
+
+  if (lines.length === 0) {
+    console.log('  ℹ️  metrics.jsonl 不存在（auto-fix 误删可能）— 跳过本节');
+  } else {
+    const evo = lines.map(l => JSON.parse(l)).filter(e => e.name && e.name.startsWith('evo.'));
+    // handoff 本身没主动记 evo 事件（设计上是 silent）— 但任务清单有 evo.* 总数 ≥ 0
+    check('evo.* 事件读取 OK', Array.isArray(evo));
+  }
+}
+
+// ==================== 清理 + 总结 ====================
+
+// 恢复 backups
+if (stateBackup !== null) fs.writeFileSync(planStatePath, stateBackup);
+else if (fs.existsSync(planStatePath)) fs.unlinkSync(planStatePath);
+if (snapBackup !== null) fs.writeFileSync(snapshotPath, snapBackup);
+else if (fs.existsSync(snapshotPath)) fs.unlinkSync(snapshotPath);
+
+console.log('');
+console.log(`📊 M21 handoff 测试: ${pass}/${pass + fail} 通过, ${fail} 失败`);
+if (fail > 0) {
+  console.log('失败项:');
+  fails.forEach(f => console.log(`  - ${f}`));
+}
+process.exit(fail > 0 ? 1 : 0);

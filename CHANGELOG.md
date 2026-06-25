@@ -10,6 +10,25 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Added - 阶段 9：M21 会话交接助手（已完成 · v3.0.4）
+
+- 新增 `scripts/orchestrator/handoff.js` v1.0.0 — 会话切换助手
+  - `buildHandoffPrompt()` 4 段拼装：会话摘要 / 待办列表 / 下一阶段目标 / 当前状态与约束
+  - `saveSnapshot()` 强制写快照（复用 session-summary.sh save --force）+ 同步 next_action 到 latest_state.json
+  - `markAwaitingHandoff()` 标 autonomous-state.json.awaiting_handoff=true + next_action
+  - `clearAwaitingHandoff()` 清除标记（新会话开窗后调）
+  - CLI `--dry-run` 让你先看接续 prompt 再决定
+- 新增 `.claude/commands/handoff.md` slash 命令定义
+- 新增 `scripts/orchestrator/test-handoff.js` **36/36 通过**
+  - 覆盖：buildHandoffPrompt / saveSnapshot / markAwaitingHandoff / clearAwaitingHandoff / handoff() / dry-run / 错误兜底 / CLI
+- 全量回归通过：bridge 45 + metrics 42 + graph-dispatch 35 + audit-loop 34 + handoff 36 = **192/192**
+- 真实跑通：CLI 输出 30+ 行接续 prompt（含会话摘要 / 待办 / 下阶段 / 约束）
+
+**L5 终极智能影响**：
+- 解决"上下文超长无法继续"硬限制 — 之前只能 /clear 硬切换丢状态
+- 让"用户接续"（/handoff）和"机器接续"（/autonomous）成为两条独立路径
+- 用户随时可"打包带走当前进度"——给"深夜编程 + 次日继续"提供工作流
+
 ### Added - 阶段 8：M19 audit 闭环（已完成 · v3.0.3）
 
 - **M19-1**：04.md 末尾加 `## 十三、Backlog（待整合候选 · 动态同步自 /audit）` 段
