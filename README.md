@@ -10,11 +10,13 @@
 
 ## 🆕 最新功能（v2.0.0）
 
-**🚀 自主演进模式**：用户可启动 `/autonomous` 开关让 Claude **自主决策开发**（不逐步确认）。适合离开时无人值守，让 Claude 自己跑智能增量。详见 `04_自我演进路线.md`。
+**🚀 自主演进模式**：用户可启动 `/autonomous single` 或 `/autonomous always` 让 Claude **自主决策开发**（不逐步确认）。`single` 完成一个阶段后自动停止；`always` 循环执行阶段。适合离开时无人值守，让 Claude 自己跑智能增量。详见 `04_自我演进路线.md`。
 
-- 打开：`/autonomous 我离开1小时` 或 `npm run autonomous:on`
+- single 模式（做完当前阶段就停）：`/autonomous single` 或 `npm run autonomous:single -- "原因"`
+- always 模式（循环执行）：`/autonomous always` 或 `npm run autonomous:always -- "原因"`
+- 只开开关：`/autonomous` 或 `npm run autonomous:on`
 - 关闭：`/autonomous-stop` 或 `npm run autonomous:off`
-- 状态：session-init 顶部 Step 7 显式显示 🤖 ON / 🙋 OFF
+- 状态：`npm run autonomous:status`
 
 **v1.9.1/2/3 四大智能增量**（全部完成）：
 - A 自我反思 / B 智能规划（含方案 A 桥接执行）/ C 主动发现 / D 自动化修复
