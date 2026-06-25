@@ -186,6 +186,47 @@ else
 fi
 echo ""
 
+# v2.0.6 M15: 评价闭环 — 记录 KB 召回命中 + 自主模式人工干预 baseline
+echo "📊 Step 10: 评价指标采集（v2.0.6 M15 Evolution Metrics）"
+if [ -n "$WORKSPACE_ROOT" ] && [ -f "$WORKSPACE_ROOT/scripts/orchestrator/metrics.js" ]; then
+  # 1. KB 召回：session-init 启动即一次"召回"——knowledge dir 有内容算 hit
+  if [ -d "$KNOWLEDGE_DIR" ] && [ "$(ls -A "$KNOWLEDGE_DIR" 2>/dev/null)" ]; then
+    KB_HIT="true"
+    KB_COUNT=$(ls -1 "$KNOWLEDGE_DIR"/*.md 2>/dev/null | wc -l)
+    echo "  ✅ KB 召回命中（$KB_COUNT 条知识）"
+  else
+    KB_HIT="false"
+    echo "  ⚠️ KB 召回未命中（knowledge 目录为空）"
+  fi
+
+  # 2. 自主模式人工干预：若 enabled=true 记一次 intervention 事件
+  HUMAN_MODE="normal"
+  HUMAN_ACTION="none"
+  AUTON_STATE="${SKILL_DIR}/memory/autonomous-state.json"
+  if [ -f "$AUTON_STATE" ]; then
+    AUTON_ENABLED=$(node -e "try{const s=require(process.argv[1]);process.stdout.write(s.enabled?'true':'false')}catch{process.stdout.write('false')}" "$AUTON_STATE" 2>/dev/null)
+    if [ "$AUTON_ENABLED" = "true" ]; then
+      HUMAN_MODE="autonomous"
+      HUMAN_ACTION="session_start"
+      AUTON_MODE=$(node -e "try{const s=require(process.argv[1]);process.stdout.write(s.mode||'always')}catch{process.stdout.write('always')}" "$AUTON_STATE" 2>/dev/null)
+      echo "  🤖 自主模式开启中（$AUTON_MODE）— 记一次人工干预基线"
+    fi
+  fi
+
+  # 3. 写入 metrics.jsonl（写失败不影响主流程）
+  node -e "
+const Metrics = require(process.argv[1]);
+const { Evolution: Evo } = Metrics;
+if (Evo) {
+  Evo.recallPrecision(process.argv[2] === 'true', { source: 'session-init' });
+  if (process.argv[3] === 'autonomous') {
+    Evo.humanIntervention({ mode: 'autonomous', action: process.argv[4] || 'session_start' });
+  }
+}
+" "$WORKSPACE_ROOT/scripts/orchestrator/metrics.js" "$KB_HIT" "$HUMAN_MODE" "$HUMAN_ACTION" 2>/dev/null
+fi
+echo ""
+
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "✅ 初始化完成！"

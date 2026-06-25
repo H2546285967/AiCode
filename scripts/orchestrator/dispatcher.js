@@ -379,12 +379,22 @@ if (require.main === module) {
   // v1.9 P1-1: 接入结构化日志
   const t0 = Date.now();
   const result = decide(taskText);
+  const durationMs = Date.now() - t0;
   console.log(JSON.stringify(result, null, 2));
 
   try {
     const Metrics = require('./metrics');
     Metrics.increment('dispatcher.decision', 1, { dispatch: String(result.dispatch) });
-    Metrics.timing('dispatcher.decision', Date.now() - t0);
+    Metrics.timing('dispatcher.decision', durationMs);
+
+    // v2.0.6 M15: 评价闭环 — 任务完成时间
+    if (Metrics.Evolution) {
+      Metrics.Evolution.taskCompletionTime(
+        'dispatcher.decision',
+        durationMs,
+        { dispatch: String(result.dispatch), task: 'dispatcher-cli' }
+      );
+    }
 
     const { createLogger } = require('./logger');
     const log = createLogger('dispatcher');

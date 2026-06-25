@@ -10,6 +10,29 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Added - 阶段 4：M15 效果量化指标启动（已完成 · 即将发版 v2.0.6）
+
+- 新增 `scripts/orchestrator/metrics/report.js` — 月度效果量化报告生成器
+- 扩展 `scripts/orchestrator/metrics.js`（v1.9 P0-4 → v2.0.6 M15）— 新增 `Evolution` 命名空间，4 项评价采集器
+  - `taskCompletionTime(taskId, durationMs, tags)` — 主线任务耗时
+  - `toolSuccessRate(tool, success, tags)` — 工具调用成功率
+  - `recallPrecision(hit, tags)` — KB 召回命中率
+  - `humanIntervention(tags)` — 自主模式人工干预率（mode/action 二维）
+  - `monthlyAggregate(yyyymm)` — 月度聚合（4 项指标 + P50/P95/avg + top_slow + 上月对比）
+- 接入 3 个 hook 点：
+  - `dispatcher.js` CLI 模式 → `evo.task.completion_time`
+  - `proactive-scan.js` 7 维度循环 → `evo.tool.success` / `evo.tool.failure`（每维度跑过记）
+  - `session-init.sh` Step 10 → `evo.kb.recall.hit/miss` + 自主模式 `evo.human.intervention` baseline
+- 月度报告输出 `data/evolution/metrics-YYYYMM.md`：4 项指标 + 趋势对比 + L5 达标进度 + 行动建议
+- 新增 npm scripts：`metrics:report` / `metrics:aggregate` / `test:evolution-metrics`
+- 测试 `scripts/orchestrator/test-evolution-metrics.js` **42/42 通过**（旧 `test-metrics.js` 10/10 仍兼容）
+- 同步 `04_自我演进路线.md`：M15 ✅，L4 评价闭环 ✅，L5 第 4 条（持续 3 个月）🟡 起步
+
+**L5 终极智能影响**：
+- M15 是 L5 5 条达成条件中第 4 条（月度 metric 报告持续 3 个月）的直接交付物
+- 完成 M15 后 L5 = 执行闭环 ✅ + 学习闭环 🟡 **2/3**（M13 ✅ / M15 ✅ / M14 ⏳） + 自治可观测 🟡 数据采集中
+- 还差：M14 知识图谱反哺 + 月度报告持续 3 个月（2026-06 / 2026-07 / 2026-08）
+
 ### Added - 阶段 1：04 文档第十二章瘦身（已完成）
 - `04_自我演进路线.md` 第十二章只保留里程碑表 M1~M15
 - 删除：实测数据 / npm scripts 列表 / 测试状态 / 路线分水岭段 / Backlog 段 / 风险和缓解段

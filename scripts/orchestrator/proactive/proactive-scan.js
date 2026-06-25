@@ -29,6 +29,11 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
+// v2.0.6 M15: 评价闭环 — 工具成功率采集
+let Metrics = null;
+try { Metrics = require('../metrics'); } catch { /* 测试/独立跑时无 metrics 父目录 */ }
+const { Evolution: Evo } = Metrics || { Evolution: null };
+
 // ── 配置 ─────────────────────────────────────────────
 
 const WORKSPACE_ROOT = path.join(__dirname, '..', '..', '..');
@@ -369,12 +374,19 @@ function detectAll(force = false) {
 
   for (const [key, fn] of detectors) {
     if (!DIMENSIONS_ENABLED[key]) continue;
+    let dimOk = false;
     try {
       const result = fn();
+      dimOk = true; // 函数没抛 = 成功（即使返回空 findings 算"健康"）
       if (result && result.length > 0) {
         findings.push(...result.map(f => ({ ...f, dimension: key, timestamp: new Date().toISOString() })));
       }
     } catch { /* 单维度失败兜底 */ }
+
+    // M15: 工具成功率采集
+    if (Evo) {
+      try { Evo.toolSuccessRate('proactive-scan', dimOk, { dim: key }); } catch { /* 写失败不影响主流程 */ }
+    }
   }
 
   const summary = {
