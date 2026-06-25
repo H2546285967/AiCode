@@ -57,6 +57,13 @@ echo "  知识库: $KNOWLEDGE_DIR"
 echo "  会话记录: $SESSIONS_DIR"
 echo ""
 
+# v2.0 P0-5: 记录会话开始事件
+WORKSPACE_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
+if [ -n "$WORKSPACE_ROOT" ] && [ -f "$WORKSPACE_ROOT/scripts/orchestrator/workflow/workflow-cli.js" ]; then
+    SESSION_ID="session_$(date '+%Y%m%d-%H%M%S')"
+    node "$WORKSPACE_ROOT/scripts/orchestrator/workflow/workflow-cli.js" record session_start "{\"source\":\"session-init\"}" "{\"session\":\"$SESSION_ID\"}" >/dev/null 2>&1
+fi
+
 echo "🔍 Step 5: 自我反思反馈（v1.9.1+ 智能增量 A）"
 REFLECTION_FILE="${SKILL_DIR}/memory/reflections.jsonl"
 if [ -f "$REFLECTION_FILE" ] && [ -s "$REFLECTION_FILE" ]; then
@@ -153,6 +160,14 @@ for (const r of daily.concat(weekly)) {
 " "$REPORT_FILE" 2>/dev/null
 else
     echo "  ✨ 暂无 cron 报告（运行 npm run cron:report:daily 生成）"
+fi
+echo ""
+
+echo "💡 Step 9: workflow 主动建议（v2.0 P0-5）"
+if [ -n "$WORKSPACE_ROOT" ] && [ -f "$WORKSPACE_ROOT/scripts/orchestrator/workflow/workflow-cli.js" ]; then
+    node "$WORKSPACE_ROOT/scripts/orchestrator/workflow/workflow-cli.js" suggest 2>/dev/null || echo "  ⚠️ 建议引擎暂时不可用"
+else
+    echo "  ⚠️ workflow-cli.js 未找到"
 fi
 echo ""
 

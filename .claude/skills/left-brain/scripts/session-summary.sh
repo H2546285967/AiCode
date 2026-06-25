@@ -69,6 +69,11 @@ EOF
     if [ -f "$snapshot_js" ]; then
         node "$snapshot_js" "$summary" "auto-stop-milestone" --force 2>&1 | tail -3 || true
     fi
+    # v2.0 P0-5: 记录会话结束事件
+    local workspace_root=$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)
+    if [ -n "$workspace_root" ] && [ -f "$workspace_root/scripts/orchestrator/workflow/workflow-cli.js" ]; then
+        node "$workspace_root/scripts/orchestrator/workflow/workflow-cli.js" record session_end "{\"source\":\"session-summary\",\"summary\":\"${summary}\"}" >/dev/null 2>&1 || true
+    fi
 }
 
 load_summary() {

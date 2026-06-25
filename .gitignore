@@ -57,5 +57,10 @@ target/
 # 会话级快照模式覆盖（/snap-mode 写入，会话结束可清）
 .claude/session-snap-mode.json
 
+# 个人 workflow 智能化动态数据（v2.0 P0-5）
+.claude/skills/left-brain/memory/workflow-events.jsonl
+.claude/skills/left-brain/memory/workflow-patterns.json
+scripts/orchestrator/workflow/.test-*/
+
 # Claude HUD 插件本地配置
 .claude/settings.json

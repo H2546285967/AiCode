@@ -82,6 +82,31 @@
   - `test-dispatcher-unit.js` 灰区断言改为按 score 动态判定（65/65 通过）
   - `test-failure-paths.js` 版本号匹配改为正则，避免硬编码 2.5.0（12/12 通过）
 
+### 🤖 Added - 自主模式无人值守 runner（autonomous-runner.js v2.1.0）
+
+**背景**：`.claude/rules/autonomous.md` 要求阶段完成后保存快照并 `/clear` 清理上下文，但 `/clear` 是用户级 slash 命令，脚本和子进程无法直接调用，导致真正的无人值守循环无法实现。
+
+- 新增 `scripts/orchestrator/autonomous-runner.js`
+  - 外部循环控制器：阶段完成后退出当前 `claude -p` 子会话，启动新子会话加载快照并继续下一阶段
+  - 状态机：`idle → in_progress → completed/failed → next`
+  - 失败重试：单阶段失败最多重试 5 次，连续失败 5 次后自动写 `autonomous-state.json enabled=false`
+  - 单阶段超时：默认 30 分钟，可配 `AUTONOMOUS_STAGE_TIMEOUT_MS`
+  - CLI：`run / stop / status / complete-stage [next]`
+- 扩展 `scripts/orchestrator/autonomous.js`
+  - 新增 `start [reason]` 命令：开启自主模式并启动 runner 循环
+  - 新增 `runner` 命令：在已开启状态下启动 runner 循环
+  - 版本：v2.0.0 → v2.1.0
+- 扩展 `.claude/skills/left-brain/scripts/state-snapshot.js`
+  - 新增 `stage` 字段：`current / status / completed / next / failure_count / started_at`
+  - 保存快照时自动保留 runner 已写入的 stage 状态
+- 扩展 `package.json`
+  - 新增 `autonomous:start` / `autonomous:runner` npm scripts
+  - `test:autonomous` 加入 `test-autonomous-runner.js`
+- 新增 `.claude/hooks/SessionStart`
+  - 新 Claude 会话启动时自动加载最新快照
+  - 自主模式开启时提示继续执行命令
+- 新增测试：`scripts/orchestrator/test-autonomous-runner.js`（5/5 通过）
+
 ### 🤖 Added - 自主模式规则补充（autonomous.md）
 
 **背景**：自主模式下完成一个选题后直接进入下一个选题，缺少强制快照和上下文清理，导致 token 消耗增加、上下文污染。
@@ -109,6 +134,9 @@
 ### Files
 
 - 新增：
+  - `scripts/orchestrator/autonomous-runner.js`
+  - `scripts/orchestrator/test-autonomous-runner.js`
+  - `.claude/hooks/SessionStart`
   - `scripts/orchestrator/reflection/secondary-review.js`
   - `scripts/orchestrator/reflection/test-secondary-review.js`
   - `scripts/orchestrator/proactive/cron-report.js`
@@ -119,6 +147,9 @@
   - `.claude/commands/cron-report.md`
   - `.claude/rules/autonomous.md`
 - 修改：
+  - `scripts/orchestrator/autonomous.js`（v2.1.0 + start/runner 入口）
+  - `.claude/skills/left-brain/scripts/state-snapshot.js`（+ stage 字段）
+  - `package.json`（+ autonomous:start / autonomous:runner / test-autonomous-runner）
   - `scripts/orchestrator/reflection/self-reflect.js`（+ high-stakes-trigger 规则）
   - `scripts/orchestrator/llm-adapter.js`（+ generate 接口）
   - `scripts/orchestrator/proactive/auto-fix.js`（+ --llm / useLLM）
@@ -136,6 +167,40 @@
   - `scripts/会话快照/save.js`（CRLF 兼容 + 保持原换行符）
   - `.claude/skills/left-brain/scripts/session-summary.sh`（save 命令同步调用 save.js --force）
   - `00_ROOT_快速加载会话.md`（索引已更新）
+
+### 🧠 Added - v2.0 P0-5：个人 workflow 智能化（workflow intelligence）
+
+**背景**：v2.0 路线最后一项 P0，让 Claude 学习用户工作模式，根据最近行为主动建议下一步（如"你刚改完 orchestrator .js，是否要跑 npm test？"）。
+
+- 新增 `scripts/orchestrator/workflow/workflow-observer.js`
+  - 事件采集：file_modified / command_run / test_run / commit / plan_created / plan_approved / session_start / session_end
+  - 自动从文件路径提取模块、扩展名、文件名
+  - 写入 `.claude/skills/left-brain/memory/workflow-events.jsonl`
+  - CLI：`record / recent / stats / cleanup`
+  - 30 天滚动清理
+- 新增 `scripts/orchestrator/workflow/pattern-miner.js`
+  - 从事件序列挖掘关联规则（A 发生后 T 分钟内发生 B）
+  - 支持度 + 置信度过滤
+  - 输出 `.claude/skills/left-brain/memory/workflow-patterns.json`
+  - CLI：`mine / list / stats`
+- 新增 `scripts/orchestrator/workflow/suggestion-engine.js`
+  - 根据当前上下文 + 已学习模式生成下一步建议
+  - 模式建议 + 启发式兜底（未提交改动 → commit、模块改动 → 对应测试、plan 未批准 → /ok）
+  - CLI：`suggest / json / context`
+- 新增 `scripts/orchestrator/workflow/workflow-cli.js`
+  - 统一入口：`suggest / learn / record / status / context`
+- 新增 `.claude/commands/workflow.md`：`/workflow` 命令
+- 新增 npm scripts：`workflow / workflow:learn / workflow:status / test:workflow`
+- 集成 `session-init.sh`
+  - Step 4 后记录 `session_start` 事件
+  - 新增 Step 9 主动展示 workflow 建议
+- 集成 `session-summary.sh`
+  - `save` 命令末尾记录 `session_end` 事件
+- 更新 `.gitignore`：排除 workflow 动态数据和测试临时目录
+- 测试：
+  - `test-workflow-observer.js`：6 项通过
+  - `test-pattern-miner.js`：4 项通过
+  - `test-suggestion-engine.js`：4 项通过
 
 ### 关联
 

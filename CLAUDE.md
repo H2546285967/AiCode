@@ -44,6 +44,7 @@ AiCode/
 ├── scripts/                           ← 核心自动化脚本
 │   ├── evolution/                     ← 🧬 自我进化系统（v1.8：每日扫描 GitHub 学习新能力）
 │   ├── orchestrator/                  ← 智能调度器（v1.9：+ metrics + logger + permissions + withRetry；v2.5.1：M10 复杂度评分驱动 Agent 数量）
+│   │   ├── workflow/                  ← 🧠 个人 workflow 智能化（v2.0 P0-5：学习工作模式，主动建议下一步）
 │   ├── parallel/                      ← worktree 并行
 │   ├── mcp/                           ← 本地 MCP server（v1.9：+ _shared 统一错误）
 │   └── 会话快照/                       ← 快照保存/加载
@@ -132,7 +133,7 @@ AiCode/
 | **二次采样队列** | `/secondary-review status` 查看高风险改动复查队列 |
 | **cron 主动报告** | `npm run cron:report:daily` / `weekly` / `status` |
 | **自动修复** | `/autofix` 或 `node scripts/orchestrator/proactive/auto-fix.js [--llm]` |
-| **互联网搜索** | `agent-reach doctor --json` 看 13 平台状态 |
+| **个人 workflow 建议** | `/workflow` 查看下一步建议，`/workflow learn` 重新学习模式 |
 | **GitHub 搜索** | `gh search repos "关键词" --limit 5` |
 | **B站搜索** | `bili search "关键词" -n 5` |
 | **任意网页** | `curl -s "https://r.jina.ai/URL"` |
