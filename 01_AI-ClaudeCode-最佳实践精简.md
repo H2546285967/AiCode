@@ -2,7 +2,7 @@
 
 > 工作空间通用行为标准。所有 AI 助手和人类开发者共同遵守。
 > 完整功能说明见 `02_工作空间功能介绍.md`，操作细节见各脚本文档。
-> 最后更新：2026-06-23（v1.9：快照模式可控化——`/snap-mode` 会话级切换、save.js 修复 milestone 关键词对显式调用也生效、状态栏显示当前模式）
+> 最后更新：2026-06-25（v2.6.0：补 4 个能力 — 二次采样验证 / cron 主动报告 / LLM 辅助 auto-fix / 个人 workflow 智能化；M10 评分驱动 Agent 数量已闭环）
 
 ---
 
@@ -17,8 +17,9 @@
 | **失败兜底** | LLM/测试/快照失败时自动降级，不崩主流程 |
 | **智能调度** | 复杂任务自动派子代理并行，主会话等完工（2-3 倍提速） |
 | **快照备份** | 重要节点用 `会话快照` 系统备份，重启 1 秒接上（save.js 自动维护索引，**`/snap-mode` 会话级切换 off/manual/milestone/auto 4 模式**） |
-| **自我约束** | AI 完成改动后**自动**跑测试+存快照+写KB+更新文档，不需用户提醒 |
+| **自我约束** | AI 完成改动后**自动**跑测试+存快照+写KB+**同步 4 文档 + CHANGELOG**（`.claude/rules/doc-sync.md` 🔴 大 / 🏁 级别强制触发），不需用户提醒 |
 | **自我进化** | AI 每天自动扫描 GitHub 学习 Claude 爆款项目，分析可行性并本地实现 |
+| **工作流学习** | AI 观察你的工作习惯（observer + pattern-miner + suggestion-engine），`/workflow` 主动建议下一步 |
 | **上下文分片** | `.claudeignore` 排除 2GB+ 数据，理论省 60% token |
 | **QA 子代理** | `.claude/agents/qa-reviewer.md`（独立验证，28/28 测试覆盖） |
 | **后台异步** | `Ctrl+B` 把当前命令放到后台跑，主线继续。`/tasks` 看所有后台任务 |
@@ -111,6 +112,9 @@
 | **加载快照** | `node scripts/会话快照/load.js latest` 或关键词 | 看 `00_ROOT_快速加载会话.md` |
 | **自我进化** | `/evolve run` 或 `npm run evolve` | 扫描 GitHub 爆款并评估可行性 |
 | **防闭门造车** | `/evolve watch` 或 `npm run trend` | 检查已实现的特性是否过时 |
+| **二次采样验证** | `/secondary-review status` / `approve <id>` / `reject <id>` | 复查高风险改动（核心文件 / 根级配置 / 规则文件）队列 |
+| **cron 主动报告** | `npm run cron:report:daily` / `weekly` / `status` | 后台定时日报（9:37）+ 周报（周一 9:42），无人值守期间主动汇报 |
+| **工作流建议** | `/workflow` / `/workflow learn` / `/workflow status` | session-init Step 9 自动展示"接下来该做什么" |
 | **切到后台** | `Ctrl+B` | 把当前命令放到后台跑 |
 | **看后台任务** | `/tasks` | 列所有后台运行的任务 |
 
@@ -169,7 +173,13 @@
 | **Mermaid 归档图** | `global-archive.sh` | 自动生成分任务流图 |
 | **CI 自动回归** | `.github/workflows/test.yml` | push/PR 自动跑 81 项测试 |
 | **Benchmark** | `npm run benchmark` | 真实任务串行 vs 并行 |
-| **自我约束** | `.claude/rules/self-discipline.md` | **AI 完成后自动收尾（无需提醒）** |
+| **自我约束** | `.claude/rules/self-discipline.md` | **AI 完成后自动收尾（无需提醒），🔴 大 / 🏁 级别强制同步 4 文档 + CHANGELOG** |
+| **二次采样验证** | `scripts/orchestrator/reflection/secondary-review.js` | 5 类高风险改动自动入队（核心文件 / 根级配置 / 规则 / >5 文件 / 安全关键词），50/50 测试 |
+| **cron 主动报告** | `scripts/orchestrator/proactive/cron-report.js` | 日报 9:37 / 周报周一 9:42，delta 计算 + 历史裁剪，54/54 测试 |
+| **LLM 辅助 auto-fix** | `scripts/orchestrator/proactive/llm-fix-advisor.js` | test-coverage / deps-outdated / candidate-pending 加 LLM 建议（`--llm` flag），19+23 测试 |
+| **任务复杂度评分** | `dispatcher.js` v2.5.0+ | `scoreComplexity()` 0-10 数字 + 三档阈值（<4 不派 / 4-7 灰区 / >7 派），M10 接入 Agent 数量（1-3） |
+| **自主演进模式** | `/autonomous single\|always` | single 完成一个阶段后停，always 循环；5 道安全闸门 + 5 次失败上限，62+6 测试 |
+| **个人 workflow 智能化** | `scripts/orchestrator/workflow/*.js` | observer / pattern-miner / suggestion-engine 三层架构，`/workflow` 主动建议 |
 
 ---
 
@@ -307,4 +317,24 @@ echo '{"tool_name":"UserPromptSubmit","tool_input":{"prompt":"排查 BUG"}}' | n
 
 ---
 
-_最后更新：2026-06-23 · v1.8 · 自我进化循环系统完成 · 41 项 evolution 测试全过 · 实测 20 个 GitHub 候选_
+## 十二、版本状态（v2.6.0）
+
+| 增量 | 版本 | 状态 |
+|:-----|:-----|:-----|
+| 增量 A 自我反思（v1.9.1）+ 二次采样验证（v2.0.1） | A | ✅ |
+| 增量 B 智能任务规划（v1.9.1）+ plan-bridge 桥接（v1.9.3） | B | ✅ |
+| 增量 C 主动发现问题 A 方案（v1.9.1）+ cron 报告（v2.0.1） | C | ✅ |
+| 增量 D 自动修复 A 方案（v1.9.2）+ LLM advisor（v2.0.1） | D | ✅ |
+| 增量 E 向量语义检索（M6 v2.1.0） | E | ✅ |
+| 增量 F 进化闭环 auto-implement（M7 v2.2.0） | F | ✅ |
+| 增量 G 跨会话状态续接（M8 v2.3.0） | G | ✅ |
+| 增量 H 个人 workflow 智能化（M11 v2.6.0） | H | ✅ |
+| M9 任务复杂度评分（v2.5.0） | M9 | ✅ |
+| M10 评分驱动 Agent 数量（v2.5.1） | M10 | ✅ |
+| M12 LLM-judge 闸门 / M13 失败蒸馏器 / M14 知识图谱反哺 / M15 效果指标 | M12~M15 | ⏳ v3.0.0 规划中 |
+
+> 🚨 **2026-06-25 真实化**：执行层 A~H + M9/M10 全部 ✅，L4 自主"学习" 4 个缺口（LLM-judge / 失败蒸馏 / 知识图谱反哺 / 效果 metric）明确为 v3.0.0 路线（M12~M15）。详见 `04_自我演进路线.md` §0.4。
+
+---
+
+_最后更新：2026-06-25 · v2.6.0 · 个人 workflow 智能化完成 · 200+ 测试全过 · M9/M10 智能调度优化闭环 · M12~M15 v3.0.0 路线明确_
