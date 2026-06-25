@@ -10,6 +10,67 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Added - 阶段 1 准备：12 章瘦身 + 路线分水岭修正（计划中）
+- 见下方各 v2.0.4 / v2.0.5 段位
+
+---
+
+## [v2.0.4] - 2026-06-25
+
+**主题**：演进治理基础设施（P0-0 元能力 — 防多窗口打架）
+
+> **背景**：用户反思 2026-06-25「两个窗口自由发挥去优化相互影响了」+「演进计划执行的只能是一个大的核心（防止两个窗口改的不同）」。本版本就是把这个心智模型制度化。
+
+### 🧠 Added - 演进计划锁（Evolution Lock）
+
+**目标**：解决"多窗口/多会话同时改 04.md / CLAUDE.md / CHANGELOG 导致状态漂移"问题。给多个"内存副本"加 `synchronized`（演进锁）+ `volatile`（单一权威源）。
+
+**实现细节**：
+
+- **单一权威源** `.claude/skills/left-brain/memory/evolution-plan.json`（gitignore）
+  - `current` — 当前阶段（id / title / owner / locked_at / scope / allowed_docs）
+  - `next` — 候选队列（id / title / queued_at / note / priority）
+  - `history` — 完成历史（最近 20 条）
+
+- **锁引擎** `scripts/orchestrator/evolution-lock.js`（v1.0.0）
+  - `status` / `acquire <id> [owner] [title]` / `release [id]` / `complete <id> [summary]` / `queue <id> [title] [note]` / `peek <id>` / `init`
+  - **三层锁机制**：
+    - L1 软锁：窗口启动时主动读 evolution-plan.json
+    - L2 文件锁：acquire 原子写 current.owner + locked_at；5 分钟超时自动释放（可被接管）
+    - L3 hook 强制：未来由 PostToolUse hook 接入（本期未实现，留作未来）
+  - **安全特性**：
+    - 永不 throw（异常 → 退化）
+    - 单文件原子写入（.tmp + rename）
+    - 5 分钟 stale 检测（超时不显式 release 仍可被接管）
+    - 同 id 重入允许；不同 id 冲突报错
+
+- **规则文件** `.claude/rules/evolution-lock.md`
+  - 启动协议：会话启动必读 evolution-plan.json
+  - 工作流：acquire → work → complete
+  - 锁冲突处理矩阵
+  - 禁止项：不允许绕过锁写 04.md / CLAUDE.md / CHANGELOG
+
+- **session-init Step 0** 集成：所有会话启动自动显示锁状态 + 冲突警告
+
+- **package.json 集成**：
+  - `test:evo-lock` / `evo-lock` / `evo-lock:status` / `evo-lock:complete`
+  - 主 test 链追加 `test-evolution-lock.js`
+
+- **测试** `scripts/orchestrator/test-evolution-lock.js`：**12/12 通过**
+  - loadState 默认值 / saveState 原子写入 / status 空状态 / acquire 成功 / acquire 冲突 / acquire 接管 stale / release 成功 / release id 不匹配 / complete 写 history / queue + 重复跳过 / peek 三档 / CLI 端到端
+
+- **初始化**：M13 / M14 / M15 已入 next 队列；当前 current = P0-0-evo-governance
+
+**Files**：
+- 新增 `scripts/orchestrator/evolution-lock.js`
+- 新增 `scripts/orchestrator/test-evolution-lock.js`
+- 新增 `.claude/rules/evolution-lock.md`
+- 修改 `.claude/skills/left-brain/scripts/session-init.sh`（加 Step 0）
+- 修改 `.gitignore`（排除 evolution-plan.json）
+- 修改 `package.json`（加 npm scripts + 测试链）
+
+**关联**：`.claude/rules/evolution-lock.md` · `.claude/rules/autonomous.md` · 增量 P0-0 · 后续 M13/M14/M15 启动前置条件
+
 ---
 
 ## [v2.2.2] - 2026-06-25

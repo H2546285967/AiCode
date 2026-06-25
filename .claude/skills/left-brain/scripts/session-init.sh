@@ -13,6 +13,22 @@ echo "🧠 左脑会话初始化"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
+# P0-0 演进治理：启动时检查演进锁状态
+echo "🔒 Step 0: 演进计划锁状态（P0-0 元能力）"
+WORKSPACE_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
+if [ -n "$WORKSPACE_ROOT" ] && [ -f "$WORKSPACE_ROOT/scripts/orchestrator/evolution-lock.js" ]; then
+  LOCK_OUTPUT=$(cd "$WORKSPACE_ROOT" && node scripts/orchestrator/evolution-lock.js status 2>/dev/null || echo "⚠️ 锁引擎暂时不可用")
+  echo "$LOCK_OUTPUT" | sed 's/^/  /'
+  # 如果锁被占用且不是当前会话，提示
+  if echo "$LOCK_OUTPUT" | grep -q "锁被占用"; then
+    echo ""
+    echo "  ⚠️ 检测到其他窗口在演进锁内，本会话应聚焦当前任务或询问是否等/换任务"
+  fi
+else
+  echo "  ⚠️ evolution-lock.js 未找到（P0-0 未部署）"
+fi
+echo ""
+
 echo "📚 Step 1: 加载知识索引"
 if [ -f "$MEMORY_FILE" ]; then
     knowledge_count=$(grep -E '知识总数:' "$MEMORY_FILE" | sed 's/.*知识总数: //')
@@ -58,7 +74,6 @@ echo "  会话记录: $SESSIONS_DIR"
 echo ""
 
 # v2.0 P0-5: 记录会话开始事件
-WORKSPACE_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
 if [ -n "$WORKSPACE_ROOT" ] && [ -f "$WORKSPACE_ROOT/scripts/orchestrator/workflow/workflow-cli.js" ]; then
     SESSION_ID="session_$(date '+%Y%m%d-%H%M%S')"
     node "$WORKSPACE_ROOT/scripts/orchestrator/workflow/workflow-cli.js" record session_start "{\"source\":\"session-init\"}" "{\"session\":\"$SESSION_ID\"}" >/dev/null 2>&1
