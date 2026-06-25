@@ -43,7 +43,7 @@ AiCode/
 │
 ├── scripts/                           ← 核心自动化脚本
 │   ├── evolution/                     ← 🧬 自我进化系统（v1.8：每日扫描 GitHub 学习新能力）
-│   ├── orchestrator/                  ← 智能调度器（v1.9：+ metrics + logger + permissions + withRetry；v2.5.1：M10 复杂度评分驱动 Agent 数量；v2.0.2：+ audit 子系统）
+│   ├── orchestrator/                  ← 智能调度器（v1.9：+ metrics + logger + permissions + withRetry；v2.5.1：M10 复杂度评分驱动 Agent 数量；v2.0.2：+ audit 子系统；v3.0.0：M14 知识图谱反哺 + recallBeforeDispatch 钩子）
 │   │   ├── workflow/                  ← 🧠 个人 workflow 智能化（v2.0 P0-5：学习工作模式，主动建议下一步）
 │   │   ├── audit/                     ← 🔍 工程自查/审计（v2.0.2 P0-6：6 段浅层报告引擎 + /audit 命令）
 │   ├── parallel/                      ← worktree 并行

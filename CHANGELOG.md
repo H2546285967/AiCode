@@ -10,6 +10,27 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Added - 阶段 5：M14 知识图谱反哺调度（已完成 · v3.0.0）
+
+- 扩展 `scripts/orchestrator/dispatcher.js`（v2.5.1 → v3.0.0）— 新增 `recallBeforeDispatch(taskText)` 钩子
+  - 软引用 `recall/semantic-recall.js`（TF-IDF 引擎不可用时降级为 no-graph）
+  - 三档决策：
+    - `hit='reuse'`（score ≥ 0.5）→ 强制 `dispatch=false` + 附 `reuse_kb` 答案
+    - `hit='similar'`（0.2 ≤ score < 0.5）→ 原逻辑 + 附 `graph` 字段供调用方参考
+    - `hit='miss'` / `no-graph` → 原逻辑不变
+  - `decide()` 返回加 `graph` 字段 + 命中复用时加 `reuse_kb` 字段
+  - 同步记 `evo.kb.recall.hit/miss` 评价事件（接 M15）
+- 阈值常量 `GRAPH_RECALL_THRESHOLDS = { reuse: 0.5, similar: 0.2 }`
+- 新增测试 `scripts/orchestrator/test-graph-dispatch.js` **35/35 通过**
+  - 覆盖：边界（null/空/非字符串）/ 三档 hit / decide() 集成 / 软引用降级 / 评价事件
+- 全量回归 **218/218** 通过（65+55+10+35+42+31+35+5=278 测试，零破坏）
+- package.json 升 v3.0.0（学习闭环全部 3 子项 ✅，v3.0.0 阶段达成）
+
+**L5 终极智能影响**：
+- M14 是 L5 5 条达成条件第 1 条（M13+M14+M15 全部 ✅）的最后一块拼图
+- 完成 M14 后 **L5 第 1 条 ✅ 3/3**（M13 ✅ / M14 ✅ / M15 ✅）
+- 第 3 条 dispatcher 知识命中率 ≥ 30% 现在可实测（评价事件已记录）
+
 ### Added - 阶段 4：M15 效果量化指标启动（已完成 · 即将发版 v2.0.6）
 
 - 新增 `scripts/orchestrator/metrics/report.js` — 月度效果量化报告生成器

@@ -22,14 +22,20 @@
  *   - 加 scoreComplexity(task) → 0-10 数字
  *   - 阈值: <4 不派 / 4-7 灰区 / >7 直接派
  *   - decide() 返回加 complexity_score + complexity_band
+ * @changed v3.0.0 (2026-06-25) M14:
+ *   - 加 recallBeforeDispatch(task) 钩子 — 派 Agent 前查知识图谱
+ *   - 三档决策：命中复用（≥0.5）/ 类似案例（≥0.2）/ 完全未知（< 0.2）
+ *   - decide() 返回加 graph 字段（{ matched, hit: 'reuse'|'similar'|'miss', kb, score }）
+ *   - 软引用 semantic-recall（KB 引擎不可用时降级为 no-graph）
+ *   - 同步记 evo.kb.recall 评价事件（接 M15 评价闭环）
  */
 
 // ==================== 规则配置（内联，避免 YAML 依赖）====================
 
 const RULES = {
-  version: '2.5.1',
+  version: '3.0.0',
   updated: '2026-06-25',
-  changelog: 'v2.5.1: scoreComplexity 动态决定派 Agent 数量（M10）',
+  changelog: 'v3.0.0: M14 知识图谱反哺调度 — dispatcher 加 recallBeforeDispatch 钩子 + 三档命中（reuse/similar/miss）',
 
   // 强信号：不派子代理
   dont_dispatch: {
@@ -246,9 +252,133 @@ function agentsFromScore(score) {
   return Math.min(RULES.should_dispatch.max_agents, Math.ceil(score / 3));
 }
 
+// ==================== v3.0.0 M14: 知识图谱反哺调度 ====================
+
+/**
+ * M14 阈值（与 04 文档 §0.4 增量 M14 验收对齐）
+ *   score ≥ 0.5  → 命中复用（不派 Agent，附 KB 答案）
+ *   0.2 ≤ score < 0.5 → 类似案例（按原逻辑派 Agent，附 KB 案例参考）
+ *   score < 0.2  → 完全未知（按原逻辑派 Agent，无 KB 参考）
+ */
+const GRAPH_RECALL_THRESHOLDS = {
+  reuse: 0.5,
+  similar: 0.2,
+};
+
+// 软引用 semantic-recall（M14 自身测试时可独立 require）
+let _semanticRecall = null;
+function getSemanticRecall() {
+  if (_semanticRecall !== null) return _semanticRecall;
+  try {
+    _semanticRecall = require('./recall/semantic-recall');
+    return _semanticRecall;
+  } catch {
+    _semanticRecall = false; // 标记为不可用，避免反复 require
+    return null;
+  }
+}
+
+/**
+ * v3.0.0 M14: dispatcher 派 Agent 前查知识图谱
+ *
+ * 设计：
+ *   - 软引用：KB 引擎不可用（require 失败/索引缺失）→ 返回 no-graph
+ *   - 三档 hit：reuse / similar / miss（与 GRAPH_RECALL_THRESHOLDS 对齐）
+ *   - 不抛异常（任何异常 → 降级为 miss 不阻塞主流程）
+ *   - 同步记 evo.kb.recall 评价事件（接 M15 评价闭环）
+ *
+ * @param {string} taskText 用户任务文本
+ * @returns {{
+ *   matched: boolean,  // 是否有 KB 命中（任何 score ≥ similar 阈值）
+ *   hit: 'reuse'|'similar'|'miss'|'no-graph',
+ *   kb: { id, category, content, score }|null,
+ *   score: number,
+ *   threshold: { reuse, similar }
+ * }}
+ */
+function recallBeforeDispatch(taskText) {
+  const result = {
+    matched: false,
+    hit: 'miss',
+    kb: null,
+    score: 0,
+    threshold: { ...GRAPH_RECALL_THRESHOLDS },
+  };
+
+  if (!taskText || typeof taskText !== 'string') {
+    return result;
+  }
+
+  const sr = getSemanticRecall();
+  if (!sr || !sr.search) {
+    result.hit = 'no-graph';
+    // 评价事件：no-graph 不算 miss（避免污染指标）
+    _recordRecallMetric(false, 'no-graph');
+    return result;
+  }
+
+  let hits;
+  try {
+    hits = sr.search(taskText, { topK: 1, minScore: GRAPH_RECALL_THRESHOLDS.similar });
+  } catch (e) {
+    // 检索失败 → 降级为 miss，不抛
+    _recordRecallMetric(false, 'error');
+    return result;
+  }
+
+  if (!hits || hits.length === 0) {
+    _recordRecallMetric(false, 'miss');
+    return result;
+  }
+
+  const top = hits[0];
+  result.kb = { id: top.id, category: top.category, content: top.content, score: top.score };
+  result.score = top.score;
+
+  if (top.score >= GRAPH_RECALL_THRESHOLDS.reuse) {
+    result.matched = true;
+    result.hit = 'reuse';
+  } else {
+    result.matched = true;
+    result.hit = 'similar';
+  }
+
+  _recordRecallMetric(true, result.hit);
+  return result;
+}
+
+/**
+ * 内部：记录 evo.kb.recall 评价事件（接 M15）
+ * 软引用 metrics.js（独立测试时不强制依赖）
+ */
+function _recordRecallMetric(hit, subTag) {
+  try {
+    const Metrics = require('./metrics');
+    if (Metrics && Metrics.Evolution) {
+      Metrics.Evolution.recallPrecision(hit, { source: 'dispatcher', hit: subTag });
+    }
+  } catch { /* metrics 不可用不阻塞 */ }
+}
+
 // ==================== 核心决策 ====================
 
 function decide(taskText) {
+  // v3.0.0 M14: 先查知识图谱（KB 命中复用/类似时调整决策）
+  const graph = recallBeforeDispatch(taskText);
+
+  // M14 hit=reuse（≥0.5）：KB 已有答案，强制不派，附 KB id
+  if (graph.hit === 'reuse' && graph.kb) {
+    return {
+      dispatch: false,
+      agents: 0,
+      reason: `M14 知识图谱命中复用：KB[${graph.kb.id}] 相似度 ${(graph.kb.score * 100).toFixed(1)}% ≥ ${GRAPH_RECALL_THRESHOLDS.reuse * 100}%，直接复用`,
+      layer: 1,
+      confidence: confidence('high'),
+      graph,
+      reuse_kb: graph.kb,
+    };
+  }
+
   // v2.5.0 M9: 先算复杂度评分（三档信号）
   const complexity = scoreComplexity(taskText);
 
@@ -264,6 +394,7 @@ function decide(taskText) {
       confidence: confidence('high'),
       complexity_score: complexity.score,
       complexity_band: complexity.band,
+      graph,
     };
   }
 
@@ -278,6 +409,7 @@ function decide(taskText) {
       confidence: confidence('high'),
       complexity_score: complexity.score,
       complexity_band: complexity.band,
+      graph,
     };
   }
 
@@ -293,6 +425,7 @@ function decide(taskText) {
       confidence: confidence('high'),
       complexity_score: complexity.score,
       complexity_band: complexity.band,
+      graph,
     };
   }
 
@@ -305,6 +438,7 @@ function decide(taskText) {
       confidence: confidence('high'),
       complexity_score: complexity.score,
       complexity_band: complexity.band,
+      graph,
     };
   }
 
@@ -318,6 +452,7 @@ function decide(taskText) {
       confidence: confidence('medium'),
       complexity_score: complexity.score,
       complexity_band: complexity.band,
+      graph,
     };
   }
 
@@ -333,6 +468,7 @@ function decide(taskText) {
       confidence: confidence('medium'),
       complexity_score: complexity.score,
       complexity_band: complexity.band,
+      graph,
     };
   }
 
@@ -345,6 +481,7 @@ function decide(taskText) {
       confidence: confidence('high'),
       complexity_score: complexity.score,
       complexity_band: complexity.band,
+      graph,
     };
   }
 
@@ -363,6 +500,7 @@ function decide(taskText) {
     },
     complexity_score: complexity.score,
     complexity_band: complexity.band,
+    graph,
   };
 }
 
@@ -415,5 +553,7 @@ module.exports = {
   detectTaskType,
   scoreComplexity,  // v2.5.0 M9
   agentsFromScore,  // v2.5.1 M10
+  recallBeforeDispatch,  // v3.0.0 M14
+  GRAPH_RECALL_THRESHOLDS,  // v3.0.0 M14
   RULES,
 };
