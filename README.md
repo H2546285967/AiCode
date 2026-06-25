@@ -67,6 +67,14 @@ cd /path/to/AiCode
 bash .workspace/setup.sh     # 一键适配当前环境
 ```
 
+> ⚠️ **迁移注意（2026-06-25 修复）**：`.claude/settings.local.json` 里的所有 hooks **必须使用相对路径**（`scripts/...` 或 `.claude/...`），**禁止使用绝对路径**（如 `H:/AI-han/AiCode/...`）。绝对路径会导致别人 clone 本工程时 SessionStart 报"没有这样的文件或目录"错误。
+>
+> 自检命令：
+> ```bash
+> grep -n "H:\|/c/Users\|/Users/" .claude/settings.local.json
+> ```
+> 输出应为空。如有匹配项，改成相对路径即可。
+
 ### 新建项目
 ```bash
 # Claude Code 内
@@ -241,6 +249,7 @@ AiCode/
 - **文件读取**：按需读取，优先 Grep/Glob 搜索
 - **输出精炼**：代码直接可用，不输出教学式代码
 - **任务切换**：建议先清空旧上下文
+- **跨平台兼容**：所有配置/脚本/hooks 使用相对路径，禁止写死绝对路径（如 `H:/...`）
 
 ---
 
