@@ -62,6 +62,13 @@ EOF
     if [ -f "${SCRIPT_DIR}/state-snapshot.js" ]; then
         node "${SCRIPT_DIR}/state-snapshot.js" save "${snapshot_args[@]}" 2>&1 | head -5 || true
     fi
+
+    # v2.5.1+: 同步保存 ROOT 快速加载快照，确保 00_ROOT_快速加载会话.md 始终最新
+    # 自主模式下每次选题完成后都需要落盘到 ROOT 索引
+    local snapshot_js="${SCRIPT_DIR}/../../../../scripts/会话快照/save.js"
+    if [ -f "$snapshot_js" ]; then
+        node "$snapshot_js" "$summary" "auto-stop-milestone" --force 2>&1 | tail -3 || true
+    fi
 }
 
 load_summary() {

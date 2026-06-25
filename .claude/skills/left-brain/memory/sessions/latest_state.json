@@ -1,11 +1,12 @@
 {
   "version": "2.3.0",
-  "saved_at": "2026-06-24T23:54:37.399Z",
-  "session_id": "20260624235437",
-  "summary": "[已完成] 自主模式规则补充：新增 .claude/rules/autonomous.md，规定每个选题完成后必须保存快照、进入下一个选题前 /clear 清理上下文。文档同步 04.md/CLAUDE.md/CHANGELOG.md。npm test 全过。下一步：v2.0 P0-5 个人 workflow 智能化。",
+  "saved_at": "2026-06-25T00:09:01.252Z",
+  "session_id": "20260625000901",
+  "summary": "[已完成] M10 + 自主模式规则 + save.js CRLF 修复 + session-summary 联动修复。全量 npm test 通过。下一步：v2.0 P0-5 个人 workflow 智能化。 -m v2.0 P0-5 个人 workflow 智能化",
   "plan_status": "none",
   "current_plan": null,
   "recent_files_modified": [
+    ".claude/rules/autonomous.md",
     ".claude/skills/left-brain/memory/sessions/latest_state.json",
     ".claude/skills/left-brain/memory/sessions/latest_summary.md",
     "CHANGELOG.md",
@@ -67,5 +68,5 @@
   },
   "proactive_anomalies": [],
   "recent_reflections": [],
-  "next_action": null
+  "next_action": "v2.0 P0-5 个人 workflow 智能化"
 }

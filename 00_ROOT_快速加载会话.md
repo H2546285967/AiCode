@@ -38,7 +38,10 @@ node scripts/会话快照/load.js v1.1
 
 | 状态 | 时间 | 中文标签 | 标题 | 启动 |
 |:-----|:-----|:---------|:-----|:-----|
-| ⭐ **最新** | 2026-06-25 01:23 | auto-stop-milestone | Stop自动: doc-sync-rule: 04_自我演进路线.md 完成 E/F/G/M9 状æ | [▶ 复制](#启动-auto-stop-milestone) |
+| ⭐ **最新** | 2026-06-25 08:09 | auto-stop-milestone | [已完成] M10 + 自主模式规则 + save.js CRLF 修复 + session-summary 联动修复。全量 npm test 通过。下一步：v2.0 P0-5 个人 workflow 智能化。 -m v2.0 P0-5 个人 workflow 智能化 | [▶ 复制](#启动-auto-stop-milestone) |
+|                    | 2026-06-25 08:02 | auto-stop-milestone | [已完成] M10 dispatcher v2.5.1 + 自主模式规则补充。修复 save.js CRLF 导致 00_ROOT_快速加载会话.md 不更新问题，session-summary.sh save 现在同步调用 save.js --force。下一步：v2.0 P0-5 个人 workflow 智能化。 -m v2.0 P0-5 个人 workflow 智能化 | [▶ 复制](#启动-auto-stop-milestone) |
+|                    | 2026-06-25 08:00 | test-crlf-fix | 测试更新 ROOT CRLF 修复 | [▶ 复制](#启动-test-crlf-fix) |
+|                    | 2026-06-25 01:23 | auto-stop-milestone | Stop自动: doc-sync-rule: 04_自我演进路线.md 完成 E/F/G/M9 状æ | [▶ 复制](#启动-auto-stop-milestone) |
 |                    | 2026-06-25 01:16 | 首次跑通 | evolve | [▶ 复制](#启动-首次跑通) |
 |                    | 2026-06-24 23:58 | milestone-M8 | M8 state-snapshot 完成（自主模式三连） | [▶ 复制](#启动-milestone-M8) |
 |                    | 2026-06-24 23:27 | milestone-M7 | M7 auto-implement 闭环完成（自主模式） | [▶ 复制](#启动-milestone-M7) |
@@ -111,6 +114,54 @@ node scripts/会话快照/load.js latest
 
 ---
 ### <a id="启动-auto-stop-milestone"></a>📦 auto-stop-milestone（最新）
+
+**时间**：2026-06-25 08:09:03
+**中文标签**：auto-stop-milestone
+**快照文件**：`.claude/snapshots/2026-06-25-08-09-03-auto-stop-milestone.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-25-08-09-03-auto-stop-milestone.md。
+标题: [已完成] M10 + 自主模式规则 + save.js CRLF 修复 + session-summary 联动修复。全量 npm test 通过。下一步：v2.0 P0-5 个人 workflow 智能化。 -m v2.0 P0-5 个人 workflow 智能化
+标签: auto-stop-milestone
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-auto-stop-milestone"></a>📦 auto-stop-milestone
+
+**时间**：2026-06-25 08:02:44
+**中文标签**：auto-stop-milestone
+**快照文件**：`.claude/snapshots/2026-06-25-08-02-44-auto-stop-milestone.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-25-08-02-44-auto-stop-milestone.md。
+标题: [已完成] M10 dispatcher v2.5.1 + 自主模式规则补充。修复 save.js CRLF 导致 00_ROOT_快速加载会话.md 不更新问题，session-summary.sh save 现在同步调用 save.js --force。下一步：v2.0 P0-5 个人 workflow 智能化。 -m v2.0 P0-5 个人 workflow 智能化
+标签: auto-stop-milestone
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-test-crlf-fix"></a>📦 test-crlf-fix
+
+**时间**：2026-06-25 08:00:11
+**中文标签**：test-crlf-fix
+**快照文件**：`.claude/snapshots/2026-06-25-08-00-11-test-crlf-fix.md`
+
+```
+我们之前的工作已快照在 .claude/snapshots/2026-06-25-08-00-11-test-crlf-fix.md。
+标题: 测试更新 ROOT CRLF 修复
+标签: test-crlf-fix
+
+<填入你想继续做的事>
+```
+
+---
+
+### <a id="启动-auto-stop-milestone"></a>📦 auto-stop-milestone
 
 **时间**：2026-06-25 01:23:42
 **中文标签**：auto-stop-milestone

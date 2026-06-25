@@ -94,6 +94,18 @@
 - 更新 `04_自我演进路线.md` 自主模式段，引用 `.claude/rules/autonomous.md`
 - 更新 `CLAUDE.md` 规则文件清单，新增 `autonomous.md` 行
 
+### 🔧 Fixed - 快照系统修复（Windows CRLF + session-summary 联动）
+
+**背景**：`session-summary.sh save` 只更新左脑会话摘要，不更新 `00_ROOT_快速加载会话.md`；且 `save.js` 在 Windows CRLF 文件上找不到 `\n---\n` 分隔线，导致 ROOT 索引长期不更新。
+
+- 修复 `scripts/会话快照/save.js`
+  - 读取 `00_ROOT_快速加载会话.md` 时检测并统一 CRLF → LF
+  - 写回时保持原文件换行符风格（CRLF 文件仍写 CRLF）
+  - `updateQuickLoad()` 现在能正常更新 ROOT 索引
+- 修改 `.claude/skills/left-brain/scripts/session-summary.sh`
+  - `save` 命令末尾同步调用 `save.js --force`，确保每次会话摘要保存时 ROOT 索引也更新
+  - 自主模式下选题完成后保存快照，00_ROOT 同步落盘
+
 ### Files
 
 - 新增：
@@ -121,6 +133,9 @@
   - `scripts/orchestrator/test-failure-paths.js`（版本号正则匹配）
   - `04_自我演进路线.md`（+ 自主模式选题切换规则）
   - `CLAUDE.md`（+ autonomous.md 规则清单）
+  - `scripts/会话快照/save.js`（CRLF 兼容 + 保持原换行符）
+  - `.claude/skills/left-brain/scripts/session-summary.sh`（save 命令同步调用 save.js --force）
+  - `00_ROOT_快速加载会话.md`（索引已更新）
 
 ### 关联
 

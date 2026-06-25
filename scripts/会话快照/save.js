@@ -343,6 +343,10 @@ function updateQuickLoad(d) {
   }
   let content = fs.readFileSync(QUICK_LOAD_FILE, 'utf8');
 
+  // v2.5.1: 兼容 Windows CRLF 换行
+  const hasCRLF = content.includes('\r\n');
+  if (hasCRLF) content = content.replace(/\r\n/g, '\n');
+
   const anchorId = '启动-' + d.tag.replace(/[^\w一-龥]/g, '-');
   const tableHeader = '| 状态 | 时间 | 中文标签 | 标题 | 启动 |';
   const headerIdx = content.indexOf(tableHeader);
@@ -427,6 +431,9 @@ ${nextTaskLine}${levelHint}
 
   content = content.replace(/（最新）\n/g, '\n').replace(/（最新） /g, ' ');
   content = content.substring(0, insertPos) + newSegment + content.substring(insertPos);
+
+  // v2.5.1: 保持原文件换行符风格
+  if (hasCRLF) content = content.replace(/\n/g, '\r\n');
 
   fs.writeFileSync(QUICK_LOAD_FILE, content, 'utf8');
   console.log(`✅ 索引已更新: 00_ROOT_快速加载会话.md`);
