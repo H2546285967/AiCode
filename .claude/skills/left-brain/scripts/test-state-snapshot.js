@@ -199,10 +199,43 @@ section('8. 字段完整性');
       'plan_status', 'current_plan',
       'recent_files_modified', 'pending_todos', 'kb_recent',
       'autonomous_state', 'proactive_anomalies', 'next_action',
+      'stage',
     ];
     for (const k of required) {
       assert(k in saved, `字段 ${k} 存在`);
     }
+  } finally { restore(); }
+}
+
+// ==================== 9. stage 字段保留 ====================
+section('9. stage 字段保留');
+
+{
+  backup();
+  try {
+    // 先模拟 runner 写入 stage
+    fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
+    const fake = {
+      version: '2.3.0',
+      saved_at: new Date().toISOString(),
+      session_id: 'test',
+      summary: 'pre',
+      stage: {
+        current: 'stage-X',
+        status: 'in_progress',
+        completed: ['stage-0'],
+        next: 'stage-Y',
+        failure_count: 1,
+        started_at: new Date().toISOString(),
+      },
+    };
+    fs.writeFileSync(STATE_FILE, JSON.stringify(fake, null, 2));
+
+    // 再调用 save，stage 应该被保留
+    const saved = save('after runner');
+    assert(saved.stage.current === 'stage-X', 'save 后 stage.current 保留');
+    assert(saved.stage.next === 'stage-Y', 'save 后 stage.next 保留');
+    assert(saved.stage.completed.length === 1, 'save 后 stage.completed 保留');
   } finally { restore(); }
 }
 

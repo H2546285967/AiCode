@@ -225,7 +225,7 @@ clearState();
 // 帮助
 {
   const out = execFileSync('node', ['autonomous.js', 'help'], { cwd: __dirname, encoding: 'utf8', stdio: 'pipe' });
-  assert(out.includes('autonomous.js v2.0.0'), 'help 显示版本');
+  assert(out.includes('autonomous.js v2.1.0'), 'help 显示版本');
   assert(out.includes('on') && out.includes('off'), 'help 列出子命令');
 }
 

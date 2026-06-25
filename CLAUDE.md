@@ -141,8 +141,9 @@ AiCode/
 | 重置会话 | `/clear` |
 | **切快照模式** | `/snap-mode off\|manual\|milestone\|auto\|reset` |
 | **强制存快照** | `/snap-save "标题" "标签"` |
-| **自主模式 ON** | `/autonomous "我离开1小时"`（开关 ON，Claude 自主开发不询问） |
-| **自主模式 OFF** | `/autonomous-stop`（回到正常模式） |
+| **自主模式 ON** | `/autonomous "我离开1小时"`（开关 ON，可继续启动 runner 无人值守） |
+| **自主模式 OFF** | `/autonomous-stop` 或 `npm run autonomous:off`（回到正常模式） |
+| **启动自主 runner** | `npm run autonomous:start "原因"`（ON + 启动循环） / `npm run autonomous:runner`（已 ON 时启动） |
 | **文档漂移检查** | `npm run doc:check` 或扫 04.md 是否还写"计划中" |
 
 ---

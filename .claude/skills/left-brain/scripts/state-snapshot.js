@@ -180,6 +180,18 @@ function save(summary, opts = {}) {
   ensureDir(SESSIONS_DIR);
   const sessionId = new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 14);
 
+  // 保留 runner 写入的 stage 状态（不要覆盖）
+  const existing = readJSON(STATE_FILE, {});
+  const stage = existing.stage || {
+    current: null,
+    status: 'idle',
+    completed: [],
+    next: opts.nextAction || null,
+    failure_count: 0,
+    started_at: null,
+  };
+  if (opts.nextAction) stage.next = opts.nextAction;
+
   const state = {
     version: VERSION,
     saved_at: now(),
@@ -193,6 +205,7 @@ function save(summary, opts = {}) {
     proactive_anomalies: collectAnomalies(),
     recent_reflections: collectReflections(),
     next_action: opts.nextAction || null,
+    stage,
   };
 
   fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
@@ -220,6 +233,18 @@ function renderMarkdown(s) {
     md += `  - ${s.current_plan.name || ''} (${s.current_plan.completed_steps || 0}/${s.current_plan.total_steps || '?'} steps)\n`;
   }
   md += `\n## 对话摘要\n${s.summary}\n\n`;
+
+  md += `## 阶段状态\n`;
+  if (s.stage) {
+    md += `- 当前: ${s.stage.current || '(无)'}\n`;
+    md += `- 状态: ${s.stage.status || 'idle'}\n`;
+    md += `- 已完: ${(s.stage.completed || []).length} 个\n`;
+    md += `- 下一: ${s.stage.next || '(无)'}\n`;
+    md += `- 失败: ${s.stage.failure_count || 0} 次\n`;
+  } else {
+    md += `(无)\n`;
+  }
+  md += `\n`;
 
   md += `## 关键决策\n`;
   md += `<!-- 由 AI 在保存前填充 -->\n\n`;
@@ -283,6 +308,10 @@ function print(s) {
   console.log('━'.repeat(60));
   console.log(`🤖 自主模式: ${s.autonomous_state.enabled ? 'ON' : 'OFF'}${s.autonomous_state.reason ? ' (' + s.autonomous_state.reason + ')' : ''}`);
   console.log(`📋 Plan: ${s.plan_status}${s.current_plan ? ' — ' + (s.current_plan.name || '') : ''}`);
+  if (s.stage) {
+    console.log(`🎯 阶段: ${s.stage.current || '(无)'} [${s.stage.status || 'idle'}]`);
+    console.log(`   已完成: ${(s.stage.completed || []).length} 个 | 下一步: ${s.stage.next || '(无)'} | 失败: ${s.stage.failure_count || 0}`);
+  }
   console.log(`📁 最近改动: ${s.recent_files_modified.length} 个`);
   if (s.recent_files_modified.length > 0) {
     for (const f of s.recent_files_modified.slice(0, 5)) console.log(`     - ${f}`);

@@ -22,13 +22,14 @@
  *   - ON 时带启用时间戳（便于追溯何时进入）
  *   - 永不 throw
  *
- * @since v2.0.0 (2026-06-24)
+ * @since v2.1.0 (2026-06-25) — 增加 runner 入口（start/runner）
  * @source 03_版本迭代计划.md §五 v2.0 P0-1
  * @source .claude/memory/autonomous-mode.md
  */
 
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 
 // ── 配置 ─────────────────────────────────────────────
 
@@ -166,6 +167,38 @@ if (require.main === module) {
         console.log('🙋 已切回正常模式（逐步确认）');
         break;
       }
+      case 'start': {
+        const s = enable({ reason });
+        console.log('🤖 自主模式已开启，启动 runner...');
+        if (s.reason) console.log(`   原因: ${s.reason}`);
+        console.log(`   开启时间: ${s.enabled_at}`);
+        // 启动 runner 循环（阻塞直到 runner 结束）
+        const runnerPath = path.join(__dirname, 'autonomous-runner.js');
+        const child = spawn('node', [runnerPath, 'run'], {
+          cwd: WORKSPACE_ROOT,
+          stdio: 'inherit',
+        });
+        child.on('exit', (code) => {
+          process.exit(code);
+        });
+        // 此处不 break，因为 spawn 是异步的，已经通过 child.on('exit') 控制退出
+        return;
+      }
+      case 'runner': {
+        if (!isEnabled()) {
+          console.log('🙋 自主模式当前为 OFF，无法启动 runner。请先执行 start 或 on');
+          process.exit(1);
+        }
+        const runnerPath = path.join(__dirname, 'autonomous-runner.js');
+        const child = spawn('node', [runnerPath, 'run'], {
+          cwd: WORKSPACE_ROOT,
+          stdio: 'inherit',
+        });
+        child.on('exit', (code) => {
+          process.exit(code);
+        });
+        return;
+      }
       case 'toggle': {
         const r = toggle({ reason });
         if (r.action === 'on') {
@@ -191,11 +224,13 @@ if (require.main === module) {
       }
       default: {
         console.log(`
-autonomous.js v2.0.0 — 自主演进模式开关
+autonomous.js v2.1.0 — 自主演进模式开关 + runner 入口
 
 用法:
-  node autonomous.js on [reason]       # 开启自主模式
+  node autonomous.js on [reason]       # 开启自主模式（不启动 runner）
   node autonomous.js off              # 关闭
+  node autonomous.js start [reason]   # 开启并启动 runner 循环
+  node autonomous.js runner           # 直接启动 runner（需已开启）
   node autonomous.js toggle [reason]  # 切换
   node autonomous.js status           # 查看状态
   node autonomous.js is-enabled       # 机器读（exit 0=ON, 1=OFF）
@@ -207,6 +242,7 @@ ON 时行为:
   ✅ 关键决策写入快照不询问
   ✅ 完成后自动 commit（安全时）
   ✅ session-init 顶部显示 🤖
+  ✅ runner 自动循环执行阶段
 
 OFF 时行为（默认）:
   🙋 每完成一个功能 → 询问
