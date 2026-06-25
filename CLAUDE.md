@@ -148,6 +148,78 @@ AiCode/
 
 ---
 
+## 🎯 演进计划怎么来 / 怎么判断（外层摘要 · 完整版见 `04_自我演进路线.md` §0.7）
+
+> **用户最常问 3 个问题**：
+> 1. "演进计划的任务从哪儿来？"
+> 2. "什么时候加新任务？"
+> 3. "凭啥选这个不选那个？"
+
+### 📥 4 个候选来源 → 1 个队列
+
+```
+04.md §0.4 增量定义        ──┐
+/evolve candidates.json     ──┼──→ queue-bridge.js ──→ evolution-plan.json
+  (suggestion=adopt)         │    (npm run queue:sync)  (next 队列)
+/audit backlog 段           ──┤
+左脑偏好/纠正              ──┘
+```
+
+| 来源 | 触发 | 产物 | 谁决定 |
+|:-----|:-----|:-----|:-------|
+| **04.md §0.4 增量定义** | AI 起草 + 用户确认 | 增量段（含验收 / ROI）| 用户主导 |
+| **/evolve GitHub 扫描** | `npm run evolve:scan + :analyze` | `data/github/candidates.json`（adopt 才入）| AI 跑 + 用户审 |
+| **/audit 工程自审** | `npm run audit` | 04.md 末尾 backlog 段 | AI 跑 + 用户整合 |
+| **左脑偏好/纠正** | 用户对话中纠正 AI | `left-brain.sh preference "..."` | 用户主导 |
+
+### 🚦 怎么"加一个新任务"（3 种方法）
+
+```bash
+# 方法 1：最规范（AI 起草 + 用户确认）
+# 写好 "## 增量 M17：..." + 验收 + ROI，然后告诉我 "M17 入队"
+
+# 方法 2：最快（直接命令）
+node scripts/orchestrator/evolution-lock.js queue M17-token-budget "token 预算管理" -p P1
+
+# 方法 3：让 bridge 自动汇聚（先 dry-run 看）
+npm run queue:sync:dry   # 看准备入队哪些
+npm run queue:sync        # 确认入队
+```
+
+### 🔍 怎么判断"该不该加"
+
+| 维度 | 谁判断 |
+|:-----|:-------|
+| 相关性（跟自身需求匹配）| 用户 |
+| 可落地性（人手/技术栈）| 用户 |
+| 优先级（P0/P1/P2）| /audit 或 /evolve 自动 + 用户调整 |
+| 重复性（是否已在 history）| bridge dedupe（自动）|
+| **是否解决真实问题** | **用户（机器不知道你的痛点）**|
+
+### ⚖️ 版本号怎么决定
+
+| 触发 | 版本号 |
+|:-----|:------:|
+| v3.0.x 修小 bug | patch |
+| 完成一个里程碑（Mxx）| minor |
+| **L5 5 条全部达成 + 30 天稳定** | **major → v4.0.0** |
+| 路线图重写 | major |
+
+**当前（2026-06-25）**：v3.0.1；v4.0.0 等 L5 5 条全部达成（还需 2026-07 / 2026-08 月度数据）。
+
+### 💡 关键原则
+
+1. **别让队列空** — 每次会话结束前查 `next`
+2. **别让队列假满** — `--dry-run` 先看再入队
+3. **让 AI 主动发现** — 跑 `/evolve` + `/audit` 产候选
+4. **让数据驱动设计** — 30 天 L5 数据 → v4.0.0 增量（不是凭空设计）
+
+> 📖 **完整版**：`04_自我演进路线.md` §0.7（演进计划怎么来 / 怎么判断）— 130+ 行深入说明
+> 🔧 **操作命令**：`evolution-lock.js status / queue / complete` + `queue:sync` npm 脚本
+> 📊 **关联**：M15 评价闭环 → 月度报告驱动设计；M16 候选汇聚 → 3 源 → 1 队列
+
+---
+
 ## 规则文件（.claude/rules/）
 
 | 文件 | 作用 |
