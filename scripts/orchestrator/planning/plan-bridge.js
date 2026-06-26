@@ -124,10 +124,11 @@ ${files}
  */
 function executeStepSync(prompt, model) {
   try {
-    const result = spawnSync('claude', ['-p', '--model', model, prompt], {
+    const result = spawnSync(process.env.CLAUDE_BIN || 'claude', ['-p', '--model', model, prompt], {
       encoding: 'utf8',
       timeout: STEP_TIMEOUT,
       stdio: ['ignore', 'pipe', 'pipe'],
+      shell: true,  // Windows: 让 .cmd/.bat 走 cmd.exe 解析
     });
 
     if (result.error) {
