@@ -298,65 +298,24 @@ cat 00_ROOT_快速加载会话.md
 
 ### 📌 会话交接（handoff · v3.0.5 M29）
 
-> **5 场景教程**：[`.claude/handoff/TUTORIAL.md`](../.claude/handoff/TUTORIAL.md)
-> **何时用 handoff vs /clear**：handoff 保留进度（新会话能接续），/clear 硬切（从头来）
+> **何时用**：上下文 40% / 想睡觉 / 想换窗口 —— 让当前会话收尾，新会话无缝接续。
+> **何时不用**：要彻底换任务（用 `/clear`）/ 离开几小时让 runner 跑（用 `/autonomous`）
 
 ```bash
-# 🌟 最常用 — 无参数：自动从摘要生成标题（不用手写）
-node scripts/orchestrator/handoff.js
-# 自动提取：title ← summary [已完成] / nextTitle ← summary 下一步:
-
-# 一键接续（开 VS Code 新窗口 + 复制启动命令到剪贴板）
-node scripts/orchestrator/handoff.js --auto
-# 修复 M28 后能跨 Windows 平台（4 路径兜底 + Cursor 过滤）
-
-# 显式指定（高级用户 / 想精确控制时）
-node scripts/orchestrator/handoff.js "今天做 M22" "M23: 文档清理" --auto
-
-# 离开几小时让 runner 跑 — 机器接续
-node scripts/orchestrator/handoff.js --runner
-# → spawn autonomous-runner 后台循环跑 next 队列
-# → 回来 /autonomous-stop 停止
-
-# runner 跑一半想换人 — 人工接管
-node scripts/orchestrator/handoff.js --resume
-# → 调 runner stop + 固化 stage.current → next_action + 生成接续 prompt
-
-# 路线图漂移修复（防止 04.md §十二 ⏳ 段假满）
-npm run roadmap:sync:status   # 先看 next 队列和 04.md 是否一致
-npm run roadmap:sync:dry      # 预览
-npm run roadmap:sync          # 真同步
+/handoff           # 🌟 一句话就够，不用写标题
+/handoff --auto    # + 开 VS Code 新窗口 + 复制启动命令
 ```
 
-**日常用法决策树**：
-
-```
-想做什么？
-├─ 继续同一序列工作（上下文快满）
-│   → node handoff.js              # 🌟 无参数，自动
-│   → node handoff.js --auto       # 1 步开新窗口
-│
-├─ 离开几小时让 runner 跑
-│   → node handoff.js --runner
-│
-├─ 切换到全新任务
-│   → /clear
-│
-└─ 完成里程碑要归档
-    → node handoff.js "v3.0.5 完成" --tags "milestone handoff"
-```
-
-**M29 新增能力**（v3.0.5 · 2026-06-27）：
-- ✅ **无参数智能标题** — `resolveNextFromSnapshot()` 4 层 fallback：
-  - title: `summary [已完成]` → summary 前 50 字 → 时间戳
-  - nextTitle: `next_action` → `summary 下一步:` → `evolution-plan next[0]` → "继续会话"
-- ✅ **跨 Windows 平台**（M28）— `findCodeExecutable()` 4 路径兜底 + Cursor 过滤 + cmd 包装
-- ✅ **退出码 0**（M28）— 修前 255
+> **自动行为**：标题从会话摘要 `[已完成]` 自动提取，下一阶段从 `下一步:` 自动提取。
+> **5 场景教程**：[`.claude/handoff/TUTORIAL.md`](../.claude/handoff/TUTORIAL.md)
 
 **M24 已含 3 个能力**：
 - ✅ **状态自愈** — `session-init.sh` Step 0.5 自动清理 stale `awaiting_handoff`（实测清理 12h 残留）
 - ✅ **数据基础** — `data/handoff_lifecycle.jsonl` 记录每次 handoff_start / resume / stale_cleanup（L5 第 5 条数据基础）
 - ✅ **同步脚本** — `sync-roadmap.js` 读 `evolution-plan.json` 写 04.md，`evolution-lock.js queue` 钩子自动触发
+- ✅ **M23 L1→L5 用户视角** — 4 文档同步：全景图 + 5 级速览 + v4.0.0 触发条件 + L5 5 条达成完整版
+- ✅ **M29 无参数智能标题** — 自动从摘要提取，**不用手写标题**
+- ✅ **M28 跨平台** — Windows / macOS / Linux 都能开 VS Code 新窗口
 
 ### 📌 左脑记忆
 
