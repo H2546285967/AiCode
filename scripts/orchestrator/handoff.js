@@ -446,6 +446,75 @@ function spawnClaudeContinuation(prompt, nextTitle) {
   });
 }
 
+/**
+ * M24-C: --runner 模式 — 存快照后 spawn autonomous-runner.js 后台进程
+ * 等价于：--auto + 机器接续 runner（用户不用粘命令）
+ */
+function spawnRunnerContinuation(nextTitle) {
+  return new Promise((resolve) => {
+    const runnerScript = path.join(WORKSPACE_ROOT, 'scripts', 'orchestrator', 'autonomous-runner.js');
+    log('INFO', `准备 spawn autonomous-runner: ${nextTitle}`);
+
+    // detached: true 让 runner 独立于 handoff 进程
+    const child = spawn(process.execPath, [runnerScript, 'run'], {
+      cwd: WORKSPACE_ROOT,
+      stdio: 'ignore',
+      detached: true,
+      env: { ...process.env },
+    });
+    child.unref();  // 允许父进程退出不影响子进程
+
+    appendHandoffLifecycle({
+      event: 'handoff_to_runner',
+      to: nextTitle,
+      runner_pid: child.pid,
+    });
+
+    resolve({ spawned: true, runnerPid: child.pid });
+  });
+}
+
+/**
+ * M24-C: --resume 模式 — 调 autonomous-runner.js stop + 固化 state + 生成 prompt
+ * 场景：runner 正在跑时用户想接管（切回人工接续）
+ */
+function resumeFromRunner() {
+  try {
+    const runnerScript = path.join(WORKSPACE_ROOT, 'scripts', 'orchestrator', 'autonomous-runner.js');
+
+    // 1. 调 runner stop（写 enabled=false，等子 stage 完成）
+    log('INFO', '调 autonomous-runner.js stop ...');
+    try {
+      execFileSync(process.execPath, [runnerScript, 'stop'], {
+        encoding: 'utf8', stdio: 'pipe', cwd: WORKSPACE_ROOT, timeout: 10000,
+      });
+    } catch (e) {
+      log('WARN', `runner stop 异常（可能未在跑）: ${e.message.slice(0, 100)}`);
+    }
+
+    // 2. 固化 state：从 latest_state.json 读 stage 转 next_action
+    const snapshot = loadSnapshot();
+    if (snapshot?.stage?.current) {
+      const stage = snapshot.stage;
+      snapshot.next_action = stage.current;
+      writeJSON(SNAPSHOT_FILE, snapshot);
+      log('INFO', `已固化 stage.current → next_action: ${stage.current}`);
+    }
+
+    // 3. 写 lifecycle 事件
+    appendHandoffLifecycle({
+      event: 'runner_to_handoff_resume',
+      from_runner: true,
+      next_action: snapshot?.next_action || null,
+    });
+
+    return { resumed: true, next_action: snapshot?.next_action || null };
+  } catch (e) {
+    log('ERROR', `resume 失败: ${e.message}`);
+    return { resumed: false, error: e.message };
+  }
+}
+
 function log(level, message) {
   const ts = new Date().toLocaleString('zh-CN');
   console.log(`[${ts}] [${level}] ${message}`);
@@ -455,7 +524,12 @@ function log(level, message) {
  * 主入口
  */
 function handoff(title, opts = {}) {
-  let { nextTitle, dryRun = false, auto = false, tags = ['handoff'] } = opts;
+  let { nextTitle, dryRun = false, auto = false, runner = false, resume = false, tags = ['handoff'] } = opts;
+
+  // M24-C: --resume 模式：从 runner 切回人工接续
+  if (resume) {
+    return resumeFromRunner();
+  }
 
   // M22: 无参数时从 snapshot 解析下一步
   if (!title) {
@@ -504,6 +578,7 @@ function handoff(title, opts = {}) {
     prompt,
     enqueued,
     auto,
+    runner,
     title: resolvedTitle,
     nextTitle: resolvedNext,
   };
@@ -515,22 +590,39 @@ function handoff(title, opts = {}) {
   return result;
 }
 
+// 异步 spawn runner（在 handoff() 返回后由 CLI 调）
+function handoffAndSpawnRunner(title, opts) {
+  const r = handoff(title, opts);
+  if (opts.runner && !opts.dryRun && r.saved) {
+    return spawnRunnerContinuation(r.nextTitle).then(sr => ({
+      ...r,
+      runnerPid: sr.runnerPid,
+      spawnedRunner: true,
+    }));
+  }
+  return Promise.resolve(r);
+}
+
 // ── CLI ───────────────────────────────────────────────
 
 function showHelp() {
   console.log(`
-handoff.js — 会话切换助手（v3.0.4 M21 + M22）
+handoff.js — 会话切换助手（v3.0.5 M21 + M22 + M24-C）
 
 用法:
-  node handoff.js                                   # 无参数：继续摘要里的下一步
-  node handoff.js "标题" [next-title]               # 强制存快照 + 生成 prompt
-  node handoff.js "标题" --dry-run                  # 只打印 prompt 不写
-  node handoff.js "标题" [next-title] --auto        # VS Code 新窗口 + 剪贴板命令
+  node handoff.js                                       # 无参数：继续摘要里的下一步
+  node handoff.js "标题" [next-title]                   # 强制存快照 + 生成 prompt
+  node handoff.js "标题" --dry-run                      # 只打印 prompt 不写
+  node handoff.js "标题" [next-title] --auto            # VS Code 新窗口 + 剪贴板命令
+  node handoff.js "标题" [next-title] --runner          # 存快照 + spawn autonomous-runner 后台接续 (M24-C)
+  node handoff.js --resume                              # 从 runner 切回人工接续 (M24-C)
 
 参数:
   第一个 (可选)   当前会话标题（不写则读 snapshot.next_action）
   第二个 (可选)   下一阶段标题（默认 = 第一个）
   --auto / -a     VS Code 新窗口模式（打开新窗口 + 复制 claude 启动命令到剪贴板）
+  --runner / -r   spawn autonomous-runner 后台接续（机器接续 · 离开场景）
+  --resume        从 runner 切回人工接续（runner 跑一半你想接管）
   --dry-run       只打印接续 prompt，不写快照
   --tags "tag1 tag2"  自定义快照标签
 
@@ -538,8 +630,11 @@ handoff.js — 会话切换助手（v3.0.4 M21 + M22）
   1. 自动存快照到 .claude/skills/left-brain/memory/sessions/latest_state.json
   2. 标记 autonomous-state.json.awaiting_handoff = true
   3. 实际入队 evolution-plan.json next（如果 ID 不存在）
-  4. 输出"接续 prompt"
-  5. --auto 时打开 VS Code 新窗口，并把启动命令复制到剪贴板
+  4. 写 handoff_lifecycle.jsonl（M24-B 数据基础）
+  5. 输出"接续 prompt"
+  6. --auto 时打开 VS Code 新窗口，并把启动命令复制到剪贴板
+  7. --runner 时 spawn autonomous-runner.js run（detached）
+  8. --resume 时调 runner stop + 固化 stage.current → next_action
 `);
 }
 
@@ -552,6 +647,8 @@ function main() {
 
   const dryRun = args.includes('--dry-run');
   const auto = args.includes('--auto') || args.includes('-a');
+  const runner = args.includes('--runner') || args.includes('-r');
+  const resume = args.includes('--resume');
   const tagsIdx = args.indexOf('--tags');
   const tags = tagsIdx !== -1 ? args[tagsIdx + 1].split(/\s+/) : ['handoff'];
 
@@ -560,8 +657,14 @@ function main() {
   const title = positional[0];
   const nextTitle = positional[1] || title;
 
+  // --auto 和 --runner 互斥
+  if (auto && runner) {
+    console.error('❌ --auto 和 --runner 互斥，请只用其中一个');
+    process.exit(1);
+  }
+
   try {
-    const result = handoff(title, { nextTitle, dryRun, auto, tags });
+    const result = handoff(title, { nextTitle, dryRun, auto, runner, resume, tags });
 
     if (dryRun) {
       console.log('━'.repeat(60));
@@ -605,6 +708,29 @@ function main() {
         console.log(r.command);
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       });
+    } else if (runner) {
+      console.log('🤖 --runner 模式：spawn autonomous-runner.js 后台接续...');
+      handoffAndSpawnRunner(title, { nextTitle, dryRun, runner, tags })
+        .then((r) => {
+          if (r.spawnedRunner) {
+            console.log('');
+            console.log('✅ autonomous-runner 已后台启动');
+            console.log(`   runner PID: ${r.runnerPid}`);
+            console.log(`   下一阶段：${r.nextTitle}`);
+            console.log('');
+            console.log('💡 你可以关闭当前会话，runner 会在后台循环执行 next 队列');
+            console.log('   回来后用 /autonomous-stop 停止');
+          } else {
+            console.log('❌ runner spawn 失败');
+          }
+        })
+        .catch((e) => console.error('❌', e.message));
+    } else if (resume) {
+      console.log('🔄 --resume 模式：从 autonomous-runner 切回人工接续');
+      console.log(`   next_action: ${result.next_action || '(无)'}`);
+      console.log('');
+      console.log('💡 新会话第一句：');
+      console.log(`   > 继续 ${result.next_action}，先读 latest_state.json 和 04.md §0.4。`);
     } else {
       console.log('━'.repeat(60));
       console.log('📋 接续 prompt（新子会话第一句）');
@@ -629,12 +755,13 @@ if (require.main === module) {
 
 module.exports = {
   handoff,
+  handoffAndSpawnRunner,
   buildHandoffPrompt,
   saveSnapshot,
   markAwaitingHandoff,
   clearAwaitingHandoff,
-  clearAwaitingHandoffIfStale,  // M24-B
-  appendHandoffLifecycle,        // M24-B
+  clearAwaitingHandoffIfStale,
+  appendHandoffLifecycle,
   loadAutonomousState,
   loadSnapshot,
   resolveNextFromSnapshot,
@@ -642,6 +769,8 @@ module.exports = {
   copyToClipboard,
   openVsCodeNewWindow,
   spawnClaudeContinuation,
+  spawnRunnerContinuation,   // M24-C
+  resumeFromRunner,          // M24-C
   CONTINUE_PROMPT_FILE,
   HANDOFF_DIR,
   HANDOFF_LIFECYCLE_FILE,

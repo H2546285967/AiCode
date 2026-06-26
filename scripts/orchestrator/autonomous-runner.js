@@ -328,6 +328,18 @@ async function runLoop() {
       break;
     }
 
+    // M24-C: check-handoff — 用户标记 handoff 后等待 5 分钟再停止 runner
+    if (autoState.awaiting_handoff) {
+      log('INFO', '检测到用户 handoff 标记，等待 5 分钟后停止 runner...');
+      const waited = await checkHandoff(5 * 60 * 1000);  // 5 分钟
+      if (waited.stopped) {
+        log('INFO', '5 分钟内用户未接续，runner 自动停止');
+        break;
+      }
+      // 等待期间 handoff 被 clear（说明用户开了新会话）→ 继续 runner
+      log('INFO', 'handoff 标记已被清理（用户开了新会话），继续 runner');
+    }
+
     markStageInProgress(snapshot, nextStage);
     log('INFO', `开始阶段: ${nextStage}`);
 
@@ -366,6 +378,23 @@ async function runLoop() {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// M24-C: check-handoff — 等待 handoff 标记被清理（用户开了新会话）或超时
+// 用 5 秒切片 + 状态检查，避免长 sleep 卡住
+async function checkHandoff(maxWaitMs) {
+  const interval = 5000;  // 5 秒检查一次
+  const totalIntervals = Math.floor(maxWaitMs / interval);
+  for (let i = 0; i < totalIntervals; i++) {
+    await sleep(interval);
+    const s = loadAutonomousState();
+    if (!s.awaiting_handoff) {
+      return { stopped: false, cleared: true };
+    }
+  }
+  // 超时 — 关 runner
+  disableAutonomous('用户 handoff 后 5 分钟内未接续');
+  return { stopped: true, cleared: false };
 }
 
 // ── CLI 入口 ─────────────────────────────────────────
@@ -468,6 +497,7 @@ module.exports = {
   markStageInProgress,
   markStageCompleted,
   markStageFailed,
+  checkHandoff,  // M24-C
   buildStagePrompt,
   runClaudeStage,
   runLoop,
