@@ -37,6 +37,9 @@ AiCode/
 ├── .claude/                           ← Claude Code 配置
 │   ├── rules/                         ← 拆分规则（详见下方）
 │   ├── skills/left-brain/             ← 🧠 左脑记忆系统
+│   ├── skills/audit/                  ← 🔍 工程自查/审计 skill（v3.0.5 M25）
+│   ├── skills/evolve/                 ← 🧬 自我进化 skill（v3.0.5 M25 · /evolve 升格）
+│   ├── skills/autonomous/             ← 🤖 自主模式 skill（v3.0.5 M25 · /autonomous 升格）
 │   ├── skills/agent-reach/            ← 🌐 13 平台互联网路由（GitHub/B站/V2EX/RSS/任意网页）
 │   ├── commands/                      ← 常用命令
 │   └── agents/                        ← 专业子代理
