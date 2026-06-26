@@ -7,6 +7,8 @@ description: 🚀 会话交接 — 自动存快照 + 生成接续 prompt
 
 > **作用**：当前会话收尾时，自动保存进度并生成"下个会话第一句 prompt"，实现无缝上下文切换。
 > **典型场景**：上下文太长 / 想 /clear 但不想丢状态 / 想换 Claude Code 窗口继续。
+>
+> 📖 **5 场景教程**：见 [`.claude/handoff/TUTORIAL.md`](../handoff/TUTORIAL.md) —— "晚 12 点想睡觉" / "上下文 40% 触顶" / "完成里程碑" / "双会话并行" / "handoff vs autonomous 决策树"
 
 ## 用法
 
