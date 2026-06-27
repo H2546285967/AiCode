@@ -1,0 +1,25 @@
+{
+  "name": "audit-mvp-v2",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI 素材审核 MVP Demo v2 - 面试演示版（绕开文件锁重建）",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node tests/smoke.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1",
+    "openai": "^4.67.0"
+  },
+  "optionalDependencies": {
+    "ffmpeg-static": "^5.3.0"
+  }
+}

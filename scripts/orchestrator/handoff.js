@@ -513,38 +513,33 @@ function enqueueNext(id, title, note) {
  * VS Code 方案：打开新窗口 + 写入 prompt 文件 + 复制启动命令到剪贴板
  * 由于 VS Code CLI 没有"在新终端自动执行命令"的能力，采用"窗口+剪贴板"半自动方案
  */
-function spawnClaudeContinuation(prompt, nextTitle) {
-  return new Promise(async (resolve) => {
-    log('INFO', `准备 VS Code 新窗口接续: ${nextTitle}`);
+/**
+ * 准备接续：写 prompt 文件 + 构造命令 + 复制到剪贴板（不开窗口）
+ * 返回 { promptFile, command, copied } — 由调用方决定是否再开窗口
+ */
+function prepareContinuation(prompt, nextTitle) {
+  const promptFile = writeContinuePromptFile(prompt, nextTitle)
+  const claudeBin = process.env.CLAUDE_BIN || 'claude'
+  const command = `${claudeBin} --append-system-prompt-file "${promptFile}" "继续执行: ${nextTitle}"`
+  const copied = copyToClipboard(command)
+  return { promptFile, command, copied }
+}
 
-    // 1. 写入 prompt 文件
-    const promptFile = writeContinuePromptFile(prompt, nextTitle);
-    log('INFO', `  prompt 文件: ${promptFile}`);
-
-    // 2. 构造启动命令（用户在新窗口终端粘贴执行）
-    const claudeBin = process.env.CLAUDE_BIN || 'claude';
-    const command = `${claudeBin} --append-system-prompt-file "${promptFile}" "继续执行: ${nextTitle}"`;
-
-    // 3. 复制命令到剪贴板
-    const copied = copyToClipboard(command);
-    if (copied) {
-      log('INFO', '  启动命令已复制到剪贴板');
-    } else {
-      log('WARN', '  剪贴板复制失败，请手动复制下方命令');
-    }
-
-    // 4. 打开 VS Code 新窗口
-    log('INFO', '  正在打开 VS Code 新窗口...');
-    const vs = await openVsCodeNewWindow();
-
-    resolve({
-      opened: vs.opened,
-      copied,
-      command,
-      promptFile,
-      error: vs.error || null,
-    });
-  });
+/**
+ * --auto 专用：准备接续 + 自动开 VS Code 新窗口
+ */
+async function spawnClaudeContinuation(prompt, nextTitle) {
+  const prep = prepareContinuation(prompt, nextTitle)
+  log('INFO', `准备 VS Code 新窗口接续: ${nextTitle}`)
+  log('INFO', `  prompt 文件: ${prep.promptFile}`)
+  if (prep.copied) {
+    log('INFO', '  启动命令已复制到剪贴板')
+  } else {
+    log('WARN', '  剪贴板复制失败，请手动复制下方命令')
+  }
+  log('INFO', '  正在打开 VS Code 新窗口...')
+  const vs = await openVsCodeNewWindow()
+  return { ...prep, opened: vs.opened, error: vs.error || null }
 }
 
 /**
@@ -785,28 +780,32 @@ function main() {
     console.log(`   next 入队：${result.enqueued ? '✅' : '⏭️ 已存在'}`);
     console.log('');
 
+    // 不管 --auto 与否，都先把启动命令写到剪贴板（让用户任何时候都能一键接续）
+    const prep = prepareContinuation(result.prompt, result.nextTitle);
+    console.log('📋 启动命令已就绪：');
+    console.log(`   prompt 文件：${prep.promptFile}`);
+    console.log(`   命令已复制到剪贴板：${prep.copied ? '✅ 是（直接 Cmd+V / Ctrl+V 粘贴）' : '⚠️ 否（手动复制下方命令）'}`);
+    console.log('');
+
     if (auto) {
-      console.log('🚀 --auto 模式：打开 VS Code 新窗口 + 复制启动命令到剪贴板...');
+      console.log('🚀 --auto 模式：额外打开 VS Code 新窗口...');
       spawnClaudeContinuation(result.prompt, result.nextTitle).then((r) => {
         if (r.error) {
           console.error(`❌ VS Code 新窗口打开失败: ${r.error}`);
           console.log('');
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          console.log('📋 请手动打开 VS Code 新窗口，并在终端执行：');
+          console.log('📋 手动打开 VS Code 新窗口，并在终端执行：');
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-          console.log(r.command);
+          console.log(prep.command);
           console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
           process.exit(1);
         }
         console.log('');
         console.log('✅ VS Code 新窗口已打开');
-        console.log(`   prompt 文件：${r.promptFile}`);
-        console.log(`   命令已复制到剪贴板：${r.copied ? '是' : '否'}`);
-        console.log('');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('📋 在新窗口终端粘贴执行（已复制到剪贴板）：');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log(r.command);
+        console.log(prep.command);
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         process.exit(0);
       });
@@ -834,16 +833,20 @@ function main() {
       console.log('💡 新会话第一句：');
       console.log(`   > 继续 ${result.next_action}，先读 latest_state.json 和 04.md §0.4。`);
     } else {
+      // 纯 /handoff 模式：已复制命令到剪贴板 + 打印接续 prompt 全文 + 提示怎么打开
       console.log('━'.repeat(60));
       console.log('📋 接续 prompt（新子会话第一句）');
       console.log('━'.repeat(60));
       console.log(result.prompt);
       console.log('━'.repeat(60));
       console.log('');
-      console.log('💡 建议操作：');
-      console.log('   1. 加 --auto 打开 VS Code 新窗口并复制命令（推荐）');
-      console.log('   2. 手动：在 Claude Code UI 点击 "New Chat"');
-      console.log('   3. 手动：输入 /clear 后粘上面 prompt');
+      console.log('💡 你已经可以选择怎么打开（剪贴板里就是启动命令）：');
+      console.log('   1. 打开任意 terminal（Git Bash / PowerShell / VS Code 内置）→ Cmd+V / Ctrl+V → 回车');
+      console.log('   2. 或者 VS Code → File → New Window → 在新窗口的终端粘贴');
+      console.log('   3. 或者用 /handoff --auto 下次自动开窗口');
+      console.log('');
+      console.log('   如果想跑前手动看一眼 prompt 内容，复制下面这一行到剪贴板（已就绪）：');
+      console.log('   > ' + prep.command);
     }
   } catch (e) {
     console.error(`❌ handoff 失败: ${e.message}`);

@@ -136,7 +136,7 @@
 | **SKILL 生态索引** | 看 `.claude/SKILL_INDEX.md` | 4 skill（left-brain/audit/autonomous/evolve）总览 + 5 场景脚本（M32），0 启动成本 |
 | **SKILL 自我进化（GEPA）** | `/evolve self-evolve` 或 `npm run gepa:evolve` | 借鉴 Hermes GEPA 思路，基于 execution traces 自动迭代 SKILL.md（M34 · 加 `--apply` 才覆盖），详见 02 §2.X |
 | **文档基线** | 看 `README.md` + `PROJECT-CONTEXT.md` | v3.0.5 用户首看 + session-init 自动加载（M33 重写，告别 v2.0.0 / v1.9 过期）|
-| **handoff 接续（人工）** | `/handoff` 或 `node handoff.js`（无参数自动生成标题） | 上下文 40% 时 / 想换窗口 / 5 场景教程见 `.claude/handoff/TUTORIAL.md` |
+| **handoff 接续（推荐 · 一键接续）** | `/handoff` 或 `node handoff.js` | 上下文 40% 时 / 想换窗口 / 5 场景教程见 `.claude/handoff/TUTORIAL.md`（自动复制启动命令到剪贴板 + 打印接续 prompt，由你决定怎么打开）|
 | **handoff 接续（VS Code 新窗口）** | `/handoff "..." --auto` | 开 VS Code 新窗口 + 复制启动命令到剪贴板（v3.0.4 M22） |
 | **handoff 接续（机器接续 runner）** | `/handoff "..." --runner` 或 `node handoff.js "..." --runner` | 离开时让 runner 循环跑（v3.0.5 M24-C） |
 | **handoff 接续（人工接管 runner）** | `/handoff --resume` | runner 跑一半想换回人工（v3.0.5 M24-C） |

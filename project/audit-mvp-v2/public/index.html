@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 素材审核 Demo v2</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>🛡️ AI 素材审核 Demo</h1>
+    <p class="subtitle">抖音/小红书投放素材 · 智能合规审核 · <span id="mode-badge">加载中...</span></p>
+  </header>
+
+  <main>
+    <section id="upload-section" class="card">
+      <h2>① 上传素材</h2>
+      <div id="dropzone" class="dropzone">
+        <input type="file" id="file-input" accept="image/*,video/*" hidden>
+        <p class="dropzone-hint">📁 拖拽文件到这里，或<button id="browse-btn" class="link-btn">点击选择</button></p>
+        <p class="dropzone-sub">支持图片（jpg/png/gif）和视频（mp4/mov），最大 50MB</p>
+        <div class="platform-select">
+          <label><input type="radio" name="platform" value="douyin" checked> 抖音</label>
+          <label><input type="radio" name="platform" value="xiaohongshu"> 小红书</label>
+        </div>
+        <div class="mock-hint">
+          💡 <strong>Mock 模式小技巧</strong>：文件名包含「合规」= 通过；包含「违规」= 拒绝；其他 = 复审
+        </div>
+      </div>
+      <div id="upload-progress" class="hidden"><p>⏳ 上传中...</p></div>
+    </section>
+
+    <section id="result-section" class="card hidden">
+      <h2>② 审核报告</h2>
+      <div id="material-preview"></div>
+      <div id="audit-summary"></div>
+      <div id="audit-dimensions"></div>
+      <div id="audit-suggestions"></div>
+    </section>
+
+    <section id="history-section" class="card">
+      <h2>③ 审核历史</h2>
+      <div id="history-list">加载中...</div>
+    </section>
+  </main>
+
+  <footer>
+    <p>面试演示版 · MVP v2 · 基于 <code>H:\AI-han\AiCode\project\一、系统架构总览.md</code> 实现</p>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
