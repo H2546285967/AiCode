@@ -86,8 +86,8 @@ icon: 🧬
 |:-----|:-----|
 | `scripts/evolution/daily-evolution.js` | 主入口（scan/analyze/run/candidates/implement/status/log/watch/report）|
 | `scripts/evolution/github-scanner.js` | GitHub Trending + Search API（含 token 认证 M18）|
-| `scripts/evolution/judge-candidate.js` | LLM-judge 双轨制（M12）|
-| `scripts/orchestrator/auto-implement.js` | 自动实现引擎（M7，含 5 道闸门）|
+| `scripts/orchestrator/llm-adapter.js` | LLM-judge 双轨制（M12 judgeCandidateWithFallback）+ 4 个 adapter 镜像|
+| `scripts/evolution/auto-implement.js` | 自动实现引擎（M7，含 5 道闸门）|
 | `scripts/orchestrator/llm-adapter.js` | LLM 调用 adapter（4 个镜像）|
 
 ## 📊 数据流
@@ -97,7 +97,7 @@ GitHub API
   ↓ (token 认证 M18)
 github-scanner.js
   ↓ (TF-IDF 打分)
-judge-candidate.js (LLM-judge)
+judgeCandidateWithFallback() (in llm-adapter.js)
   ↓ (suggestion=adopt)
 data/github/candidates.json
   ↓ (bridge M16)
@@ -123,9 +123,9 @@ evolution-plan.json next 队列
 
 ## 🧪 测试
 
-- `scripts/evolution/test-github-scanner.js`：14/14 通过（M18 token 认证）
-- `scripts/orchestrator/test-auto-implement.js`：27/27 通过（M7 5 道闸门）
-- `scripts/orchestrator/test-llm-judge.js`：52/52 通过（M12 双轨制）
+- `scripts/evolution/test-github-scanner-auth.js`：14/14 通过（M18 token 认证）
+- `scripts/evolution/test-auto-implement.js`：27/27 通过（M7 5 道闸门）
+- `scripts/orchestrator/test-judge-candidate.js`：52/52 通过（M12 双轨制）
 - 全量回归：318+ 测试
 
 ---

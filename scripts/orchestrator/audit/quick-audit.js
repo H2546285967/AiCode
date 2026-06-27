@@ -327,15 +327,28 @@ function scanCapabilityGaps() {
   // SKILL.md 关联引用 vs 实际 skill
   for (const skill of listDirSafe(SKILL_DIR)) {
     const skillMd = readFileSafe(path.join(SKILL_DIR, skill, 'SKILL.md')) || '';
-    // 提取 scripts/ 路径引用
-    const scriptRefs = skillMd.match(/scripts\/[\w\-\/]+\.js/g) || [];
+    // 提取 scripts/ 路径引用（相对工作空间根）
+    // 支持 3 种写法：
+    //   1. `scripts/xxx.js` —— 相对工作空间根
+    //   2. `.claude/skills/<self>/scripts/xxx.js` —— 同 skill 内部
+    //   3. `.claude/skills/<other>/scripts/xxx.js` —— 跨 skill 引用（如 autonomous → left-brain）
+    const scriptRefs = skillMd.match(/(?:\.claude\/skills\/[\w\-]+\/)?scripts\/[\w\-\/]+\.js/g) || [];
     for (const ref of scriptRefs) {
-      if (!existsSafe(path.join(WORKSPACE_ROOT, ref))) {
+      const normalized = ref.replace(/^\.claude\/skills\/[\w\-]+\//, ''); // 去掉 .claude/skills/<x>/ 前缀
+      const direct = path.join(WORKSPACE_ROOT, normalized);
+      const skillRelative = path.join(SKILL_DIR, skill, normalized);
+      // 跨 skill 引用：扫所有 skill 的 scripts/ 目录
+      let crossSkillMatch = false;
+      for (const otherSkill of listDirSafe(SKILL_DIR)) {
+        const candidate = path.join(SKILL_DIR, otherSkill, normalized);
+        if (existsSafe(candidate)) { crossSkillMatch = true; break; }
+      }
+      if (!existsSafe(direct) && !existsSafe(skillRelative) && !crossSkillMatch) {
         gaps.push({
           kind: 'script-missing',
           ref: `/${skill}`,
           location: `${skill}/SKILL.md 引用 ${ref}`,
-          message: `${skill} SKILL.md 引用 ${ref} 但文件不存在`,
+          message: `${skill} SKILL.md 引用 ${ref} 但文件不存在（已尝试：工作空间根 + skill 内部 + 所有 skill 跨引用）`,
         });
       }
     }

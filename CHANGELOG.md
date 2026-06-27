@@ -10,6 +10,27 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Fixed - SKILL.md 脚本路径错引用修复 + audit 工具正则升级（2026-06-27）
+
+- **痛点**：`/audit` 报告 6 项 P0 能力缺口 — `evolve` 和 `autonomous` SKILL.md 引用的脚本路径不存在
+  - 实际是 M25 skill 升格时路径迁移了（M18 重命名 test-github-scanner → test-github-scanner-auth；auto-implement 从 orchestrator 迁到 evolution 子目录；LLM-judge 合并进 llm-adapter），但 SKILL.md 没同步
+  - 加上 audit 工具自己的正则 bug：`state-snapshot.js` 实际在 `.claude/skills/left-brain/scripts/`，audit 只在根目录查
+- **修复**（3 文件）：
+  - `.claude/skills/evolve/SKILL.md`：5 处脚本路径对齐实际位置
+    - `scripts/orchestrator/auto-implement.js` → `scripts/evolution/auto-implement.js`
+    - `scripts/orchestrator/test-auto-implement.js` → `scripts/evolution/test-auto-implement.js`
+    - `scripts/orchestrator/test-llm-judge.js` → `scripts/orchestrator/test-judge-candidate.js`
+    - `scripts/evolution/test-github-scanner.js` → `scripts/evolution/test-github-scanner-auth.js`
+    - 删除 `scripts/evolution/judge-candidate.js` 行（功能在 `llm-adapter.js` 的 `judgeCandidateWithFallback`）
+    - 数据流图同步更新（`judge-candidate.js` → `judgeCandidateWithFallback()`）
+  - `.claude/skills/autonomous/SKILL.md`：无需改（路径本来就对）
+  - `scripts/orchestrator/audit/quick-audit.js`：正则升级支持 3 种写法
+    - `scripts/xxx.js`（相对根） + `.claude/skills/<self>/scripts/xxx.js`（同 skill 内） + `.claude/skills/<other>/scripts/xxx.js`（跨 skill 引用）
+- **验证**：重跑 `/audit` 浅层报告 — **P0 6 项 → 0 项**，4 段全 ✨（已声明未完成 0 / 能力缺口 0 / 重复冗余 0 / 文档-代码完全对齐）
+- **测试**：`test-judge-candidate.js` 26/26 + `test-llm-adapter.js` 23/23 通过
+- **L5 影响**：用户/AI 看 SKILL.md 时不会被错路径误导；audit 工具正则支持跨 skill 引用 = L5 学习闭环更准
+- **关联**：M25 skill 升格（路径未同步）+ M18 GitHub token 认证（重命名测试）
+
 ### Added - M31 多 Agent Swarm 协调 POC（借鉴 ruvnet/ruflo · 2026-06-27）
 
 - **痛点**：AiCode dispatcher 只决定"派不派 + 派几个",派出去的 Agent 各自独立回答,没有"汇总 + 投票"机制。复杂任务单 Agent 视角容易盲。
