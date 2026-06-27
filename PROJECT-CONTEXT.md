@@ -1,8 +1,8 @@
 # 项目上下文速览（1 分钟掌握全貌）
 
 > **用途**：新会话启动时自动加载（`session-init.sh` top-list 包含本文件），快速建立项目心智模型，避免扫描整个仓库浪费 token。
-> **更新时间**：2026-06-27
-> **版本**：v3.0.5（M25~M32 · 4 skill 升格 + swarm 协调 + SKILL 索引）
+> **更新时间**：2026-06-28
+> **版本**：v3.0.5（M25~M34 · 4 skill 升格 + swarm 协调 + SKILL 索引 + GEPA skill 自我进化）
 > **加载方式**：session-init 自动加载（≈ 100 行 · token 友好）
 
 ---
@@ -30,6 +30,7 @@
 | **🛡️ self-discipline** | (自动) | 完成改动后自动收尾（测试/快照/KB/6 文档同步）| L4 |
 | **🔒 evolution-lock** | `node scripts/orchestrator/evolution-lock.js status\|queue\|complete` | 防止多窗口同时改 04/CLAUDE/CHANGELOG 导致漂移 | P0-0 |
 | **🌳 sync-roadmap** | `node scripts/orchestrator/sync-roadmap.js` | 自动同步 04.md §十二 ⏳ 段 + evolution-plan.json | M24-D |
+| **🧬 gepa** | `npm run gepa:evolve` 或 `node scripts/evolution/daily-evolution.js self-evolve` | SKILL.md 自我进化（5 模块 + 5 道护栏 + 26/26 测试，借鉴 Hermes GEPA）| L4 |
 
 ---
 
@@ -81,6 +82,7 @@ bash .claude/skills/left-brain/scripts/left-brain.sh recall "关键词"
 /audit                              # 工程健康度自查
 /autonomous single                  # 自主模式单阶段
 /evolve run                         # GitHub 扫描 + LLM-judge
+npm run gepa:evolve                 # SKILL 自我进化（GEPA · M34）
 
 # 会话交接（M21-M29）
 /handoff                            # 无参数自动生成标题 + 下一阶段

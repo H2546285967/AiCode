@@ -33,6 +33,7 @@ claude
 | 🔍 **工程自查** | 1-2 分钟发现 P0 缺口 / 重复 / 漂移 | `audit` |
 | 🤖 **自主模式** | 离开几小时让 Claude 自己跑增量 | `autonomous` |
 | 🧬 **自我进化** | 每日扫描 GitHub 学习爆款 Claude 项目 | `evolve` |
+| 🧬 **SKILL 自我进化** | 让 SKILL.md 基于 execution traces 自动迭代优化（GEPA，借鉴 Hermes）| `gepa-runner` |
 | 🐝 **多 Agent Swarm** | 复杂任务多视角分析 + 投票汇总 | `swarm-coordinator` |
 | 📋 **会话交接** | 上下文 40% 时一键 `/handoff` 换窗口 | `handoff` |
 | 📊 **效果量化** | 月度报告：耗时 / 成功率 / KB 召回 / 人工干预 | `metrics` |
