@@ -10,6 +10,31 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Added - M31 多 Agent Swarm 协调 POC（借鉴 ruvnet/ruflo · 2026-06-27）
+
+- **痛点**：AiCode dispatcher 只决定"派不派 + 派几个",派出去的 Agent 各自独立回答,没有"汇总 + 投票"机制。复杂任务单 Agent 视角容易盲。
+- **修复**:新增 `scripts/orchestrator/swarm-coordinator.js`(v3.0.5 POC)
+  - **3 个核心纯函数**:
+    - `generatePerspectives(task, n)`:生成 N 个异构视角 prompt(默认 5 视角池:安全/性能/可维护性/简洁性/兼容性)
+    - `aggregateResults(results, strategy)`:3 种汇总策略(majority / weighted / best-of)
+    - `swarmDecide(task, opts)`:一站式入口,支持 mock 演示 + runAgent 注入
+  - **文本相似度复用 semantic-recall.js tokenize**(软引用降级到本地 bigram fallback)
+  - **PowerShell 友好 CLI**:`swarm:run task words here --n=3` 不需要引号
+  - **永不 throw**:空输入/异常 Agent 都返回友好结构
+- **测试**:`scripts/orchestrator/test-swarm-coordinator.js` **42/42 全过**
+  - 12 段覆盖:基础 / 自定义 n / 兜底 / similarity / best-of / majority / weighted / 空输入 / mock / runAgent 注入 / 真实场景 demo / runAgent 异常
+- **真实 demo**:`npm run swarm:demo` → "重构 dispatcher.js" 3 视角 prompt + 投票输出
+  - 视角 1 安全:输入校验、权限边界、敏感字段加密
+  - 视角 2 性能:算法复杂度、缓存策略、批量处理
+  - 视角 3 可维护性:函数拆分、注释、单元测试覆盖
+- **npm scripts**:`swarm:run` / `swarm:demo` / `test:swarm`(+ 加入主 `test` 链)
+- **L5 终极智能影响**:
+  - **多 Agent 群体智能** POC 落地——L5 自治运行的基础能力之一
+  - 配合 M14 dispatcher 决策 + M27 skill-reuse 复用 + M26 sandbox 压缩 = L5 完整决策链
+  - **不接 dispatcher hook**(避免误派),试用 1 周观察再决定是否接入
+- **关联**:M14(知识图谱反哺)/ M27(skill 复用)/ M26(sandbox 压缩)= L5 决策链闭环
+- **关键洞察**:mock 输出措辞差异大时,majority 退化为"选第一个"——真实 Agent 输出需要更宽松阈值或更好 embedding
+
 ### Added - M23 L1→L5 智能演进路径用户视角说明（2026-06-26）
 
 - **痛点**：新用户读 4 个核心文档（CLAUDE.md / 01.md / 02.md / 04.md）看不到清晰的"AI 越来越智能"路径，只能看到平铺功能列表
