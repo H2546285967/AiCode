@@ -10,6 +10,20 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Added - M35 扫描盲区解决（关键词扩 11→20 + 新星探测 + 能力加权 · 2026-06-28）
+
+- **痛点**：/evolve 扫描 GitHub 用 SEARCH_KEYWORDS 11 个全是 "claude*" 硬匹配 → 漏掉能力导向爆款（NousResearch Hermes / MemGPT / LangChain Agents / AutoGPT / Aider） + 漏掉 24h 新星项目（stars 总量低但增长快）。L4 学习闭环有"扫描盲区" = 候选池不完整 → AI 不知道业界有什么
+- **修复**（1 文件 + 1 新测试 + npm script）：
+  - scripts/evolution/github-scanner.js SEARCH_KEYWORDS：11 → 20 个，新增 9 个能力导向词（agent memory system / agent orchestration / ai agent framework / mcp server / claude code alternative / ai coding assistant / llm agent tools / context engineering）
+  - scripts/evolution/github-scanner.js 新增 CAPABILITY_KEYWORDS 常量（15 词：memory/agent/automation/orchestration/extension/hook/mcp/tool/self-improve/self-evolve/context/vector/rag/workflow/dispatcher）
+  - scripts/evolution/github-scanner.js calcRelevance() v2：能力词 3+ 命中强信号 (+5) / 2 命中 (+3) / 1 命中 (+1) + 新星加成（30 天内 + stars ≥ 30 → +3）
+  - scripts/evolution/github-scanner.js 新增 detectRisingStars()：GitHub Search API created:>7d 过滤新晋项目 + stars desc 排序 → 接入 scan() 第 3 源（trending + search + rising）
+  - scripts/evolution/test-scan-coverage.js：19/19 通过（Hermes-style 21 分 / 新星加成 +3 / 4+ 能力词 19 分 / 向后兼容 24 分 / 关键词扩增 / detectRisingStars mock + 限流）
+  - package.json test:evolution 同步加 test-scan-coverage.js
+- **数据源对比**：Trending（大盘热度）+ Search API（关键词匹配 20 词）+ Rising（新星项目 · 新增）= 三源汇聚
+- **L5 影响**：L4 学习闭环盲区收窄，候选池从 claude-only 扩到 AI coding + agent 全生态；与 M34 GEPA skill 自我进化形成"外部学习（新候选多）+ 内部优化（skill 进化）"双轮驱动
+- **关联**：M18 GitHub token（认证路径）+ M34 GEPA（外部借鉴）+ Hermes Agent（能力导向目标项目）
+
 ### Added - M34 GEPA skill 自我进化原型（2026-06-28）
 
 - **痛点**：AiCode 已有完整的 L4 外部学习闭环（/evolve 扫描 GitHub 候选 + LLM-judge + auto-implement），但**没有 skill 自我进化能力** — `evolve` SKILL.md 写得不好时只能手动改。最近研究 NousResearch Hermes Agent（DSPy + GEPA + execution traces 反思式 prompt 进化），发现正好补这块缺口。

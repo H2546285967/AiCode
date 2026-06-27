@@ -115,6 +115,7 @@ AiCode/
 | `.claudeignore` | 上下文管理 | 省 token |
 | `qa-reviewer` | 验证层 | 独立 QA 验证 |
 | `/evolve`, `/dispatch` | UX 层 | 高效交互入口 |
+| **github-scanner.js (M35)** | **L4 学习闭环** | **关键词 11→20 + 能力加权 + 新星探测，候选池扩到 AI coding + agent 全生态** |
 | `会话快照` | 状态恢复 | 跨会话接上 |
 
 ### 为什么这个定位更务实

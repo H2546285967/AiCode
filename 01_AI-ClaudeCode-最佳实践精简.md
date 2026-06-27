@@ -126,7 +126,7 @@
 | **备份对话** | `node scripts/会话快照/backup-history.js "标签"` | 重要里程碑 |
 | **切快照模式** | `/snap-mode off\|manual\|milestone\|auto\|reset` | 会话级覆盖，不动全局 config |
 | **加载快照** | `node scripts/会话快照/load.js latest` 或关键词 | 看 `00_ROOT_快速加载会话.md` |
-| **自我进化** | `/evolve run` 或 `npm run evolve` | 扫描 GitHub 爆款并评估可行性 |
+| **自我进化** | `/evolve run` 或 `npm run evolve` | 扫描 GitHub 爆款并评估可行性（候选池已扩到 AI coding + agent 全生态 · M35） |
 | **防闭门造车** | `/evolve watch` 或 `npm run trend` | 检查已实现的特性是否过时 |
 | **二次采样验证** | `/secondary-review status` / `approve <id>` / `reject <id>` | 复查高风险改动（核心文件 / 根级配置 / 规则文件）队列 |
 | **cron 主动报告** | `npm run cron:report:daily` / `weekly` / `status` | 后台定时日报（9:37）+ 周报（周一 9:42），无人值守期间主动汇报 |
