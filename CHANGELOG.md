@@ -68,6 +68,21 @@
 - **L5 影响**：新用户首次打开仓库看到的是 v3.0.5 而非 v2.0.0；session-init 自动加载的"1 分钟全貌"是真实的 11 个系统而非过期的 6 个；L5 第 5 条"人工干预率"减少 1 次"读错版本"的认知负担
 - **关联**：M32 SKILL_INDEX（M33 的输入）+ M25 skill 升格（核心系统数变化）+ doc-sync v2 强化（用户可见判断标准）
 
+### Fixed - .claude/rules 内部"6 文档"→"8 文档"表述统一（M33 follow-up · 2026-06-27）
+
+- **痛点**：M33 commit bf8f130 改了 doc-sync.md 顶部 + 8 文档表，但**内部"6 文档"表述没统一**：
+  - `self-discipline.md` line 1 标题 / line 99 决策树标题 / 7 段自检清单（缺 README + PROJECT-CONTEXT 2 段）
+  - `doc-sync.md` line 41 触发节点 / line 46-67 节点 1 详细说明 / 节点 3 / 节点 4
+  - `evolution-lock.md` line 83 关联段（"4 文档"→"8 文档"）
+  - 实际运行 + 测试都通过，但**读规则的人会被旧表述误导**（以为是 v2 6 文档版）
+- **修复**（3 文件）：
+  - `.claude/rules/doc-sync.md`：所有"6 文档" → "8 文档"；节点 1 详细说明补 README + PROJECT-CONTEXT 两段；节点 3 "7 文件"→"9 文件"；节点 4 "5 文件"→"8 文件"
+  - `.claude/rules/self-discipline.md`：标题"6 文档版"→"8 文档版"；决策树标题"6 文档自检"→"8 文档自检"；7 段自检清单重排（README + PROJECT-CONTEXT + CHANGELOG 移到合适位置 + CHANGELOG 段扩展到 4 条）
+  - `.claude/rules/evolution-lock.md`：line 83 关联段"4 文档"→"8 文档" + 列出 8 文档全名
+- **验证**：`npm run doc:check` **26 通过 / 0 失败**（不破坏现有测试）
+- **L5 影响**：未来 AI 读 self-discipline 决策树时自动覆盖 README + PROJECT-CONTEXT = 减少"漏改 8 文档"风险
+- **关联**：M33 README + PROJECT-CONTEXT 重写（v3 8 文档规则） + M24.6 doc-sync v2（v2 6 文档规则）
+
 ### Added - M31 多 Agent Swarm 协调 POC（借鉴 ruvnet/ruflo · 2026-06-27）
 
 - **痛点**：AiCode dispatcher 只决定"派不派 + 派几个",派出去的 Agent 各自独立回答,没有"汇总 + 投票"机制。复杂任务单 Agent 视角容易盲。

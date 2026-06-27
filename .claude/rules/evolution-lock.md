@@ -80,7 +80,7 @@ node scripts/orchestrator/evolution-lock.js complete P0-0-evo-governance "建 ev
 ## 🔗 关联
 
 - [`.claude/rules/autonomous.md`](autonomous.md) — 自主模式规则（互不冲突，自主模式是 ON/OFF 开关，本规则是「在做什么」锁）
-- [`.claude/rules/doc-sync.md`](doc-sync.md) — 文档同步规则（完成里程碑后必须同步 4 文档，但要等锁释放后做）
+- [`.claude/rules/doc-sync.md`](doc-sync.md) — 文档同步规则（完成里程碑后必须同步 8 文档 = README + PROJECT-CONTEXT + 01/02/03/04/CLAUDE/CHANGELOG + package.json，但要等锁释放后做）
 - [`.claude/rules/self-discipline.md`](self-discipline.md) — 自我约束（快照 + 测试 + KB + 文档）
 - `04_自我演进路线.md` 第十二章 — 里程碑表（事实源，**禁止在没有锁的情况下改**）
 - `scripts/orchestrator/evolution-lock.js` — 锁引擎实现
