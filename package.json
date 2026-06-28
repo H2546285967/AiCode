@@ -13,6 +13,7 @@
     "evolve:auto:reset": "node scripts/evolution/auto-implement.js reset",
     "test:coverage": "c8 --reporter=text --reporter=html --reporter=json-summary --reports-dir=coverage --include='scripts/**/*.js' --exclude='**/test-*.js' npm test",
     "test:dispatcher": "node scripts/orchestrator/test-dispatcher.js && node scripts/orchestrator/test-dispatcher-unit.js && node scripts/orchestrator/test-dispatcher-scoring.js",
+    "test:dispatch-skill": "node scripts/orchestrator/test-dispatch-skill.js",
     "test:planning": "node scripts/orchestrator/planning/test-plan-detect.js",
     "test:plan-bridge": "node scripts/orchestrator/planning/test-plan-bridge.js",
 "plan:execute": "node scripts/orchestrator/planning/plan-bridge.js execute-latest",
