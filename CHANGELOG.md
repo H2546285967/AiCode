@@ -10,6 +10,56 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Added - M36A ui-skill-installer 一键安装 shadcn+Tailwind+v0 模板（2026-06-28）
+
+- **痛点**：手工 `npx create-next-app` + 装 shadcn 组件（30+ 分钟）；去 GitHub 翻别人 starter（5-15 分钟找 + 10 分钟理解 + 改）
+- **目标**：用户/AI 一句自然语言"做个 SaaS 后台" → 30 秒得到完整 Next.js 15 + Tailwind v4 + shadcn 组件库 + AI SDK（如 chat 场景）的脚手架
+- **已实现**（10 文件 / 929 行 / 15/15 测试）：
+  - `scripts/ui-skill-installer/ui-skill-installer.js` — 主控器（CLI 入口）
+  - `scripts/ui-skill-installer/template-{scanner,judge,scaffolder}.js` — 5 场景模板扫描/评分/脚手架
+  - `scripts/ui-skill-installer/v0-adapter.js` — v0.dev 接入 stub（heuristic 兜底，未来增量真实接入）
+  - `scripts/ui-skill-installer/test-ui-installer.js` — **15/15 测试**
+  - `.claude/commands/ui-install.md` + `.claude/skills/ui-skill-installer/SKILL.md` — slash command + skill
+  - `package.json` — 5 个新 script（`ui-install` + 4 变体）+ `test:ui-install`
+- **5 大场景**：landing（产品落地页）/ dashboard（SaaS 后台）/ chat（AI 聊天）/ admin（管理后台）/ portfolio（个人作品集）
+- **双轨模板选择**：关键词轨道（快速匹配）+ LLM-judge 轨道（复杂需求）
+- **CLI**：`npm run ui-install` / `ui-install:dry` / `ui-install:list` / `ui-install:cache`
+- **Slash command**：`/ui-install "做个 SaaS 后台"` → 30 秒得到 Next.js 15 + dashboard 脚手架
+
+### Added - M36B+M36C skill-registry 自动发现+安装 skill（含营销号过滤 · 2026-06-28）
+
+- **痛点**：去 GitHub 翻别人的 skill（10+ 分钟找 + 验证可不可用 + 复制安装）；抖音/小红书刷到的"宝藏 skill 合集"90% 是营销号低质内容，装上后污染 `.claude/skills/`
+- **目标**：对标 Codex — 用户/AI 一句"加 chart 能力" → 自动扫 GitHub 3 仓 + npm 关键词 → 5 维评分 ≥ 7.0 → 路径穿越防护安装 → 验证 require → 完成
+- **已实现**（6 文件 / 746 行 / 16/16 测试）：
+  - `scripts/skill-registry/registry-scanner.js` — GitHub 3 仓（awesome-claude-skills / anthropic-skills / community-skills）+ npm 20+ 关键词（chart/database/devops/animation/i18n/auth 等）
+  - `scripts/skill-registry/registry-judge.js` — 5 维评分（来源/描述/stars/URL/禁依赖）+ **minComposite=7.0 闸门（M36C 营销号过滤）**
+  - `scripts/skill-registry/registry-installer.js` — 安装 + 验证 + 卸载 + 列出 + **路径穿越防护**（拒绝 `../../etc/passwd`）+ **require 失败自动回滚**
+  - `scripts/skill-registry/registry-cli.js` — 6 子命令（`list` / `search` / `install` / `uninstall` / `update` / `verify`）+ `--dry-run`
+  - `scripts/skill-registry/test-registry.js` — **16/16 测试**（含路径穿越 + M36C 营销号过滤）
+  - `.claude/commands/skill-install.md` — `/skill-install` slash command
+- **CLI**：`npm run skill-install` / `skill-install:search` / `skill-install:list` / `skill-install:verify` / `skill-install:update`
+- **Slash command**：`/skill-install "添加 chart 能力"` → 自动评分 + 安装到 `.claude/skills/`
+- **验收**：
+  - 营销号低质内容自动 reject（抖音/小红书"宝藏 skill 合集"）
+  - 路径穿越防护：测试 case 含 `../../../etc/passwd` 拒绝路径
+  - require 失败自动回滚：测试 case 覆盖
+
+### Fixed - M37 doc-sync 补漏（M36A/B/C 完成后同步 8 文档 · 2026-06-28）
+
+- **痛点**：M36A（commit ae29b7f）+ M36B/M36C（commit 996db00）已 commit，但 **04.md §0.4 增量段 + §十二 ✅ 表 + 6 文档** 全部未同步 = doc-sync v3 缺失
+- **修复**（7 文档）：
+  - `04_自我演进路线.md` §0.4 新增 M36A + M36B + M36C 3 个增量段
+  - `04_自我演进路线.md` §十二 ✅ 已完成表追加 3 行（33 → 36）+ ⏳ 段移除 "commit + M37" + 状态统计 ✅ 36 / ⏳ 9 / 合计 45
+  - `04_自我演进路线.md` 顶部 next 队列 10 → 9 + 同步日期 2026-06-28
+  - `01_AI-ClaudeCode-最佳实践精简.md` §三速查表 + §二能力表新增 M36 行
+  - `02_工作空间功能介绍.md` §2.31 新章节 + §现状速览表追加 M36 行
+  - `CLAUDE.md` 核心能力表 + 快速操作表新增 M36 行
+  - `PROJECT-CONTEXT.md` 核心系统表 11 → 13 + 11 命令 → 13 命令
+  - `03_版本迭代计划.md` 顶部版本说明 + v3.0.5 行追加 M36 描述
+  - `CHANGELOG.md` 本段新增
+- **验证**：`npm run doc:check` + 全量测试通过
+- **关联**：M36A (commit ae29b7f) + M36B/M36C (commit 996db00) 之前漏同步本次补齐
+
 ### Added - M35 扫描盲区解决（关键词扩 11→20 + 新星探测 + 能力加权 · 2026-06-28）
 
 - **痛点**：/evolve 扫描 GitHub 用 SEARCH_KEYWORDS 11 个全是 "claude*" 硬匹配 → 漏掉能力导向爆款（NousResearch Hermes / MemGPT / LangChain Agents / AutoGPT / Aider） + 漏掉 24h 新星项目（stars 总量低但增长快）。L4 学习闭环有"扫描盲区" = 候选池不完整 → AI 不知道业界有什么

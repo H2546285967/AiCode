@@ -108,6 +108,8 @@ AiCode/
 | `README.md` + `PROJECT-CONTEXT.md` | 文档基线 | 项目名片 + session-init 自动加载的 1 分钟全貌（v3.0.5 M33 重写，告别 v2.0.0 / v1.9 过期）|
 | `left-brain` | 长期记忆 | 跨会话知识沉淀 |
 | `agent-reach` | 外部感知 | 13 平台互联网路由（GitHub/B站/V2EX/RSS/网页） |
+| **`ui-skill-installer`** (M36A) | **UI 模板脚手架** | **5 场景（landing/dashboard/chat/admin/portfolio）+ shadcn+Tailwind+v0，30 秒得到 Next.js 15 脚手架** |
+| **`skill-registry`** (M36B+C) | **skill 自动发现+安装** | **GitHub 3 仓 + npm 20+ 关键词 + 5 维评分 ≥ 7.0 + 路径穿越防护 + 营销号过滤（M37 doc-sync 8 文档补漏）** |
 | MCP servers | 工具链 | 本地文件/数据库/网页能力 |
 | `hooks/` | 环境集成 | 自动执行启动/停止逻辑 |
 | `自我约束规范.md` | 工作流 | 改完代码自动收尾 |
@@ -164,6 +166,8 @@ AiCode/
 | **AI 启动协议** | 见上方"启动协议"段（CLAUDE.md 必读） |
 | **用户命令速查** | 01_AI-ClaudeCode-最佳实践精简.md §三 |
 | **能力详细说明** | 02_工作空间功能介绍.md §二（按 2.X 节） |
+| **UI 模板一键安装** | `/ui-install "做 SaaS 后台"` 或 `npm run ui-install` |
+| **skill 一键安装** | `/skill-install "加 chart 能力"` 或 `npm run skill-install` |
 
 > **2026-06-25 调整（B 方案）**：3 文件职责正交化——
 > - **CLAUDE.md** = 启动导航（启动协议 / 工作空间结构 / 规则文件清单 / 核心定位）

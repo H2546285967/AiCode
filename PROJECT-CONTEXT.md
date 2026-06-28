@@ -15,7 +15,7 @@
 
 ---
 
-## 11 个核心系统
+## 13 个核心系统
 
 | 系统 | 入口 | 一句话 | 阶段 |
 |:-----|:-----|:-------|:----:|
@@ -31,6 +31,8 @@
 | **🔒 evolution-lock** | `node scripts/orchestrator/evolution-lock.js status\|queue\|complete` | 防止多窗口同时改 04/CLAUDE/CHANGELOG 导致漂移 | P0-0 |
 | **🌳 sync-roadmap** | `node scripts/orchestrator/sync-roadmap.js` | 自动同步 04.md §十二 ⏳ 段 + evolution-plan.json | M24-D |
 | **🧬 gepa** | `npm run gepa:evolve` 或 `node scripts/evolution/daily-evolution.js self-evolve` | SKILL.md 自我进化（5 模块 + 5 道护栏 + 26/26 测试，借鉴 Hermes GEPA）| L4 |
+| **🎨 ui-skill-installer** (M36A) | `/ui-install` 或 `npm run ui-install` | 5 场景 UI 模板脚手架（landing/dashboard/chat/admin/portfolio + shadcn+Tailwind+v0）| L4 ✅ |
+| **📦 skill-registry** (M36B+C) | `/skill-install` 或 `npm run skill-install` | skill 自动发现+安装（GitHub 3 仓 + npm 20+ 关键词 + 5 维评分 ≥ 7.0 + 路径穿越防护 + 营销号过滤）| L4 ✅ |
 
 ---
 
@@ -67,10 +69,10 @@ AiCode/
 
 ---
 
-## 11 个常用命令
+## 13 个常用命令
 
 ```bash
-# 测试（25+ 文件 / 300+ 断言全过）
+# 测试（30+ 文件 / 300+ 断言全过）
 npm test
 npm run doc:check                  # 6 文档一致性（M24.6）
 
@@ -83,6 +85,11 @@ bash .claude/skills/left-brain/scripts/left-brain.sh recall "关键词"
 /autonomous single                  # 自主模式单阶段
 /evolve run                         # GitHub 扫描 + LLM-judge
 npm run gepa:evolve                 # SKILL 自我进化（GEPA · M34）
+
+# 一键安装（M36A+B+C）
+/ui-install "做 SaaS 后台"          # 30 秒得到 Next.js 15 + Tailwind 脚手架（M36A）
+/skill-install "加 chart 能力"       # 自动评分 + 安装到 .claude/skills/（M36B+C）
+npm run ui-install / skill-install  # CLI 入口
 
 # 会话交接（M21-M29）
 /handoff                            # 无参数自动生成标题 + 下一阶段

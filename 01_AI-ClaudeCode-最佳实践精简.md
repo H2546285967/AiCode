@@ -69,6 +69,8 @@
 | `qa-reviewer` | 验证层 | 独立 QA 验证 |
 | `/evolve`, `/dispatch` | UX 层 | 高效交互入口 |
 | `会话快照` | 状态恢复 | 跨会话接上 |
+| **`ui-skill-installer`** (M36A) | **UI 模板脚手架** | **5 场景（landing/dashboard/chat/admin/portfolio）+ shadcn+Tailwind+v0** |
+| **`skill-registry`** (M36B+C) | **skill 自动发现+安装** | **20 关键词扫 GitHub/npm + 5 维评分 ≥ 7.0 + 路径穿越防护 + 营销号过滤** |
 
 ### 2.4 为什么这个定位更务实
 
@@ -135,6 +137,8 @@
 | **多 Agent Swarm 协调** | `npm run swarm:demo` 或 `npm run swarm:run 任务 --n=3` | 多视角生成 + 投票汇总（v3.0.5 M31 POC），详见 02 §2.X |
 | **SKILL 生态索引** | 看 `.claude/SKILL_INDEX.md` | 4 skill（left-brain/audit/autonomous/evolve）总览 + 5 场景脚本（M32），0 启动成本 |
 | **SKILL 自我进化（GEPA）** | `/evolve self-evolve` 或 `npm run gepa:evolve` | 借鉴 Hermes GEPA 思路，基于 execution traces 自动迭代 SKILL.md（M34 · 加 `--apply` 才覆盖），详见 02 §2.X |
+| **UI 模板一键安装** | `/ui-install "做 SaaS 后台"` 或 `npm run ui-install` | 30 秒得到 Next.js 15 + shadcn + Tailwind v4 + AI SDK 脚手架（v3.0.5 M36A），详见 02 §2.X |
+| **skill 一键安装** | `/skill-install "加 chart 能力"` 或 `npm run skill-install` | 自动扫 GitHub 3 仓 + npm 关键词 + 5 维评分 ≥ 7.0 + 路径穿越防护（v3.0.5 M36B+C · M37 8 文档补同步），详见 02 §2.X |
 | **文档基线** | 看 `README.md` + `PROJECT-CONTEXT.md` | v3.0.5 用户首看 + session-init 自动加载（M33 重写，告别 v2.0.0 / v1.9 过期）|
 | **handoff 接续（推荐 · 一键接续）** | `/handoff` 或 `node handoff.js` | 上下文 40% 时 / 想换窗口 / 5 场景教程见 `.claude/handoff/TUTORIAL.md`（自动复制启动命令到剪贴板 + 打印接续 prompt，由你决定怎么打开）|
 | **handoff 接续（VS Code 新窗口）** | `/handoff "..." --auto` | 开 VS Code 新窗口 + 复制启动命令到剪贴板（v3.0.4 M22） |
