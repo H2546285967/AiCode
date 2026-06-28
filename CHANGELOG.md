@@ -10,6 +10,31 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Added - x1xhlol IDE Agent 按需评估 + auto-perceive 规则补完（2026-06-28）
+
+- **背景**：用户问 `x1xhlol/system-prompts-and-models-of-ai-tools` 价值（141k⭐，GPL-3.0，30+ IDE Agent 语料）。与 asgeirtj (chat 产品) 互补（IDE Agent 方向），按"按需抓不 clone"策略读 3 个核心 prompt。
+- **本阶段动作**：
+  - **新增 KB `ide-agent-prompts-x1xhlol-2026.md`** — 读 Cline (508 行) / Devin (314 行) / Cursor Agent 2.0 (691 行) 提炼 5 模式：
+    1. **planning vs standard 双模式切换** — autonomous-runner 应分两阶段（只读 vs 写）
+    2. **think tool 10 个必须触发场景** — 显式触发条件清单替代 AI 自决思考
+    3. **`<suggest_plan>` 结构化命令** — plan 显式触发信号
+    4. **调试铁律 4 条** — 不改测试 / 不加注释 / 看现有模式 / 不假设库可用
+    5. **现有模式优先** — 新组件前先看邻居代码
+  - **`.claude/rules/auto-perceive.md` 补 "What NOT to save" 5 类不写清单**（commit `2aa0f08`）— 沉淀 cowork-dispatch 借鉴
+  - **MEMORY.md 索引追加 1 条**（ide-agent-prompts）
+- **GPL-3.0 风险**：所有 KB 内容只能写"我们总结的模式"，**严禁原文搬运 x1xhlol 仓库的 prompt 段落**（asgeirtj 是 CC0，x1xhlol 是 GPL-3.0）
+- **测试结果**：N/A（纯 KB 沉淀 + 规则补完）
+- **L5 影响**：
+  - **未来增量候选**（待 04 路线图确认）：3 个 autonomous-runner 改进方向（详见 `ide-agent-prompts-x1xhlol-2026.md`）
+  - **L4 学习闭环 ↑**：IDE Agent 正例库（按需，0 体积成本）
+- **关联**：`ide-agent-prompts-x1xhlol-2026.md` · `cowork-dispatch-memory-pattern-2026.md`（互补：chat 产品）
+
+### Files - 本次增量
+
+- KB `ide-agent-prompts-x1xhlol-2026.md` (新) — 5 借鉴模式 + GPL-3.0 划界
+- `.claude/rules/auto-perceive.md` (改) — "What NOT to save" 5 类不写清单（已在 commit `2aa0f08`）
+- `MEMORY.md` (改) — 索引追加 ide-agent-prompts 条
+
 ### Added - asgeirtj 语料库接入 + cowork-dispatch 借鉴评估（2026-06-28）
 
 - **背景**：用户问 `asgeirtj/system_prompts_leaks` 价值，评估为"挖语料不当 skill"。这是 L4 学习闭环的官方对齐机会——仓库 46,778⭐、CC0 license、165+ 真实 SOTA 产品 system prompt（含 Anthropic Claude Fable 5/Opus 4.8/Code/Cowork、OpenAI GPT-5.5、Cursor/Copilot 等）。
