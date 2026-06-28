@@ -10,6 +10,24 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Tracking - M26/M27 hook 试用期 Day 1/7 跟踪记录（2026-06-28）
+
+- **背景**：M26（sandbox-tool-output）+ M27（skill-reuse）POC 完成于 2026-06-27，04.md §0.4 明文要求"试用 1 周后决定是否接 hook"。当前 Day 1/7（截止 2026-07-04 周五）
+- **本阶段动作**：
+  - 重跑两个 POC 测试确认无 regression：`test-sandbox.js` **37/37 通过** + `test-skill-reuse.js` **24/24 通过**
+  - 创建试用期跟踪文档 `.claude/skills/left-brain/memory/decisions/m26-m27-trial-tracking.md`：定义 7 天试用期的评估维度（M26 自动触发 / 信息丢失；M27 召回质量 / 注入价值）
+  - 标记 Day 1/7 状态：当前无负面信号也无正面信号（用户/AI 主动调用 0 次 — 痛点未迫切到必须接 hook）
+- **决策结论**：**未到 1 周不做最终决定**，遵守用户明文要求；留给 Day 7/7 stage 出对比报告
+- **下次 stage**：`M26-M27-trial-day7-decision`（2026-07-04 触发）
+- **关联**：04.md §0.4 M26/M27 增量段 · evolution-plan.json `试用 1 周后决定 M26/M27 是否接 hook`
+
+### Files - M26/M27 试用期 Day 1 跟踪
+
+```
+.claude/skills/left-brain/memory/decisions/m26-m27-trial-tracking.md   (新增 Day 1/7 跟踪文档)
+CHANGELOG.md                                                          (本条目)
+```
+
 ### Fixed - security-skills-poc cache 命令 ReferenceError + npm scripts 接入（2026-06-28）
 
 - **痛点**：借鉴 mukul975/Anthropic-Cybersecurity-Skills 的防御性安全 POC 已落地（cache/list/search/map/adapt/demo），但 `cache` 子命令第 135 行引用了不存在的函数 `ghRaw`，执行会抛 ReferenceError；只跑 `demo` 路径的用户察觉不到；npm scripts 也未暴露，与 aris-poc/mem-poc/skill-hub 体验不一致
