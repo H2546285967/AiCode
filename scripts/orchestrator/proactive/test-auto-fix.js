@@ -44,16 +44,35 @@ function clearProposals() {
 // ==================== 1. fixUncommitted 安全过滤 ====================
 section('Fix 1: uncommitted 安全过滤');
 
-// AI 工作目录文件 → 跳过
+// AI 工作目录文件 → 跳过（自己造临时文件测试，不依赖当前工作区状态）
 {
-  const r = fixUncommitted(false);
-  // 当前工作区有 scripts/orchestrator/ 改动，应被过滤
-  if (r.skipped && r.reason && r.reason.includes('AI 工作目录')) {
-    assert(true, 'AI 工作目录文件被跳过');
-  } else if (r.committed !== undefined) {
-    assert(false, 'AI 工作目录不应被自动 commit', `got committed=${r.committed}`);
-  } else {
-    assert(r.skipped || r.committed !== undefined, '返回结构正常', JSON.stringify(r));
+  // 1. 备份当前工作区状态
+  const stashed = (() => {
+    try { return execFileSync('git', ['stash', '--include-untracked'], { stdio: 'pipe', encoding: 'utf8' }); }
+    catch { return null; }
+  })();
+  const dirtyBefore = !!stashed;
+
+  // 2. 造一个 AI 工作目录临时文件
+  const testFile = path.join(__dirname, '..', '..', 'orchestrator', '_test_aiworkdir.tmp.js');
+  fs.writeFileSync(testFile, '// 临时测试文件 - 验证 AI 工作目录过滤\n');
+
+  try {
+    const r = fixUncommitted(false);
+    // 期望：返回 skipped 且 reason 含 'AI 工作目录'
+    if (r.skipped && r.reason && r.reason.includes('AI 工作目录')) {
+      assert(true, 'AI 工作目录文件被跳过');
+    } else if (r.committed !== undefined) {
+      assert(false, 'AI 工作目录不应被自动 commit', `got committed=${r.committed}`);
+    } else {
+      assert(r.skipped, '返回结构正常（应被跳过）', JSON.stringify(r));
+    }
+  } finally {
+    // 3. 清理临时文件 + 恢复工作区
+    try { fs.unlinkSync(testFile); } catch {}
+    if (dirtyBefore) {
+      try { execFileSync('git', ['stash', 'pop'], { stdio: 'pipe' }); } catch {}
+    }
   }
 }
 
