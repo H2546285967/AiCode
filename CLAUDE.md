@@ -111,6 +111,7 @@ AiCode/
 | **`ui-skill-installer`** (M36A) | **UI 模板脚手架** | **5 场景（landing/dashboard/chat/admin/portfolio）+ shadcn+Tailwind+v0，30 秒得到 Next.js 15 脚手架** |
 | **`skill-registry`** (M36B+C) | **skill 自动发现+安装** | **GitHub 3 仓 + npm 20+ 关键词 + 5 维评分 ≥ 7.0 + 路径穿越防护 + 营销号过滤（M37 doc-sync 8 文档补漏）** |
 | **`aris-poc`** (M38) | **ARIS 借鉴 + 6-state verdict** | **借鉴 wanshuiyin/ARIS：6-state verdict 合约 + cross-model review loop（5 视角）+ idea discovery（5 维评分 + Top-K）+ CLI（npm run aris-poc:demo）** |
+| **`mem-poc`** (M39) | **claude-mem 借鉴 + 历史事件注入** | **借鉴 thedotmack/claude-mem：78 session → 36 事件压缩 + 按 query 注入最相关历史决策/教训 + CLI（npm run mem-poc:demo）** |
 | MCP servers | 工具链 | 本地文件/数据库/网页能力 |
 | `hooks/` | 环境集成 | 自动执行启动/停止逻辑 |
 | `自我约束规范.md` | 工作流 | 改完代码自动收尾 |
@@ -169,6 +170,8 @@ AiCode/
 | **能力详细说明** | 02_工作空间功能介绍.md §二（按 2.X 节） |
 | **UI 模板一键安装** | `/ui-install "做 SaaS 后台"` 或 `npm run ui-install` |
 | **skill 一键安装** | `/skill-install "加 chart 能力"` 或 `npm run skill-install` |
+| **ARIS POC** | `npm run aris-poc:demo` 或 `aris-poc:review -- --file foo.js` |
+| **Mem POC** | `npm run mem-poc:demo` 或 `mem-poc:inject "PowerShell 中文乱码"` |
 
 > **2026-06-25 调整（B 方案）**：3 文件职责正交化——
 > - **CLAUDE.md** = 启动导航（启动协议 / 工作空间结构 / 规则文件清单 / 核心定位）

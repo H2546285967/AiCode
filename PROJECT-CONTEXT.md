@@ -2,7 +2,7 @@
 
 > **用途**：新会话启动时自动加载（`session-init.sh` top-list 包含本文件），快速建立项目心智模型，避免扫描整个仓库浪费 token。
 > **更新时间**：2026-06-28
-> **版本**：v3.0.5（M25~M38 · 4 skill 升格 + swarm 协调 + SKILL 索引 + README/PROJECT-CONTEXT 重写 + doc-sync v3 8 文档 + GEPA skill 自我进化 + 扫描盲区解决 + 一键安装 UI/skill + ARIS POC）
+> **版本**：v3.0.5（M25~M39 · 4 skill 升格 + swarm 协调 + SKILL 索引 + README/PROJECT-CONTEXT 重写 + doc-sync v3 8 文档 + GEPA skill 自我进化 + 扫描盲区解决 + 一键安装 UI/skill + ARIS POC + claude-mem POC）
 > **加载方式**：session-init 自动加载（≈ 100 行 · token 友好）
 
 ---
@@ -15,7 +15,7 @@
 
 ---
 
-## 14 个核心系统
+## 15 个核心系统
 
 | 系统 | 入口 | 一句话 | 阶段 |
 |:-----|:-----|:-------|:----:|
@@ -34,6 +34,7 @@
 | **🎨 ui-skill-installer** (M36A) | `/ui-install` 或 `npm run ui-install` | 5 场景 UI 模板脚手架（landing/dashboard/chat/admin/portfolio + shadcn+Tailwind+v0）| L4 ✅ |
 | **📦 skill-registry** (M36B+C) | `/skill-install` 或 `npm run skill-install` | skill 自动发现+安装（GitHub 3 仓 + npm 20+ 关键词 + 5 维评分 ≥ 7.0 + 路径穿越防护 + 营销号过滤）| L4 ✅ |
 | **🎯 aris-poc** (M38) | `npm run aris-poc:demo` 或 `aris-poc:review` / `aris-poc:idea` | 借鉴 wanshuiyin/ARIS：6-state verdict 合约 + cross-model review loop（5 视角）+ idea discovery（5 维评分 + Top-K），95/95 测试 | L4 |
+| **🧠 mem-poc** (M39) | `npm run mem-poc:demo` 或 `mem-poc:inject "query"` | 借鉴 thedotmack/claude-mem：78 session → 36 事件压缩 + 按 query 注入最相关历史决策/教训，71/71 测试 | L2 |
 
 ---
 
