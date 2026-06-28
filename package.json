@@ -131,7 +131,6 @@
     "skill-install:update": "node scripts/skill-registry/registry-cli.js update",
     "test:skill-registry": "node scripts/orchestrator/test-skill-registry.js",
     "test:aris-poc": "node scripts/aris-poc/test-aris-poc.js",
-    "test:mem-poc": "node scripts/orchestrator/test-mem-poc.js",
     "aris-poc": "node scripts/aris-poc/aris-poc.js",
     "aris-poc:demo": "node scripts/aris-poc/aris-poc.js demo",
     "aris-poc:review": "node scripts/aris-poc/aris-poc.js review",
