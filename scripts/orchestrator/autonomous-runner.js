@@ -258,12 +258,21 @@ function runClaudeStage(prompt) {
   return new Promise((resolve) => {
     log('INFO', `启动 claude -p 子会话执行阶段... (bin: ${CLAUDE_BIN})`);
 
-    // shell: true 让 PowerShell/cmd 接管 PATH 解析，跨 Windows shell 边界也能找到全局 npm CLI
-    const child = spawn(CLAUDE_BIN, ['-p', prompt], {
+    // v3.0.6 fix: Windows 上 shell:true + 长 prompt 参数会被截断/误解析，
+    // 导致子 Claude 收不到完整任务指令。改为通过 stdin 喂 prompt，
+    // claude -p 会读取 stdin 作为 prompt 内容。
+    // 加 --permission-mode auto 让子 Claude 能自动执行文件修改/commit 等安全操作。
+    const child = spawn(CLAUDE_BIN, ['-p', '--permission-mode', 'auto'], {
       cwd: WORKSPACE_ROOT,
-      stdio: 'inherit',
+      stdio: ['pipe', 'inherit', 'inherit'],
       shell: true,
     });
+
+    // 喂入 prompt 后关闭 stdin，让 claude 开始处理
+    if (child.stdin) {
+      child.stdin.write(prompt);
+      child.stdin.end();
+    }
 
     let timeoutId;
     if (STAGE_TIMEOUT_MS > 0) {

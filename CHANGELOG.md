@@ -10,6 +10,23 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Fixed - autonomous-runner 子进程权限模式导致阶段无法完成（2026-06-28）
+
+- **痛点**：`autonomous-runner.js` spawn `claude -p` 子会话执行阶段时，子 Claude 默认需要交互式权限确认；非 TTY 子进程无法响应，导致阶段实际未执行就退出，runner 误判为 `子进程退出 code=0` 并累计失败
+- **修复**：
+  - 延续 v3.0.6 已做的 stdin 喂 prompt 方案，避免 Windows 长参数截断
+  - 子进程启动参数追加 `--permission-mode auto`，让子 Claude 在无交互环境下自动执行文件修改 / bash / commit 等安全操作
+  - 同步更新注释说明修复原因
+- **测试**：`npm run test:autonomous` **64/64 + 12/12 + 6/6 全过**
+- **关联**：`.claude/rules/autonomous.md` · `.claude/skills/autonomous/SKILL.md`
+
+### Files - autonomous-runner 子进程修复
+
+```
+scripts/orchestrator/autonomous-runner.js     (stdin 喂 prompt + --permission-mode auto)
+CHANGELOG.md                                  (本条目)
+```
+
 ### Added - M38.2 /autonomous 交互式方向键菜单（2026-06-28）
 
 - **痛点**：用户执行 `/autonomous` 无参时报"必须显式指定模式"，记不住 `single/always/on/off` 四个入口；输入完整命令也不够爽
