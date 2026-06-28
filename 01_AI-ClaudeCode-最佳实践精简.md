@@ -140,7 +140,8 @@
 | **UI 模板一键安装** | `/ui-install "做 SaaS 后台"` 或 `npm run ui-install` | 30 秒得到 Next.js 15 + shadcn + Tailwind v4 + AI SDK 脚手架（v3.0.5 M36A），详见 02 §2.X |
 | **skill 一键安装** | `/skill-install "加 chart 能力"` 或 `npm run skill-install` | 自动扫 GitHub 3 仓 + npm 关键词 + 5 维评分 ≥ 7.0 + 路径穿越防护（v3.0.5 M36B+C · M37 8 文档补同步），详见 02 §2.X |
 | **ARIS POC** | `npm run aris-poc:demo` 或 `aris-poc:review -- --file foo.js` 或 `aris-poc:idea -- --json candidates.json` | 借鉴 wanshuiyin/ARIS：6-state verdict 合约 + cross-model review loop（5 视角）+ idea discovery（5 维评分 + Top-K）（v3.0.5 M38），详见 02 §2.32 |
-| **Mem POC** | `npm run mem-poc:demo` 或 `mem-poc:inject "PowerShell 中文乱码"` | 借鉴 thedotmack/claude-mem：78 session → 36 事件压缩 + 按 query 注入最相关历史决策/教训（v3.0.5 M39），详见 02 §2.33 |
+| **Mem POC** | `npm run mem-poc:demo` 或 `mem-poc:inject "PowerShell 中文乱码"` | 借鉴 thedotmack/claude-mem：78 session → 35 事件压缩 + 按 query 注入最相关历史决策/教训（v3.0.5 M39），详见 02 §2.33 |
+| **Skill Hub** | `npm run skill-hub:demo` 或 `skill-hub:search "chart"` | 借鉴 davepoon/buildwithclaude：三源聚合（已装+本地+远程缓存）统一搜索/推荐 skill（v3.0.5 M40），详见 02 §2.34 |
 | **文档基线** | 看 `README.md` + `PROJECT-CONTEXT.md` | v3.0.5 用户首看 + session-init 自动加载（M33 重写，告别 v2.0.0 / v1.9 过期）|
 | **handoff 接续（推荐 · 一键接续）** | `/handoff` 或 `node handoff.js` | 上下文 40% 时 / 想换窗口 / 5 场景教程见 `.claude/handoff/TUTORIAL.md`（自动复制启动命令到剪贴板 + 打印接续 prompt，由你决定怎么打开）|
 | **handoff 接续（VS Code 新窗口）** | `/handoff "..." --auto` | 开 VS Code 新窗口 + 复制启动命令到剪贴板（v3.0.4 M22） |
@@ -213,7 +214,7 @@
 | **cron 主动报告** | `scripts/orchestrator/proactive/cron-report.js` | 日报 9:37 / 周报周一 9:42，delta 计算 + 历史裁剪，54/54 测试 |
 | **LLM 辅助 auto-fix** | `scripts/orchestrator/proactive/llm-fix-advisor.js` | test-coverage / deps-outdated / candidate-pending 加 LLM 建议（`--llm` flag），19+23 测试 |
 | **任务复杂度评分** | `dispatcher.js` v2.5.0+ | `scoreComplexity()` 0-10 数字 + 三档阈值（<4 不派 / 4-7 灰区 / >7 派），M10 接入 Agent 数量（1-3） |
-| **自主演进模式** | `/autonomous single\|always` | single 完成一个阶段后停，always 循环；5 道安全闸门 + 5 次失败上限，62+6 测试 |
+| **自主演进模式** | `npm run autonomous`（↑↓ 方向键选择，↵ 自动执行）<br>或 `/autonomous single\|always` | single 完成一个阶段后停，always 循环；5 道安全闸门 + 5 次失败上限，64+12+6 测试 |
 | **个人 workflow 智能化** | `scripts/orchestrator/workflow/*.js` | observer / pattern-miner / suggestion-engine 三层架构，`/workflow` 主动建议 |
 | **工程自查/审计** | `scripts/orchestrator/audit/quick-audit.js` | 6 个扫描器（profile / completed / unfinished / gaps / duplicates / suggestions），9/9 测试 |
 

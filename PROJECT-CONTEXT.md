@@ -2,7 +2,7 @@
 
 > **用途**：新会话启动时自动加载（`session-init.sh` top-list 包含本文件），快速建立项目心智模型，避免扫描整个仓库浪费 token。
 > **更新时间**：2026-06-28
-> **版本**：v3.0.5（M25~M39 · 4 skill 升格 + swarm 协调 + SKILL 索引 + README/PROJECT-CONTEXT 重写 + doc-sync v3 8 文档 + GEPA skill 自我进化 + 扫描盲区解决 + 一键安装 UI/skill + ARIS POC + claude-mem POC）
+> **版本**：v3.0.5（M25~M40 · 4 skill 升格 + swarm 协调 + SKILL 索引 + README/PROJECT-CONTEXT 重写 + doc-sync v3 8 文档 + GEPA skill 自我进化 + 扫描盲区解决 + 一键安装 UI/skill + ARIS POC + claude-mem POC + skill-hub POC）
 > **加载方式**：session-init 自动加载（≈ 100 行 · token 友好）
 
 ---
@@ -21,7 +21,7 @@
 |:-----|:-----|:-------|:----:|
 | **🧠 left-brain** | `bash .claude/skills/left-brain/scripts/left-brain.sh remember/recall` | 跨会话记忆 + 知识图谱 + 语义搜索 + Token 监控 | L2 ✅ |
 | **🔍 audit** | `/audit` 或 `node scripts/orchestrator/audit/quick-audit.js` | 工程健康度自查（6 段浅层报告 + 4 维度 P0/P1/P2 建议）| L4 |
-| **🤖 autonomous** | `/autonomous single\|always` | 自主模式（4 种：single/always/toggle/off）| L5 ✅ |
+| **🤖 autonomous** | `npm run autonomous`（↑↓ 方向键选择）或 `/autonomous single\|always` | 自主模式（4 种：single/always/on/off）+ 方向键交互菜单 | L5 ✅ |
 | **🧬 evolve** | `/evolve run\|scan\|analyze\|candidates\|implement` | GitHub 扫描 + TF-IDF + LLM-judge + 入队 | L4 ✅ |
 | **🐝 swarm** | `npm run swarm:demo` 或 `npm run swarm:run 任务 --n=3` | 多 Agent 异构视角 + 投票汇总（M31 POC）| L5 |
 | **📊 metrics** | `node scripts/orchestrator/metrics/report.js` | 月度报告（4 指标：耗时/成功率/KB 召回/人工干预）| L4 |
@@ -34,7 +34,8 @@
 | **🎨 ui-skill-installer** (M36A) | `/ui-install` 或 `npm run ui-install` | 5 场景 UI 模板脚手架（landing/dashboard/chat/admin/portfolio + shadcn+Tailwind+v0）| L4 ✅ |
 | **📦 skill-registry** (M36B+C) | `/skill-install` 或 `npm run skill-install` | skill 自动发现+安装（GitHub 3 仓 + npm 20+ 关键词 + 5 维评分 ≥ 7.0 + 路径穿越防护 + 营销号过滤）| L4 ✅ |
 | **🎯 aris-poc** (M38) | `npm run aris-poc:demo` 或 `aris-poc:review` / `aris-poc:idea` | 借鉴 wanshuiyin/ARIS：6-state verdict 合约 + cross-model review loop（5 视角）+ idea discovery（5 维评分 + Top-K），95/95 测试 | L4 |
-| **🧠 mem-poc** (M39) | `npm run mem-poc:demo` 或 `mem-poc:inject "query"` | 借鉴 thedotmack/claude-mem：78 session → 36 事件压缩 + 按 query 注入最相关历史决策/教训，71/71 测试 | L2 |
+| **🧠 mem-poc** (M39) | `npm run mem-poc:demo` 或 `mem-poc:inject "query"` | 借鉴 thedotmack/claude-mem：78 session → 35 事件压缩 + 按 query 注入最相关历史决策/教训，71/71 测试 | L2 |
+| **🗂️ skill-hub** (M40) | `npm run skill-hub:demo` 或 `skill-hub:search "chart"` | 借鉴 davepoon/buildwithclaude：已装 + 本地 + 远程缓存三源聚合，统一搜索/推荐 skill，33/33 测试 | L4 |
 
 ---
 
@@ -84,7 +85,7 @@ bash .claude/skills/left-brain/scripts/left-brain.sh recall "关键词"
 
 # 4 大 skill 入口
 /audit                              # 工程健康度自查
-/autonomous single                  # 自主模式单阶段
+npm run autonomous                  # 自主模式方向键菜单（single/always/on/off）
 /evolve run                         # GitHub 扫描 + LLM-judge
 npm run gepa:evolve                 # SKILL 自我进化（GEPA · M34）
 

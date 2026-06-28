@@ -5,7 +5,7 @@
 >
 > 🚨 **最高指令（2026-06-24）**：本工程的核心目标是 **智能演进**（围绕 04 纲领 4 大智能增量 L1→L5 路径）。git 管理 / 多用户 / 权限 / 审计 / 团队产品化等**均非核心**。评估任何新功能/任务时，先问"这能帮 Claude 变智能吗？"→ 否则降级或拒绝。详见 `.claude/memory/priority-intelligent-evolution.md`。
 >
-> 🚀 **自主模式（v2.2.0）**：用户可启动 `/autonomous single`（完成一个阶段后自动停止）或 `/autonomous always`（循环执行阶段）让 Claude 自主决策开发。关闭用 `/autonomous-stop`。详见 `04_自我演进路线.md` 顶部"🚀 自主演进模式"段。
+> 🚀 **自主模式（v2.2.0）**：运行 `npm run autonomous` 弹出方向键菜单（↑↓ 选择，↵ 确认），或手动执行 `/autonomous single`（完成一个阶段后自动停止）/ `/autonomous always`（循环执行阶段）让 Claude 自主决策开发。关闭用 `/autonomous-stop`。详见 `04_自我演进路线.md` 顶部"🚀 自主演进模式"段。
 
 ---
 
@@ -111,7 +111,8 @@ AiCode/
 | **`ui-skill-installer`** (M36A) | **UI 模板脚手架** | **5 场景（landing/dashboard/chat/admin/portfolio）+ shadcn+Tailwind+v0，30 秒得到 Next.js 15 脚手架** |
 | **`skill-registry`** (M36B+C) | **skill 自动发现+安装** | **GitHub 3 仓 + npm 20+ 关键词 + 5 维评分 ≥ 7.0 + 路径穿越防护 + 营销号过滤（M37 doc-sync 8 文档补漏）** |
 | **`aris-poc`** (M38) | **ARIS 借鉴 + 6-state verdict** | **借鉴 wanshuiyin/ARIS：6-state verdict 合约 + cross-model review loop（5 视角）+ idea discovery（5 维评分 + Top-K）+ CLI（npm run aris-poc:demo）** |
-| **`mem-poc`** (M39) | **claude-mem 借鉴 + 历史事件注入** | **借鉴 thedotmack/claude-mem：78 session → 36 事件压缩 + 按 query 注入最相关历史决策/教训 + CLI（npm run mem-poc:demo）** |
+| **`mem-poc`** (M39) | **claude-mem 借鉴 + 历史事件注入** | **借鉴 thedotmack/claude-mem：78 session → 35 事件压缩 + 按 query 注入最相关历史决策/教训 + CLI（npm run mem-poc:demo）** |
+| **`skill-hub`** (M40) | **buildwithclaude 借鉴 + skill 统一发现** | **借鉴 davepoon/buildwithclaude：已装 + 本地 + 远程缓存三源聚合，统一搜索/推荐 skill + CLI（npm run skill-hub:demo）** |
 | MCP servers | 工具链 | 本地文件/数据库/网页能力 |
 | `hooks/` | 环境集成 | 自动执行启动/停止逻辑 |
 | `自我约束规范.md` | 工作流 | 改完代码自动收尾 |
@@ -172,6 +173,8 @@ AiCode/
 | **skill 一键安装** | `/skill-install "加 chart 能力"` 或 `npm run skill-install` |
 | **ARIS POC** | `npm run aris-poc:demo` 或 `aris-poc:review -- --file foo.js` |
 | **Mem POC** | `npm run mem-poc:demo` 或 `mem-poc:inject "PowerShell 中文乱码"` |
+| **Skill Hub** | `npm run skill-hub:demo` 或 `skill-hub:search "chart"` |
+| **自主模式** | `npm run autonomous`（↑↓ 选择，↵ 确认）或 `/autonomous single/always` |
 
 > **2026-06-25 调整（B 方案）**：3 文件职责正交化——
 > - **CLAUDE.md** = 启动导航（启动协议 / 工作空间结构 / 规则文件清单 / 核心定位）
