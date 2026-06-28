@@ -105,8 +105,10 @@ scripts/orchestrator/workflow/.test-*/
 .claude/handoff/
 !.claude/handoff/TUTORIAL.md
 
-# M15 评价闭环产物（v2.0.6）
-data/evolution/metrics-*.md 月度报告——保留入库（git 跟踪，跨会话趋势对比）
+# M15 评价闭环产物（v2.0.6）月度报告
+# 本地存在即可（跨会话趋势靠 database 聚合），不入库
+data/evolution/metrics-*.md
+data/evolution/auto-tasks.json
 
 # M16 候选汇聚桥梁产物（v3.0.1）
 data/bridge/

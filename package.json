@@ -1,6 +1,6 @@
 {
   "name": "ai-workspace",
-  "version": "3.0.4",
+  "version": "3.0.5",
   "description": "可移植的个人 AI 开发工作空间 —— 自调度、自记忆、自归档、自兜底",
   "main": "scripts/orchestrator/index.js",
   "scripts": {

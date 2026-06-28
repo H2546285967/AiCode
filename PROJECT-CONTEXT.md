@@ -2,7 +2,7 @@
 
 > **用途**：新会话启动时自动加载（`session-init.sh` top-list 包含本文件），快速建立项目心智模型，避免扫描整个仓库浪费 token。
 > **更新时间**：2026-06-28
-> **版本**：v3.0.5（M25~M34 · 4 skill 升格 + swarm 协调 + SKILL 索引 + GEPA skill 自我进化）
+> **版本**：v3.0.5（M25~M35 · 4 skill 升格 + swarm 协调 + SKILL 索引 + README/PROJECT-CONTEXT 重写 + doc-sync v3 8 文档 + GEPA skill 自我进化 + 扫描盲区解决）
 > **加载方式**：session-init 自动加载（≈ 100 行 · token 友好）
 
 ---
