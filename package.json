@@ -154,7 +154,12 @@
     "go": "node scripts/orchestrator/go-pipeline.js",
     "go:dry": "node scripts/orchestrator/go-pipeline.js --dry-run",
     "go:only-test": "node scripts/orchestrator/go-pipeline.js --only test",
-    "test:go": "node scripts/orchestrator/test-go-pipeline.js"
+    "test:go": "node scripts/orchestrator/test-go-pipeline.js && node scripts/orchestrator/test-auto-classify.js",
+    "kb:classify": "node scripts/knowledge/auto-classify.js",
+    "kb:report": "node scripts/knowledge/auto-classify.js --report",
+    "kb:enrich": "node scripts/knowledge/enrich-kb.js --apply",
+    "kb:enrich:dry": "node scripts/knowledge/enrich-kb.js --dry-run",
+    "test:auto-classify": "node scripts/orchestrator/test-auto-classify.js"
   },
   "keywords": [
     "claude-code",
