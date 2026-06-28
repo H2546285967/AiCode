@@ -10,6 +10,30 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Added - AUDIT-roadmap-item-skill：/go skill 升格（M43 · v3.0.5 · 2026-06-28）
+
+- **背景**：`/audit` 浅层报告 P2 长期挂着"扩展 skill 生态"项（2026-06-26 research-skill-ecosystem 报告 P2 推荐路径 Step 3-5），`/go` 是 25 个命令中**唯一**描述了完整 4 阶段流水线（测试→简化→审查→提交）但**没有真实脚本**的命令 — 此前只是 markdown 模板，靠 Claude 在上下文里"记得跑"
+- **本阶段动作**：
+  - **新建 `scripts/orchestrator/go-pipeline.js`** — 4 阶段流水线引擎 v1.0.0
+    - `STAGE_DEFS` 定义 4 阶段元数据（test / simplify / review / commit）+ 默认命令 + 退出码语义
+    - `parseArgs` 解析 `--dry-run` / `--skip` / `--only` / `--test-cmd` / `--commit-msg` 5 类参数
+    - `runStage` 5 状态：passed / failed / skipped / dry-run
+    - `runPipeline` 失败立即停止逻辑（不再带 broken 测试 commit）
+    - `formatHuman` 人类可读输出（✅/🟡/⏭️/❌ 4 图标 + 各阶段耗时）
+    - 纯函数设计：`opts.exec` 依赖注入 → 测试无需 mock child_process
+  - **新建 `scripts/orchestrator/test-go-pipeline.js`** — 19 个单元测试，覆盖：parseArgs 5 flag · runStage 5 状态 · runPipeline 失败立即停止 · --only 单阶段 · --skip 多阶段 · --dry-run 不调 exec · formatHuman 关键字段 · STAGE_DEFS 完整性
+  - **新建 `.claude/skills/go/SKILL.md`** — skill 升格为第 6 个正式 skill（与 audit/autonomous/evolve/left-brain/ui-skill-installer 并列），含 30 秒上手 + 4 阶段定义 + CLI 参数 + L5 影响 + 关联
+  - **新增 npm scripts**：`go` / `go:dry` / `go:only-test` / `test:go`；`test:go` 已接入 `npm test` 主链
+- **测试结果**：`test:go` **19/19 通过**（执行时间 < 1s）；audit 浅层报告 skillCount 5 → 6 ✅
+- **L5 影响**：
+  - **L5 第 4 条"完成质量"↑**：从"人工记得跑测试" → 4 阶段自动化强制（失败立即停止 + dry-run 预演）
+  - **L5 第 5 条"人工干预率" ↓**：交付场景不再需要人脑判断"该提交了吗" / "该跑测试了吗"
+  - **AI 越用越顺手**：把"流程类判断"交给脚本而非对话，节省每轮 context token
+  - skill 数量 5 → 6（research-skill-ecosystem P2"扩展 skill 生态"目标推进 1/3）
+- **关联**：`scripts/orchestrator/go-pipeline.js` (v1.0.0) · `.claude/skills/go/SKILL.md` · `04_自我演进路线.md §0.4 M43` · `research-skill-ecosystem-20260626` P2 推荐路径
+
+### Files - M43 /go skill 升格
+
 ### Added - runner 子进程执行能力端到端验证（2026-06-28）
 
 - **背景**：前序阶段 `验证 runner 子进程是否能正确执行阶段` 失败 1 次（`子进程退出 code=null`），根因待验证。runner 是 L5 自治模式的核心执行器，验证完整链路（prompt 构建 → 子进程 spawn → exit code → complete-stage 状态机）是阻塞 L5 第 5 步的前置条件。

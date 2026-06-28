@@ -2,7 +2,7 @@
 
 > **用途**：新会话启动时自动加载（`session-init.sh` top-list 包含本文件），快速建立项目心智模型，避免扫描整个仓库浪费 token。
 > **更新时间**：2026-06-28
-> **版本**：v3.0.5（M25~M40 · 4 skill 升格 + swarm 协调 + SKILL 索引 + README/PROJECT-CONTEXT 重写 + doc-sync v3 8 文档 + GEPA skill 自我进化 + 扫描盲区解决 + 一键安装 UI/skill + ARIS POC + claude-mem POC + skill-hub POC）
+> **版本**：v3.0.5（M25~M43 · 6 skill（v3.0.5 M43 新增 /go）+ swarm 协调 + SKILL 索引 + README/PROJECT-CONTEXT 重写 + doc-sync v3 8 文档 + GEPA skill 自我进化 + 扫描盲区解决 + 一键安装 UI/skill + ARIS POC + claude-mem POC + skill-hub POC）
 > **加载方式**：session-init 自动加载（≈ 100 行 · token 友好）
 
 ---
@@ -36,6 +36,7 @@
 | **🎯 aris-poc** (M38) | `npm run aris-poc:demo` 或 `aris-poc:review` / `aris-poc:idea` | 借鉴 wanshuiyin/ARIS：6-state verdict 合约 + cross-model review loop（5 视角）+ idea discovery（5 维评分 + Top-K），95/95 测试 | L4 |
 | **🧠 mem-poc** (M39) | `npm run mem-poc:demo` 或 `mem-poc:inject "query"` | 借鉴 thedotmack/claude-mem：78 session → 35 事件压缩 + 按 query 注入最相关历史决策/教训，71/71 测试 | L2 |
 | **🗂️ skill-hub** (M40) | `npm run skill-hub:demo` 或 `skill-hub:search "chart"` | 借鉴 davepoon/buildwithclaude：已装 + 本地 + 远程缓存三源聚合，统一搜索/推荐 skill，33/33 测试 | L4 |
+| **🚀 go** (M43) | `/go` 或 `npm run go` / `npm run go:dry` | 交付流水线自动化：测试 → 简化 → 审查 → 提交 4 阶段（失败立即停止，纯函数 + 19/19 测试 + `--dry-run/--skip/--only` 5 参数） | L4 |
 
 ---
 
@@ -45,11 +46,13 @@
 AiCode/
 ├── .claude/                         # Claude Code 配置
 │   ├── rules/                       # 行为规则（9 个：auto-perceive / behavior / cost-control / doc-sync / evolution-lock / git-branch / self-discipline / session-memory / autonomous）
-│   ├── skills/                      # 🆕 4 个 skill (v3.0.5 M25 升格)
+│   ├── skills/                      # 🆕 6 个 skill (v3.0.5 M25+M43 升格：evolve + autonomous + go)
 │   │   ├── left-brain/              # 🧠 跨会话记忆
 │   │   ├── audit/                   # 🔍 工程自查
 │   │   ├── autonomous/              # 🤖 自主模式
-│   │   └── evolve/                  # 🧬 自我进化
+│   │   ├── evolve/                  # 🧬 自我进化
+│   │   ├── ui-skill-installer/      # 🎨 一键 UI 模板（M36A）
+│   │   └── go/                      # 🚀 交付流水线（M43）
 │   ├── commands/                    # 斜杠命令（23 个）
 │   ├── SKILL_INDEX.md               # 🆕 M32 4 skill 速览 + 5 场景脚本
 │   ├── hooks/                       # SessionStart / PreToolUse / PostToolUse
@@ -72,7 +75,7 @@ AiCode/
 
 ---
 
-## 14 个常用命令
+## 15 个常用命令
 
 ```bash
 # 测试（30+ 文件 / 300+ 断言全过）
@@ -103,6 +106,14 @@ npm run test:aris-poc               # 95/95 测试
 # 会话交接（M21-M29）
 /handoff                            # 无参数自动生成标题 + 下一阶段
 /handoff "..." --auto               # 开 VS Code 新窗口 + 复制启动命令
+
+# /go 一键交付（M43 · v3.0.5）
+/go                                 # 跑完整流水线：测试 → 简化 → 审查 → 提交
+/go --dry-run                       # 预演模式（不真跑命令）
+npm run go                          # CLI 等价入口
+npm run go:dry                      # 预演
+npm run go:only-test                # 只跑测试阶段
+npm run test:go                     # 19/19 单元测试
 
 # Swarm 协调（M31 POC）
 npm run swarm:demo                  # 3 视角（安全/性能/可维护性）+ 投票输出

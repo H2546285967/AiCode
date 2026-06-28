@@ -113,6 +113,7 @@ AiCode/
 | **`aris-poc`** (M38) | **ARIS 借鉴 + 6-state verdict** | **借鉴 wanshuiyin/ARIS：6-state verdict 合约 + cross-model review loop（5 视角）+ idea discovery（5 维评分 + Top-K）+ CLI（npm run aris-poc:demo）** |
 | **`mem-poc`** (M39) | **claude-mem 借鉴 + 历史事件注入** | **借鉴 thedotmack/claude-mem：78 session → 35 事件压缩 + 按 query 注入最相关历史决策/教训 + CLI（npm run mem-poc:demo）** |
 | **`skill-hub`** (M40) | **buildwithclaude 借鉴 + skill 统一发现** | **借鉴 davepoon/buildwithclaude：已装 + 本地 + 远程缓存三源聚合，统一搜索/推荐 skill + CLI（npm run skill-hub:demo）** |
+| **`go`** (M43) | **交付流水线自动化** | **测试 → 简化 → 审查 → 提交 4 阶段一气呵成（失败立即停止），纯函数 + 19/19 测试 + `--dry-run/--skip/--only` 5 参数（v3.0.5）** |
 | MCP servers | 工具链 | 本地文件/数据库/网页能力 |
 | `hooks/` | 环境集成 | 自动执行启动/停止逻辑 |
 | `自我约束规范.md` | 工作流 | 改完代码自动收尾 |
@@ -174,6 +175,7 @@ AiCode/
 | **ARIS POC** | `npm run aris-poc:demo` 或 `aris-poc:review -- --file foo.js` |
 | **Mem POC** | `npm run mem-poc:demo` 或 `mem-poc:inject "PowerShell 中文乱码"` |
 | **Skill Hub** | `npm run skill-hub:demo` 或 `skill-hub:search "chart"` |
+| **/go 一键交付** | `npm run go` 或 `npm run go:dry` | 测试→简化→审查→提交 4 阶段流水线（v3.0.5 M43，失败立即停止）|
 | **自主模式** | `npm run autonomous`（↑↓ 选择，↵ 确认）<br>或 `/autonomous`（无参弹出选择框）<br>或 `/autonomous single/always/on/off` |
 
 > **2026-06-25 调整（B 方案）**：3 文件职责正交化——

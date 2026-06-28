@@ -1,7 +1,7 @@
 # AiCode — Claude Code 客户端 Agent 增强工程
 
 > **v3.0.5** · 一个**会自己调度、自己记忆、自己审计、自己进化**的 Claude Code 工作空间。
-> **26+ 个测试文件 / 404+ 项断言全过**，L1→L5 5 级智能增量路径打通（L4 ✅ / L5 🟡 3/5）。
+> **26+ 个测试文件 / 423+ 项断言全过**，L1→L5 5 级智能增量路径打通（L4 ✅ / L5 🟡 3/5）。
 
 **定位**：我们**不增强 Claude 大模型本身**，而是增强 **Claude Code 客户端 Agent** —— 通过调度 / 记忆 / 工具 / 工作流 / 自动化，让同样的 Claude 模型发挥出 2-10 倍效率。
 
@@ -38,12 +38,13 @@ claude
 | 🎯 **ARIS POC** | 6-state verdict 合约 + cross-model review loop + idea discovery | `aris-poc` |
 | 🧠 **Mem POC** | 跨会话智能压缩 + 按 query 注入最相关历史事件 | `mem-poc` |
 | 🗂️ **Skill Hub** | 已装 + 本地 + 远程缓存三源聚合，统一搜索/推荐 skill | `skill-hub` |
+| 🚀 **/go 一键交付** | 测试 → 简化 → 审查 → 提交 4 阶段流水线（失败立即停止）| `go` |
 | 📋 **会话交接** | 上下文 40% 时一键 `/handoff` 换窗口 | `handoff` |
 | 📊 **效果量化** | 月度报告：耗时 / 成功率 / KB 召回 / 人工干预 | `metrics` |
 | 🛡️ **自动收尾** | 改完代码自动测试 + 快照 + KB + 6 文档同步 | `self-discipline` |
 
 > **L1→L5 智能演进路径**：L1 工具能用 ✅ → L2 记得住 ✅ → L3 会决策 ✅ → L4 会学习 ✅ → L5 自治运行 🟡
-> **4 个 Skill 速览**：`.claude/SKILL_INDEX.md`（1 张表 + 5 场景脚本 · v3.0.5 M32）
+> **6 个 Skill 速览**：`.claude/SKILL_INDEX.md`（1 张表 + 5 场景脚本 · v3.0.5 M32 + M43）
 
 ---
 
@@ -59,8 +60,8 @@ AiCode/
 ├── CHANGELOG.md                 ⭐ 版本变更记录
 │
 ├── .claude/
-│   ├── SKILL_INDEX.md           🆕 4 skill 速览 + 5 场景脚本
-│   ├── skills/                  4 skill：left-brain / audit / autonomous / evolve
+│   ├── SKILL_INDEX.md           🆕 6 skill 速览 + 5 场景脚本
+│   ├── skills/                  6 skill：left-brain / audit / autonomous / evolve / ui-skill-installer / go
 │   ├── rules/                   9 个行为规则文件
 │   ├── commands/                23 个斜杠命令
 │   └── hooks/                   SessionStart / PreToolUse / PostToolUse
@@ -92,7 +93,8 @@ grep -n "H:\|/c/Users\|/Users/" .claude/settings.local.json
 ## 🧪 测试基线（v3.0.5）
 
 ```text
-npm test                    # 26+ 测试文件 / 300+ 断言全过
+npm test                    # 27+ 测试文件 / 320+ 断言全过
+npm run test:go             # 19/19 /go 流水线测试（M43）
 npm run doc:check           # 6 文档一致性检查（M24.6）
 npm run benchmark           # 并行 vs 串行（详见 benchmarks/result.md）
 ```
