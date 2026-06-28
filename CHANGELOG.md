@@ -10,6 +10,23 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Fixed - security-skills-poc cache 命令 ReferenceError + npm scripts 接入（2026-06-28）
+
+- **痛点**：借鉴 mukul975/Anthropic-Cybersecurity-Skills 的防御性安全 POC 已落地（cache/list/search/map/adapt/demo），但 `cache` 子命令第 135 行引用了不存在的函数 `ghRaw`，执行会抛 ReferenceError；只跑 `demo` 路径的用户察觉不到；npm scripts 也未暴露，与 aris-poc/mem-poc/skill-hub 体验不一致
+- **修复**：
+  - `scripts/security-skills-poc/security-skills-poc.js` line 135：`ghRaw` → `ghRawContent`
+  - `package.json`：新增 6 个 npm 脚本（`security-skills-poc` / `:demo` / `:cache` / `:list` / `:search` + `test:security-skills-poc`），与 aris-poc / mem-poc / skill-hub 保持一致
+- **测试**：`test-security-skills-poc.js` **8/8 通过**；`list` 子命令确认本地 cache meta 状态正确
+- **关联**：`scripts/security-skills-poc/` · `package.json`
+
+### Files - security-skills-poc 修复
+
+```
+scripts/security-skills-poc/security-skills-poc.js   (ghRaw → ghRawContent)
+package.json                                         (+ 6 npm scripts)
+CHANGELOG.md                                         (本条目)
+```
+
 ### Fixed - autonomous-runner 子进程权限模式导致阶段无法完成（2026-06-28）
 
 - **痛点**：`autonomous-runner.js` spawn `claude -p` 子会话执行阶段时，子 Claude 默认需要交互式权限确认；非 TTY 子进程无法响应，导致阶段实际未执行就退出，runner 误判为 `子进程退出 code=0` 并累计失败
