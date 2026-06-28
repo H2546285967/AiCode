@@ -222,15 +222,6 @@ if (require.main === module) {
         });
         return;
       }
-      case 'toggle': {
-        const r = toggle({ reason });
-        if (r.action === 'on') {
-          console.log('🤖 自主模式已开启');
-        } else {
-          console.log('🙋 已切回正常模式（逐步确认）');
-        }
-        break;
-      }
       case 'status': {
         const s = loadState();
         console.log(formatStatusLine());
@@ -256,7 +247,6 @@ autonomous.js v2.2.0 — 自主演进模式开关 + runner 入口
   node autonomous.js always [reason]         # 开启 always 模式（循环执行阶段）
   node autonomous.js start [reason]          # 同 always + 立即启动 runner（向后兼容）
   node autonomous.js runner                  # 直接启动 runner（按当前 mode 执行）
-  node autonomous.js toggle [reason]         # 切换
   node autonomous.js status                  # 查看状态
   node autonomous.js is-enabled              # 机器读（exit 0=ON, 1=OFF）
 

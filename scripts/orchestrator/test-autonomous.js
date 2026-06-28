@@ -245,12 +245,27 @@ clearState();
   assert(isEnabled() === false, 'off 后状态为 OFF');
 }
 
-// toggle
+// toggle CLI 已移除（M38 修复：消除模糊入口，强制显式 single/always/on/off）
 {
-  execFileSync('node', ['autonomous.js', 'toggle'], { cwd: __dirname, stdio: 'pipe' });
-  assert(isEnabled() === true, 'toggle 后 ON');
-  execFileSync('node', ['autonomous.js', 'toggle'], { cwd: __dirname, stdio: 'pipe' });
-  assert(isEnabled() === false, '再 toggle 后 OFF');
+  // 确保状态干净
+  if (isEnabled()) disable();
+  const beforeMode = loadState().mode;
+  let stdout = '';
+  let stderr = '';
+  try {
+    stdout = execFileSync('node', ['autonomous.js', 'toggle'], { cwd: __dirname, encoding: 'utf8', stdio: 'pipe' }).toString();
+  } catch (e) {
+    stdout = (e.stdout || '').toString();
+    stderr = (e.stderr || '').toString();
+  }
+  const out = stdout + stderr;
+  assert(/用法/.test(out), 'toggle 被拒绝时输出 usage 提示');
+  assert(isEnabled() === false, 'toggle 被拒绝后状态仍为 OFF（关键）');
+  assert(loadState().mode === beforeMode, 'toggle 被拒绝后 mode 不变');
+  // 内部 toggle() 函数仍可用（向后兼容其他模块）
+  const r = toggle();
+  assert(r.action === 'on', '内部 toggle() 函数仍正常工作');
+  disable();
 }
 
 // is-enabled exit code
