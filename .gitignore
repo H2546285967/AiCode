@@ -54,6 +54,9 @@ target/
 # 路线图同步日志（sync-roadmap 写入，会话级运行态）
 data/roadmap-sync/
 
+# L5 进度同步日志（sync-l5-progress 写入，会话级运行态）
+data/l5-sync/
+
 # 自主模式状态（autonomous.js 写入，会话级开关）
 .claude/skills/left-brain/memory/autonomous-state.json
 

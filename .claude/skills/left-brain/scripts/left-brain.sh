@@ -350,6 +350,65 @@ dashboard() {
     else
         echo "  ✅ Context 状态良好"
     fi
+
+    # ── L5 进度（v3.0.5 RESEARCH-research-skill-ecosystem-20260626 第 2 步）──────
+    local workspace_root="$(cd "${SKILL_DIR}/../../.." && pwd)"
+    local evolution_dir="${workspace_root}/data/evolution"
+    if [ -d "$evolution_dir" ]; then
+        local latest_report=$(ls -1t "${evolution_dir}"/metrics-*.md 2>/dev/null | head -1)
+        if [ -n "$latest_report" ]; then
+            echo ""
+            echo "🎯 L5 自治运行 5 条达标进度"
+            # 用 sed 抽取 L5 段（避免 awk 处理 emoji 出错）
+            local l5_achieved=0
+            local l5_total=0
+            # 从 ## 🎯 L5 终极智能达标进度 到下一个 ## 开头
+            local in_l5=0
+            while IFS= read -r line; do
+                # 进入 L5 段：包含 "L5 终极智能达标进度"
+                if [[ "$line" == *"L5 终极智能达标进度"* ]]; then
+                    in_l5=1
+                    continue
+                fi
+                # 退出：遇到下一个 ## 标题
+                if [ $in_l5 -eq 1 ] && [[ "$line" == "## "* ]] && [[ "$line" != *"L5 终极智能达标进度"* ]]; then
+                    break
+                fi
+                if [ $in_l5 -eq 1 ]; then
+                    # 匹配行：| N | 条件 | status |
+                    if [[ "$line" =~ ^\|[[:space:]]*([0-9]+)[[:space:]]*\|[[:space:]]*([^|]+)\|[[:space:]]*([^|]+)\|[[:space:]]*$ ]]; then
+                        local n="${BASH_REMATCH[1]}"
+                        local cond="${BASH_REMATCH[2]}"
+                        local status="${BASH_REMATCH[3]}"
+                        # 截断 condition 到 30 字（mbcs 中文也算 1 字）
+                        local cond_short
+                        if command -v awk >/dev/null 2>&1; then
+                            cond_short=$(echo "$cond" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | awk '{ if (length($0) > 30) print substr($0, 1, 30); else print $0 }')
+                        else
+                            cond_short=$(echo "$cond" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | cut -c1-30)
+                        fi
+                        l5_total=$((l5_total + 1))
+                        if echo "$status" | grep -q "✅"; then
+                            l5_achieved=$((l5_achieved + 1))
+                            echo "  ${n}. ✅ ${cond_short}"
+                        else
+                            echo "  ${n}. 🟡 ${cond_short}"
+                        fi
+                    fi
+                fi
+            done < "$latest_report"
+            if [ $l5_total -gt 0 ]; then
+                local report_label=$(basename "$latest_report" .md | sed 's/^metrics-//')
+                echo "  📊 进度: ${l5_achieved}/${l5_total} 条达成 (${report_label})"
+            else
+                echo "  ⚠️ metrics 报告无 L5 5 条数据"
+            fi
+        else
+            echo ""
+            echo "🎯 L5 自治运行 5 条达标进度"
+            echo "  ⚠️ 未找到月度报告（metrics-YYYYMM.md），跑: npm run metrics:report"
+        fi
+    fi
 }
 
 status() {

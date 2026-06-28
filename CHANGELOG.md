@@ -21,6 +21,30 @@
 - **下次 stage**：`M26-M27-trial-day7-decision`（2026-07-04 触发）
 - **关联**：04.md §0.4 M26/M27 增量段 · evolution-plan.json `试用 1 周后决定 M26/M27 是否接 hook`
 
+### Added - RESEARCH-research-skill-ecosystem-20260626：L5 进度可视化 2/6 步落地（2026-06-28）
+
+- **背景**：`.claude/audits/research-skill-ecosystem-20260626.md` 推荐 6 步路径，本阶段完成 Step 1+2：
+  - **Step 1（30 min · P0）**：`scripts/orchestrator/metrics/sync-l5-progress.js` — diff `data/evolution/metrics-YYYYMM.md` 与 `04_自我演进路线.md §0.5 L5 5 条真实进度`，输出需同步项；默认 dry-run，加 `--write` 真改 04.md + 顶部"最近一次同步"时间戳 + 写日志到 `data/l5-sync/`
+  - **Step 2（半天 · P1）**：`left-brain.sh dashboard` 新增"L5 自治运行 5 条达标进度"段 — 自动读最近一份 metrics 报告解析 5 条 + 显示 ✅/🟡 状态 + 进度计数（如 `1/5 条达成 (202606)`）
+- **新增 npm scripts**：`metrics:sync-l5` / `metrics:sync-l5:write` / `metrics:sync-l5:status` / `test:sync-l5`
+- **测试**：`test-sync-l5-progress.js` **14/14 通过**（parseMetricsL5 / parseRoadmapL5 / diffL5 in-sync & out-of-sync & graceful / applyChanges 替换 status + blockquote 兼容 / 顶部时间戳 / findLatestReport）
+- **L5 影响**：
+  - L5 第 4 条（月度 metric 报告持续 3 个月）：diff 工具确保 04.md §0.5 与 metrics 报告自动对齐，避免文档漂移影响 L5 进度可观测性
+  - L5 自治可观测性：dashboard 1 键看 L5 5 条进度（不再翻月度报告）
+- **未做**：Step 3-5（/evolve /autonomous /go 升 skill，M25/M32 已部分完成 — 见 04.md §0.4）；Step 6（L5 趋势折线图，等 2026-08 第 3 份月度报告）
+- **关联**：`.claude/audits/research-skill-ecosystem-20260626.md` 推荐路径第 1+2 步
+
+### Files - RESEARCH-research-skill-ecosystem-20260626 落地
+
+```
+scripts/orchestrator/metrics/sync-l5-progress.js           (新增 - L5 文档同步引擎)
+scripts/orchestrator/metrics/test-sync-l5-progress.js      (新增 - 14 个测试用例)
+.claude/skills/left-brain/scripts/left-brain.sh             (修改 - dashboard 加 L5 进度段)
+package.json                                                (修改 - 4 个 npm scripts)
+CHANGELOG.md                                                (本条目)
+data/evolution/metrics-202606.md                            (新增 - 验证用月度报告)
+```
+
 ### Files - M26/M27 试用期 Day 1 跟踪
 
 ```
