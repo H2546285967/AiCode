@@ -159,7 +159,8 @@
     "kb:report": "node scripts/knowledge/auto-classify.js --report",
     "kb:enrich": "node scripts/knowledge/enrich-kb.js --apply",
     "kb:enrich:dry": "node scripts/knowledge/enrich-kb.js --dry-run",
-    "test:auto-classify": "node scripts/orchestrator/test-auto-classify.js"
+    "test:auto-classify": "node scripts/orchestrator/test-auto-classify.js",
+    "test:explorer-structure": "node scripts/orchestrator/test-explorer-structure.js"
   },
   "keywords": [
     "claude-code",
