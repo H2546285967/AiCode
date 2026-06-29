@@ -10,6 +10,55 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Fixed - bridge 借鉴状态 dedupe（M16 升级 · v3.0.8 · 2026-06-29）
+
+- **背景**：`scripts/bridge/queue-bridge.js` 每次 `/evolve` 跑都会把已完成的 M26/M27/M31/M38/M39/M40 借鉴项目以新 ID（`EVOLVE-thedotmack-claude-mem` 等）重复入队。根因：dedupe 按 id 匹配，但 `evolution-plan.json history` 段里 ID 是 `M39-claude-mem-poc`（非 EVOLVE- 形式），bridge 不知道已借鉴。
+- **本阶段动作**：
+  - 新增 `.claude/knowledge/borrowed-repos.json`（commit 进版本）— 8 条已借鉴仓库白名单（M26/M27/M31/M38/M39/M40/M41/M48+M49）
+  - `scripts/bridge/queue-bridge.js` 加 `readBorrowedRepos()` + `readEvolveCandidates()` 过滤
+  - 大小写不敏感（candidates.json 用 `MemTensor/MemOS` 也能匹配 `memtensor/memos`）
+  - 新增测试段 13（`test-queue-bridge.js`）：8 项校验（白名单文件存在/不存在/小写化/mock 过滤/大小写不敏感/真路径恢复）
+- **验证**：
+  - `npm run queue:sync:dry` 从 10 条 → 4 条（7 条 EVOLVE-* 已借鉴被正确过滤）
+  - 测试 55/55 通过（基线 47 → +8 项）
+  - 桥的 `data/bridge/queue-sync-2026062905065.md` 显示真实新候选只剩 EVOLVE-affaan-m-ecc + AUDIT-cleanup-npm-script + AUDIT-roadmap-item-skill + RESEARCH-research-skill-ecosystem-20260626
+- **commit**：a0377b5
+
+### Decision - ECC（affaan-m/ECC）评估：主体不借鉴，Instincts 概念可借鉴（2026-06-29）
+
+- **背景**：`/evolve` 2026-06-29 扫到 [affaan-m/ECC](https://github.com/affaan-m/ECC) 综合分 7.4/10（⭐223145 · 261 skills · 66 agents · MIT 协议）。需评估是否借鉴。
+- **评估结论**：
+
+| 维度 | 判断 |
+|:-----|:-----|
+| ECC 整体定位 | "harness-native operator system" — 跨 8 大 IDE（Claude Code / Codex / Cursor / OpenCode 等）的 harness 性能系统 |
+| 与 AiCode 关系 | **平行 harness**（不是借鉴材料）— 借鉴它 = 借鉴一个 IDE |
+| 与 AiCode 差异化 | 商业版 Pro $19/seat/mo；Python 实现；261 skills 是营销数字 |
+| Instincts 概念 | **可借鉴**（与 KB 同构，3 处差异：confidence 评分 / TTL prune / evolve 聚类）|
+
+- **可借鉴 3 点**（P3 调研，不立即实现）：
+  1. **KB confidence 评分** — M45 KB 分类质量提升已部分实现（classification 置信度）
+  2. **KB TTL 自动 prune** — `kb-promote --ttl 30` 选项未实现
+  3. **KB evolve 自动聚类** — 与 M48 `kb-promote` 毕业机制重叠，不重复
+- **决策**：
+  - ✅ **主体不借鉴**（CLAUDE.md 最高指令：评估新功能先问"能帮 Claude 变智能吗" — ECC harness 整体不直接帮 Claude 变智能）
+  - ✅ **决策痕迹保留**（KB + CHANGELOG）— 不入队
+  - ✅ **更新 borrowed-repos.json** — 加入白名单避免下次重复入队
+- **KB 全文**：`.claude/skills/left-brain/memory/knowledge/kb-affaan-ecc-eval-2026.md`（主体结构 + 5 不借理由 + 3 可借鉴点 + 与 KB-001/M34/M41/M48/M49 关联）
+- **关联**：AUDIT-khazix-skip（同类决策模式）· [[kb-khazix-skills-borrow-2026]]（同一评估框架）· [[priority-intelligent-evolution]]（最高指令）
+
+### Docs - 自主模式高频使用场景文档化（2026-06-29）
+
+- **背景**：M48/M49 跑通当天（v3.0.7），用户多次问"新窗口 + /autonomous 为什么不自动干活"、"当前会话做 vs runner 后台"、"中途能不能切"——**说明高频用户路径没文档化**。
+- **本次同步 4 处**（按 doc-sync 8 文档规则）：
+  - **CLAUDE.md 顶部**：`v2.2.0 → v3.0.7` 版本号 + 加 1 句"注意 /autonomous 只开开关 + 改跳 01.md"（导航）
+  - **01.md §三**：新增 🚀 自主模式高频场景子段（4 场景表 + 5 条关键认知，**+14 行**）
+  - **02.md §2.20**：标题升级 `v2.2.0 → v3.0.7` + 新增 §2.20.1 子节（4 场景 + 5 认知 + 与 stop 关系 + 关联，**+25 行**）
+  - **04.md §0.4 M48 段末尾**：新增"M48 完成后的用户可见体验升级"对比表（5 行场景对比），沉淀当天实测
+- **不动**：03.md（版本计划与本话题无关）/ PROJECT-CONTEXT.md（100 行速览已含 autonomous 一行）/ README.md
+- **用户高频入口**：从 CLAUDE.md / 01.md 都可跳到场景速查表，扫一眼能选（推荐读法）
+- **影响**：下次新窗口跑 `/autonomous` 时，用户从 01.md §三 看 4 场景表 → 30 秒决定选"当前会话做"还是"启 runner"
+
 ### Added - M49 deep-research 升级：吸收 hv-analysis 横纵双轴方法论（2026-06-29）
 
 - **背景**：[khazix/hv-analysis](https://github.com/KKKKhazix/khazix-skills) 的双轴分析方法论（纵向=时间 + 横向=同期对比 + 交汇=新判断）适合"研究 / 调研 / 摸清楚"等系统化深度研究需求。但其 PDF 输出（WeasyPrint）+ 卡兹克公众号文风不适合工程场景 → **借鉴方法论核心，砍掉 PDF + 文风**，改为 AiCode 风格的离线 CLI + 模板驱动。

@@ -10,6 +10,7 @@
     { "repo": "thedotmack/claude-mem", "borrowed_at": "2026-06-28", "incremental": "M39", "reason": "mem-poc 跨会话智能压缩 + 相关性注入" },
     { "repo": "davepoon/buildwithclaude", "borrowed_at": "2026-06-28", "incremental": "M40", "reason": "skill-hub 三源聚合 + 统一搜索" },
     { "repo": "mukul975/Anthropic-Cybersecurity-Skills", "borrowed_at": "2026-06-28", "incremental": "M41", "reason": "security-skills-poc 防御性安全借鉴" },
+    { "repo": "affaan-m/ECC", "borrowed_at": "2026-06-29", "incremental": "M50", "reason": "主体不借鉴（harness OS 与 AiCode 平行）· 决策记录 · Instincts 3 处可借鉴分析入 KB" },
     { "repo": "KKKKhazix/khazix-skills", "borrowed_at": "2026-06-29", "incremental": "M48+M49", "reason": "neat-freak 完整借鉴 + hv-analysis 横纵双轴方法论" }
   ]
 }
