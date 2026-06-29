@@ -342,6 +342,82 @@ console.log('\n── 12. 源文件损坏 graceful ──');
   }
 }
 
+// ==================== 13. borrowed repos 白名单（v3.0.8）====================
+console.log('\n── 13. borrowed repos 白名单 ──');
+
+{
+  const { readBorrowedRepos } = bridge;
+
+  // 13.1 文件不存在 → 空 Set
+  // 临时移走 borrowed-repos.json
+  const borrowedPath = path.join(__dirname, '..', '..', '.claude', 'knowledge', 'borrowed-repos.json');
+  const borrowedExists = fs.existsSync(borrowedPath);
+  const borrowedBackup = borrowedExists ? fs.readFileSync(borrowedPath, 'utf8') : null;
+
+  try {
+    if (borrowedExists) fs.unlinkSync(borrowedPath);
+    const empty = readBorrowedRepos();
+    check('borrowed.json 不存在 → 空 Set', empty instanceof Set && empty.size === 0);
+
+    // 恢复
+    if (borrowedBackup) fs.writeFileSync(borrowedPath, borrowedBackup);
+  } catch (e) {
+    if (borrowedBackup) fs.writeFileSync(borrowedPath, borrowedBackup);
+    check('13.1 graceful', false, e.message);
+  }
+
+  // 13.2 文件存在 → 返回小写 repo 名集合
+  const real = readBorrowedRepos();
+  check('borrowed.json 存在 → 非空 Set', real instanceof Set && real.size > 0);
+  check('包含 mksglu/context-mode（小写）', real.has('mksglu/context-mode'));
+  check('包含 MemTensor/MemOS（小写化）', real.has('memtensor/memos'));
+  check('包含 KKKKhazix/khazix-skills（小写化）', real.has('kkkkhazix/khazix-skills'));
+
+  // 13.3 readEvolveCandidates 自动过滤掉已借鉴的
+  // 准备：备份真 cands → 写 mock（包含 1 个已借鉴 + 1 个新）
+  const candsPath = path.join(__dirname, '..', '..', 'data', 'github', 'candidates.json');
+  const candsBackup = fs.existsSync(candsPath) ? fs.readFileSync(candsPath, 'utf8') : null;
+
+  // 注意：bridge 用的是模块常量 CANDIDATES_FILE，所以必须直接覆盖真路径
+  const mockCands = {
+    candidates: [
+      { name: 'mksglu/context-mode', suggestion: 'adopt', composite_score: 7.85, summary: '已被借鉴', url: 'https://github.com/mksglu/context-mode', estimated_effort: 'small' },
+      { name: 'brand-new/never-seen', suggestion: 'adopt', composite_score: 7.5, summary: '全新', url: 'https://github.com/brand-new/never-seen', estimated_effort: 'small' },
+      { name: 'affaan-m/ECC', suggestion: 'adopt', composite_score: 7.4, summary: '新候选', url: 'https://github.com/affaan-m/ECC', estimated_effort: 'small' },
+    ],
+  };
+
+  try {
+    const githubDir = path.dirname(candsPath);
+    if (!fs.existsSync(githubDir)) fs.mkdirSync(githubDir, { recursive: true });
+    fs.writeFileSync(candsPath, JSON.stringify(mockCands));
+
+    const cands = readEvolveCandidates();
+    check('mock 3 条 adopt → 过滤后 2 条（已借鉴 mksglu 被跳）', cands.length === 2);
+
+    const ids = cands.map(c => c.id);
+    check('已借鉴的 mksglu/context-mode 被过滤（不在 ids 中）', !ids.includes('EVOLVE-mksglu-context-mode'));
+    check('全新 brand-new/never-seen 保留', ids.includes('EVOLVE-brand-new-never-seen'));
+    check('未借鉴的 affaan-m/ECC 保留', ids.includes('EVOLVE-affaan-m-ecc'));
+
+    // 大小写不敏感测试：borrowed.json 是小写，但 candidates.name 可大写
+    fs.writeFileSync(candsPath, JSON.stringify({
+      candidates: [
+        { name: 'MKSGLU/Context-Mode', suggestion: 'adopt', composite_score: 7.85, summary: '已借鉴大写', url: 'https://github.com/MKSGLU/Context-Mode', estimated_effort: 'small' },
+      ],
+    }));
+    const cands2 = readEvolveCandidates();
+    check('大小写不敏感过滤（大写 MKSGLU/Context-Mode 也跳过）', cands2.length === 0);
+  } finally {
+    // 恢复
+    if (candsBackup) {
+      fs.writeFileSync(candsPath, candsBackup);
+    } else if (fs.existsSync(candsPath)) {
+      fs.unlinkSync(candsPath);
+    }
+  }
+}
+
 // ==================== 总结 ====================
 cleanupTmp();
 console.log('');

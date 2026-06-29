@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * queue-bridge.js — 候选汇聚桥梁（v3.0.1 M16 → v3.0.3 M19-2）
+ * queue-bridge.js — 候选汇聚桥梁（v3.0.1 M16 → v3.0.3 M19-2 → v3.0.8 借鉴状态 dedupe）
  *
  * 作用：
  *   - 把 4 个分散的候选来源汇聚到 evolution-plan.json（next 队列）
@@ -15,6 +15,8 @@
  *   - **永不破坏**：dedupe 严格按 id 匹配；冲突时跳过并报告，不覆盖
  *   - **可观测**：每次跑都写 data/bridge/queue-sync-YYYYMMDD-HHMM.md 日志
  *   - **零依赖**：复用 evolution-lock.queue() + 解析 markdown
+ *   - **借鉴状态 dedupe**（v3.0.8）：读 data/github/borrowed.json 过滤掉已借鉴仓库，
+ *     避免每次 /evolve 跑都把 M26/M27/M31/M38/M39/M40 已完成的 EVOLVE-* 重复入队
  *
  * 用法：
  *   node queue-bridge.js                  # 全量汇聚（4 个源）
@@ -24,6 +26,7 @@
  *
  * @since v3.0.1 (2026-06-25) M16
  * @updated v3.0.3 (2026-06-26) M19-2（+ audit 第 6 段 + research 报告）
+ * @updated v3.0.8 (2026-06-29)（+ 借鉴状态 dedupe · borrowed.json）
  * @source 04_自我演进路线.md §0.4 M16 + M19
  */
 
@@ -44,6 +47,7 @@ const { Evolution: Evo } = Metrics || { Evolution: null };
 
 // ── 路径 ─────────────────────────────────────────────
 const CANDIDATES_FILE = path.join(DATA_DIR, 'github', 'candidates.json');
+const BORROWED_FILE = path.join(WORKSPACE_ROOT, '.claude', 'knowledge', 'borrowed-repos.json'); // v3.0.8 借鉴白名单（commit 进版本）
 const ROADMAP_FILE = path.join(WORKSPACE_ROOT, '04_自我演进路线.md');
 const AUDIT_DIR = path.join(WORKSPACE_ROOT, '.claude', 'audits');
 
@@ -76,11 +80,42 @@ function makeId(source, key) {
   return slugify(key);
 }
 
+// ── 借鉴白名单（v3.0.8 新增）─────────────────────────
+
+/**
+ * 读 data/github/borrowed.json — 已借鉴 GitHub 仓库白名单
+ *
+ * 文件格式：
+ *   {
+ *     "schema_version": 1,
+ *     "borrowed": [
+ *       { "repo": "thedotmack/claude-mem", "borrowed_at": "2026-06-28", "incremental": "M39", "reason": "mem-poc" },
+ *       ...
+ *     ]
+ *   }
+ *
+ * 设计动机（M16 升级）：
+ *   - 之前 dedupe 按 id 匹配（EVOLVE-thedotmack-claude-mem），但 history 段里 id 叫 M39-claude-mem-poc
+ *   - 名字不一致 → bridge 不知道已借鉴 → 每次 /evolve 都重复入队
+ *   - 修法：显式写"已借鉴 repo 名单" → candidates.json 里的 name 在白名单 → 跳过
+ *   - 路径：.claude/knowledge/borrowed-repos.json（commit 进版本，让团队/未来 AI 可见）
+ *
+ * @returns {Set<string>} repo name 集合（小写）
+ */
+function readBorrowedRepos() {
+  if (!fs.existsSync(BORROWED_FILE)) return new Set();
+  let data;
+  try { data = JSON.parse(fs.readFileSync(BORROWED_FILE, 'utf8')); }
+  catch { return new Set(); }
+  const borrowed = data.borrowed || [];
+  return new Set(borrowed.map(b => String(b.repo || '').toLowerCase()).filter(Boolean));
+}
+
 // ── 源 1：data/github/candidates.json ──────────────────
 
 /**
  * 读 evolve 候选（adopt 建议）
- * @returns {Array<{id, title, source, score, summary, url}>}
+ * @returns {Array<{id, title, source, score, summary, url, borrowed_reason?}>}
  */
 function readEvolveCandidates() {
   if (!fs.existsSync(CANDIDATES_FILE)) return [];
@@ -89,8 +124,17 @@ function readEvolveCandidates() {
   catch { return []; }
 
   const candidates = data.candidates || [];
+  const borrowed = readBorrowedRepos();
   return candidates
     .filter(c => c.suggestion === 'adopt') // 只采纳"建议采纳"的
+    .filter(c => {
+      // v3.0.8 借鉴白名单过滤：repo 已被借鉴 → 跳过
+      const name = (c.name || '').toLowerCase();
+      if (borrowed.has(name)) {
+        return false;
+      }
+      return true;
+    })
     .map(c => ({
       id: makeId('evolve', c.name || c.id || c.url),
       title: c.name || c.url || 'unknown',
@@ -490,6 +534,7 @@ if (require.main === module) {
 
 module.exports = {
   readEvolveCandidates,
+  readBorrowedRepos,    // v3.0.8 借鉴白名单
   readRoadmapBacklog,
   readAuditBacklog,    // v3.0.3 M19-2
   readResearchDigest,  // v3.0.3 M19-2
