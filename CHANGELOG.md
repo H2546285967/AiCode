@@ -55,6 +55,29 @@
 - **剩余**：A 主题 4 维度中的 3 维度（hook-fail / config-drift / memory-health）另立 P1 候选（避免单次合 4 维度失焦）
 - **关联**：`.claude/rules/doc-sync.md` 第 8 维度承诺 · M48 neat-freak 借鉴 · batch 2 audit 报告 `.claude/audits/audit-20260629-2330-deep.md` 主题 A
 
+### Fixed - M54 /audit batch 2 主题 E：left-brain recall 默认入口合并（2026-06-30 · v3.0.9）
+
+> **背景**：`.claude/skills/left-brain/scripts/left-brain.sh:446` 走两条并行路径（bash grep + Node TF-IDF 语义引擎），用户默认走 grep → 语义引擎空转 → L4 学习闭环"TF-IDF 召回"是假命题。
+
+- **方案选 A**（保留语义引擎能力，去摩擦；放弃 B = 删引擎缩成简单 grep）：
+  - 默认入口走 Node TF-IDF（去掉隐藏 `--semantic` 开关）
+  - 保留 `--grep` 兼容路径（调试 / 兼容旧 workflow）
+  - Node 进程非零退出 → 自动 fallback 到 bash grep（兜底）
+- **改动**：
+  - `.claude/skills/left-brain/scripts/left-brain.sh` — `recall|search)` 分支改写（默认 Node + `--grep` fallback + 失败兜底）
+  - `scripts/orchestrator/recall/test-left-brain-recall-default.js`（新建）— 6 场景断言（默认走 Node / `--grep` 走 bash / 直调 Node / 真实命中 / exit 0）
+  - `package.json` — 主 `test` 串接入 `test-left-brain-recall-default.js` + 新增 `test:left-brain-recall-default` 单跑 alias
+- **验证**：
+  - `test:left-brain-recall-default` **6/6 通过**
+  - `test:recall`（原 baseline）**30/31**（1 preexisting fail = "不存在的查询返回空" 期望值太严，与本次无关）
+  - 真实调用 `bash left-brain.sh recall dispatcher` → 返回带"语义检索"+ "相似度%"排序结果（旧 grep 缺），top1 = KB-20260621-013 dispatcher MVP（15.7%）
+  - `doc:check` 26/26 通过
+- **L4 影响**：
+  - 第 1 条「数据真实性」↑：L4 学习闭环宣称"TF-IDF 召回"不再假命题 → 真实兑现
+  - 第 4 条「完成质量」↑：去掉用户认知摩擦（不用记 `--semantic` 开关），左脑调用从 grep 升级到语义检索
+- **剩余**：E 主题 2 子项中的 E-recall-threshold（P0 · dispatcher 阈值 0.2→0.05）另立条目
+- **关联**：`.claude/audits/audit-20260629-2330-deep.md` 主题 E · M14 知识图谱反哺 · semantic-recall.js 索引失效机制（KB mtime 自动 rebuild）
+
 ### Added - M52 「两大神级 Prompt」方法论沉淀：0.5 步思维闸门（v3.0.8 · 2026-06-29）
 
 - **背景**：[AIHOT 作者饭桌心得](两大神级prompt.md) 总结的"两大神级 Prompt"（第一性原理 + 对抗式审查）已在 AiCode 半显式存在——CLAUDE.md 最高指令「先问这能帮 Claude 变智能吗」/ M48 借鉴方法论 / ECC 评估 5 理由 / qa-reviewer / swarm-coordinator，但**没有作为统一方法论 + 必跑动作沉淀**。

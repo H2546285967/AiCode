@@ -445,12 +445,17 @@ case "$1" in
         ;;
     recall|search)
         shift
-        # --semantic 走 Node TF-IDF 引擎，其余走原 grep
-        if [ "$1" = "--semantic" ]; then
+        # M54 batch2 E-recall-merge: 默认走 Node TF-IDF 语义引擎，去摩擦（之前默认 grep）
+        # --grep 强制走原 bash grep（兼容 + 调试用），否则进 Node 引擎
+        # 失败兜底：Node 进程非零退出 → 自动 fallback 到 grep（保证不空响）
+        if [ "$1" = "--grep" ]; then
             shift
-            node "${SCRIPT_DIR}/../../../../scripts/orchestrator/recall/semantic-recall.js" search "$@"
-        else
             recall "$@"
+        else
+            if ! node "${SCRIPT_DIR}/../../../../scripts/orchestrator/recall/semantic-recall.js" search "$@" 2>/dev/null; then
+                echo "[left-brain] 语义引擎失败，fallback 到 grep" >&2
+                recall "$@"
+            fi
         fi
         ;;
     preference|correct)
