@@ -1,0 +1,102 @@
+#!/usr/bin/env node
+/**
+ * test-self-discipline.js — self-discipline 6 步法决策树校验（v5 · M52）
+ *
+ * 覆盖：
+ *   1. self-discipline.md 存在 + 是 6 步法（标题 + 表格 + footer）
+ *   2. first-principles.md 存在 + 含关键概念（4 类反模式 + 5 类审查角度）
+ *   3. 决策树 0.5 步存在（第一性原理 + 对抗式审查）
+ *   4. CLAUDE.md / 01.md / 02.md 提及 M52 第一性原理 / 对抗式审查
+ *   5. 04.md §0.4 M52 段存在 + §十二 M52 行存在
+ *   6. CHANGELOG Unreleased 段含 M52 条目
+ *
+ * @since v5 M52 (2026-06-29)
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+const ROOT = path.join(__dirname, '..', '..');
+const RULES_DIR = path.join(ROOT, '.claude', 'rules');
+const CLAUDE_MD = path.join(ROOT, 'CLAUDE.md');
+const CHANGELOG = path.join(ROOT, 'CHANGELOG.md');
+const ROADMAP = path.join(ROOT, '04_自我演进路线.md');
+const DOC_01 = path.join(ROOT, '01_AI-ClaudeCode-最佳实践精简.md');
+const DOC_02 = path.join(ROOT, '02_工作空间功能介绍.md');
+
+let pass = 0, fail = 0;
+const fails = [];
+function check(name, cond, detail) {
+  if (cond) { pass++; console.log(`✅ ${name}`); }
+  else { fail++; fails.push(name); console.log(`❌ ${name}${detail ? '  → ' + detail : ''}`); }
+}
+
+console.log('── 1. self-discipline.md 6 步法校验 ──');
+
+const selfDiscipline = path.join(RULES_DIR, 'self-discipline.md');
+check('self-discipline.md 存在', fs.existsSync(selfDiscipline));
+if (fs.existsSync(selfDiscipline)) {
+  const txt = fs.readFileSync(selfDiscipline, 'utf8');
+  check('标题包含 "6 步法"', /6 步法/.test(txt));
+  check('标题包含 "M52"', /M52/.test(txt));
+  check('表格含 0.5 步 / 零点五 思维闸门', /零点五|0\.5.*思维闸门/.test(txt));
+  check('含 "第一性原理"', /第一性原理/.test(txt));
+  check('含 "对抗式审查"', /对抗式审查/.test(txt));
+  check('含 "first-principles.md" 关联', /first-principles\.md/.test(txt));
+}
+
+console.log('\n── 2. first-principles.md 校验 ──');
+
+const fp = path.join(RULES_DIR, 'first-principles.md');
+check('first-principles.md 存在', fs.existsSync(fp));
+if (fs.existsSync(fp)) {
+  const txt = fs.readFileSync(fp, 'utf8');
+  check('含 "第一性原理"', /第一性原理/.test(txt));
+  check('含 "对抗式审查"', /对抗式审查/.test(txt));
+  check('含 4 类反模式（行业共识/中间层/模仿/跳过根因）', /行业共识|加中间层|模仿 trending|跳过根因/.test(txt));
+  check('含 5 类审查角度（输入异常/边界/并发/时间/部署）', /输入异常|边界条件|并发|时间污染|部署.*回滚/.test(txt));
+  check('含 AIHOT 来源', /AIHOT/.test(txt));
+}
+
+console.log('\n── 3. CLAUDE.md 提及 M52 ──');
+
+if (fs.existsSync(CLAUDE_MD)) {
+  const txt = fs.readFileSync(CLAUDE_MD, 'utf8');
+  check('CLAUDE.md 含 "第一性原理" 或 "对抗式审查"', /第一性原理|对抗式审查/.test(txt));
+}
+
+console.log('\n── 4. 01.md / 02.md 提及 ──');
+
+if (fs.existsSync(DOC_01)) {
+  const txt = fs.readFileSync(DOC_01, 'utf8');
+  check('01.md 含 "第一性原理" 或 "对抗式审查"', /第一性原理|对抗式审查/.test(txt));
+}
+if (fs.existsSync(DOC_02)) {
+  const txt = fs.readFileSync(DOC_02, 'utf8');
+  check('02.md 含 "第一性原理" 或 "对抗式审查"', /第一性原理|对抗式审查/.test(txt));
+}
+
+console.log('\n── 5. 04.md §0.4 M52 + §十二 ──');
+
+if (fs.existsSync(ROADMAP)) {
+  const txt = fs.readFileSync(ROADMAP, 'utf8');
+  check('04.md 含 M52 段', /增量 M52/.test(txt));
+  check('04.md §十二含 M52 行', /\| \*\*M52\*\* \|/.test(txt));
+}
+
+console.log('\n── 6. CHANGELOG Unreleased M52 ──');
+
+if (fs.existsSync(CHANGELOG)) {
+  const txt = fs.readFileSync(CHANGELOG, 'utf8');
+  const unreleasedMatch = txt.match(/## \[Unreleased\][\s\S]*?(?=\n## \[v|\n---)/);
+  const ur = unreleasedMatch ? unreleasedMatch[0] : '';
+  check('CHANGELOG Unreleased 含 M52', /M52/.test(ur));
+}
+
+console.log('');
+console.log(`📊 self-discipline M52 校验: ${pass}/${pass + fail} 通过, ${fail} 失败`);
+if (fail > 0) {
+  console.log('失败项:');
+  fails.forEach(f => console.log(`  - ${f}`));
+}
+process.exit(fail > 0 ? 1 : 0);

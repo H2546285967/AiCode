@@ -1,24 +1,29 @@
-# AI 自我约束（Self-Discipline · 5 步法 · M48 升级）
+# AI 自我约束（Self-Discipline · 6 步法 · M52 升级）
 
 > **作用**：让 AI 在完成改动后**自动**保存快照、更新文档、写 KB，**不需要用户提醒**。
 > **完整规范**：[`scripts/orchestrator/自我约束规范.md`](../../scripts/orchestrator/自我约束规范.md)
-> **最后更新**：2026-06-29（v4 · M48 neat-freak 完整借鉴 + 5 步法 + sync-matrix 引用 + MEMORY.md 200/25KB 硬红线）
+> **最后更新**：2026-06-29（v5 · M52 「两大神级 Prompt」方法论沉淀 + 0.5 步思维闸门 + first-principles.md）
 
 ---
 
-## 🔴 5 步法（M48 升级 · 来源 neat-freak）
+## 🔴 6 步法（M52 升级 · 来源 neat-freak + AIHOT 两大神级 Prompt）
 
 > **适用**：🔴 大 / 🏁 里程碑级别必跑。
-> **依据**：neat-freak 第零步到第五步「End-of-session knowledge cleanup」流程。
+> **依据**：neat-freak 第零步到第五步「End-of-session knowledge cleanup」+ M52 0.5 步「思维闸门」。
 
 | 步 | 名称 | 工具 | 入口 |
 |:---|:-----|:-----|:-----|
 | **零** | **尺寸体检**（防膨胀）| `wc -l` + [memory-health-check.js](../../scripts/knowledge/memory-health-check.js) | [§尺寸红线](#尺寸红线硬约束-🚨-m48-起) |
+| **零点五** | **思维闸门**（第一性原理 + 对抗式审查）| prompt 末尾加"从第一性原理出发" / `swarm-coordinator` 多 Agent | [first-principles.md](first-principles.md) |
 | **一** | **盘点现状**（不漏文件）| `ls docs/` + 读关键文件 | 见 [sync-matrix.md](sync-matrix.md) |
 | **二** | **变更影响矩阵**（不漏文档）| [sync-matrix.md](sync-matrix.md) | [§必同步的 8 个根目录文档](doc-sync.md) |
 | **三** | **实际修改** | Edit/Write + 减优于加 + 毕业机制 | [memory-promote.md](memory-promote.md) |
 | **四** | **14 项自检** | [§🔴 动作 4a 8 文档自检](#🔴-动作-4a8-文档自检决策树🔴-大--🏁-级别必跑) | — |
 | **五** | **变更摘要** | 记忆变更 + 文档变更 + 未处理 | — |
+
+**0.5 步思维闸门**（M52 新增，含 2 子步）：
+- **0.5a 第一性原理** — 生成方案前问"从第一性原理出发"（4 类反模式：行业共识 / 模仿 trending / 加中间层 / 跳过根因）
+- **0.5b 对抗式审查** — 完成前开 N 个 Agent 找漏洞（5 类角度：输入异常 / 边界条件 / 并发 / 时间污染 / 部署回滚）
 
 **关键**：先精简（破除膨胀）→ 再做本次增量同步（补漏）。两件事**不能合并**——精简时心态是"什么不该在这"，补漏时心态是"什么该补到这"，混着做会两头不到位。
 
@@ -40,6 +45,7 @@
 > 1. **"文档更新"从 4 文档升级到 6 文档**（[doc-sync v2](doc-sync.md)）— 01.md + 02.md 也必同步
 > 2. **"快照"已从可选项明确为 commit 前必跑**（动作 0）— 杜绝 1 快照 0 commit
 > 3. **2026-06-29 强化（v4 M48）**：升级到 5 步法（含尺寸体检） + 引入 [sync-matrix.md](sync-matrix.md) + [memory-promote.md](memory-promote.md) + 200/25KB 硬红线
+> 4. **2026-06-29 强化（v5 M52）**：5 步法 → 6 步法，新增 **0.5 步思维闸门**（第一性原理 + 对抗式审查）+ 新规则 `.claude/rules/first-principles.md`
 >
 > 失败教训：
 > - 2026-06-25：完成 4 commit（04 真实化 / doc-sync 串联 / 01-02 补全 / B 方案正交化），全程没主动调 `save.js` → 1 快照 0 commit
@@ -117,7 +123,7 @@
 
 # 2. PROJECT-CONTEXT.md — session-init 自动加载（🔴 大 必做）
 □ 顶部"更新时间"和"版本"字段
-□ 核心系统表完整（当前 11 个：left-brain/audit/autonomous/evolve/swarm/metrics/workflow/handoff/self-discipline/evolution-lock/sync-roadmap + memory-promote/sync-matrix/special-cases M48 3 个）
+□ 核心系统表完整（当前 11 个：left-brain/audit/autonomous/evolve/swarm/metrics/workflow/handoff/self-discipline/evolution-lock/sync-roadmap + memory-promote/sync-matrix/special-cases M48 3 个 + first-principles M52）
 □ 11 个常用命令路径对
 □ L5 自治运行 5 条进度表
 
@@ -193,6 +199,9 @@
 |:--|:-----|:---------|:-----|
 | 0 | commit 前**先存快照**（防 1 快照 0 commit）| 🟡+/必做 | v1 强化（2026-06-25）|
 | 0.5 | **尺寸体检**（MEMORY.md 200/25KB + CLAUDE.md 300/15KB + 体量倒挂）| 🔴 大/必做 | **v4 M48 强化（2026-06-29）** |
+| 0.5 | **思维闸门**（第一性原理 + 对抗式审查）| 🔴 大/必做 | **v5 M52 强化（2026-06-29）** |
+| 0.5a | **第一性原理**（生成前问"从第一性原理出发"）| 🔴 大/必做 | v5 M52 |
+| 0.5b | **对抗式审查**（完成前开 N Agent 找漏洞）| 🔴 大/必做 | v5 M52 |
 | 1 | 写测试（test-first 闸门）| 🟡+/必做 | v1 |
 | 2 | 写 KB（左脑 memory）| 🟡+/必做 | v1 |
 | 3 | commit（带规范 message）| 🟡+/必做 | v1 |
@@ -208,8 +217,10 @@
 - [`.claude/rules/sync-matrix.md`](sync-matrix.md) — 变更影响矩阵（M48 新增）
 - [`.claude/rules/memory-promote.md`](memory-promote.md) — 毕业机制（M48 新增）
 - [`.claude/rules/special-cases.md`](special-cases.md) — 特殊情况兜底（M48 新增）
+- [`.claude/rules/first-principles.md`](first-principles.md) — 思维闸门（第一性原理 + 对抗式审查 · M52 新增）
 - [`.claude/rules/auto-perceive.md`](auto-perceive.md) — 自动记忆
 - [`.claude/rules/behavior.md`](behavior.md) — 总行为约定
 - [`.claude/rules/cost-control.md`](cost-control.md) — 成本控制 + Git 工作流
 - [`scripts/orchestrator/自我约束规范.md`](../../scripts/orchestrator/自我约束规范.md) — 完整决策树
+- [`scripts/orchestrator/test-self-discipline.js`](../../scripts/orchestrator/test-self-discipline.js) — 6 步法校验（M52 新增）
 - [`scripts/orchestrator/test-doc-sync.js`](../../scripts/orchestrator/test-doc-sync.js) — 6 文档一致性测试

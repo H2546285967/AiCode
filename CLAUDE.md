@@ -211,11 +211,12 @@ AiCode/
 | `session-memory.md` | 会话记忆、智能丢弃 |
 | `cost-control.md` | 成本控制 + Git 工作流（个人工程） |
 | `daily-maintenance.md` | 每日更新、Changelog |
-| `self-discipline.md` | 改动后自动收尾（测试/快照/KB/文档）+ 5 步法（M48 升级） |
+| `self-discipline.md` | 改动后自动收尾（测试/快照/KB/文档）+ 6 步法（M52 升级 = 5 步 + 0.5 步思维闸门） |
 | `doc-sync.md` | 里程碑/增量后同步 04/03/CLAUDE/CHANGELOG，防漂移 |
 | **`memory-promote.md`** (M48) | **KB 毕业机制 — 把稳定 KB 升 docs + 缩源为指针，治 memory 膨胀** |
 | **`sync-matrix.md`** (M48) | **变更影响矩阵 — 代码层 → 8 文档系统化映射表** |
 | **`special-cases.md`** (M48) | **特殊情况段 — 5 种非典型场景兜底（无 README / 无新事实 / 记忆矛盾 / 跨项目 / 历史漏改）** |
+| **`first-principles.md`** (M52) | **思维闸门 — 第一性原理（生成前）+ 对抗式审查（完成前）双闭环，AIHOT 两大神级 Prompt 沉淀** |
 | `autonomous.md` | 🤖 自主模式 ON 期间行为规则（选题后快照、切题前清理上下文） |
 ---
 

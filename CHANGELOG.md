@@ -10,6 +10,34 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Added - M52 「两大神级 Prompt」方法论沉淀：0.5 步思维闸门（v3.0.8 · 2026-06-29）
+
+- **背景**：[AIHOT 作者饭桌心得](两大神级prompt.md) 总结的"两大神级 Prompt"（第一性原理 + 对抗式审查）已在 AiCode 半显式存在——CLAUDE.md 最高指令「先问这能帮 Claude 变智能吗」/ M48 借鉴方法论 / ECC 评估 5 理由 / qa-reviewer / swarm-coordinator，但**没有作为统一方法论 + 必跑动作沉淀**。
+- **本阶段动作**：
+  - **新增 `.claude/rules/first-principles.md`**（独立规则文件，180+ 行）— 含 4 类反模式（行业共识 / 模仿 trending / 加中间层 / 跳过根因）+ 5 类审查角度（输入异常 / 边界条件 / 并发 / 时间污染 / 部署回滚）+ AIHOT 来源 + 集成方案
+  - **升级 `.claude/rules/self-discipline.md`**（v4 → v5 · 5 步法 → 6 步法）— 0.5 步思维闸门（含 0.5a 第一性原理 + 0.5b 对抗式审查 两子步）
+  - **新增 `scripts/orchestrator/test-self-discipline.js`** — 19 项校验（self-discipline + first-principles + CLAUDE/01/02/04/CHANGELOG 全部含 M52 引用 + 0.5 步完整性）
+- **触发决策表**：
+
+  | 改动级别 | 0.5a 第一性原理 | 0.5b 对抗式审查 |
+  |:---------|:---------------:|:---------------:|
+  | 🟢 微小 | ❌ | ❌ |
+  | 🟡 小 | 🟡 建议（根因未明时）| 🟡 建议（影响大时）|
+  | 🔴 大 | ✅ **必跑** | ✅ **必跑** |
+  | 🏁 里程碑 | ✅ **必跑** | ✅ **必跑（N=4-8）** |
+
+- **验证**：
+  - `node scripts/orchestrator/test-self-discipline.js` **19/19 通过**
+  - `npm run test:queue-bridge` **55/55 通过**（无回归）
+  - `npm run doc:check` **0 失败**（合计 45 → 48 同步）
+- **8 文档同步**：README.md / PROJECT-CONTEXT.md / 01.md / 02.md / 04.md / 03.md / CLAUDE.md / CHANGELOG.md 全部加 M52 引用
+- **L5 影响**：
+  - 第 4 条「完成质量」↑：🔴/🏁 任务不治表 + 不漏 BUG（5 类审查角度兜底）
+  - 第 5 条「自治覆盖率」↑：🔴/🏁 任务必走双闭环（生成 + 验证），L5 数据基础稳固
+  - 第 3 条「自治可观测」↑：M52 self-discipline test 提供 19 项量化校验（首次为 self-discipline 加正式测试基线）
+- **commit**：M52 (即将)
+- **关联**：KB `kb-aihot-two-prompts-2026.md`（local · gitignore）· [[priority-intelligent-evolution]] · [[m48-neat-freak-borrow]] · [first-principles.md](../../.claude/rules/first-principles.md) · [test-self-discipline.js](../../scripts/orchestrator/test-self-discipline.js)
+
 ### Fixed - 合并 package.json 重复 npm script（AUDIT-cleanup-npm-script · 2026-06-29）
 
 - **背景**：`/audit` 浅层报告 P1（2026-06-29 13:08）发现 `package.json` line 23-24 两条命令值完全相同：

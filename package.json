@@ -62,6 +62,7 @@
     "test:evolution-metrics": "node scripts/orchestrator/test-evolution-metrics.js",
     "test:graph-dispatch": "node scripts/orchestrator/test-graph-dispatch.js",
     "test:queue-bridge": "node scripts/orchestrator/test-queue-bridge.js",
+    "test:self-discipline": "node scripts/orchestrator/test-self-discipline.js",
     "test:audit-loop": "node scripts/orchestrator/test-audit-loop.js",
     "test:handoff": "node scripts/orchestrator/test-handoff.js",
     "test:github-auth": "node scripts/evolution/test-github-scanner-auth.js",
