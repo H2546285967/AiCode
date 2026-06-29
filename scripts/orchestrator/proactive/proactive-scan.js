@@ -5,7 +5,7 @@
  * 触发位置：SessionStart hook（在 evolution-hook.sh 后追加）
  * 作用：让 Claude "自己看项目状态"，不用用户问也能主动发现问题
  *
- * 7 个内置检测维度（每类 anomaly 一个）：
+ * 8 个内置检测维度（每类 anomaly 一个）：
  *   1. ci-status           — CI 最近 run 红/绿
  *   2. uncommitted         — 未提交改动
  *   3. todo-accumulate     — TODO/FIXME 累积数
@@ -13,6 +13,7 @@
  *   5. deps-outdated       — npm outdated 依赖过期
  *   6. stale-files         — 30 天未访问的 .js / .md
  *   7. candidate-pending   — candidates.json 采纳但未实现
+ *   8. doc-drift           — 04/CHANGELOG/01/02 文档漂移（M48 兑现 CLAUDE.md 承诺）
  *
  * 设计原则：
  *   - 永不阻塞主流程（任何异常包 try/catch + 返回）
@@ -51,6 +52,7 @@ const DIMENSIONS_ENABLED = {
   'deps-outdated': true,
   'stale-files': true,
   'candidate-pending': true,
+  'doc-drift': true,
 };
 
 // 缓存 TTL（秒）：5 分钟内不重扫
@@ -343,6 +345,82 @@ function detectCandidatePending() {
   }
 }
 
+// ── 维度 8：文档漂移（doc-drift · M48 兑现）─────────────
+// 兑现 .claude/rules/doc-sync.md 承诺的 3 段检查：
+//   1) 04.md "最近一次同步"日期 >= CHANGELOG 最近日期（防漂移）
+//   2) 04.md §0.4 段是否残留 "🆕 计划中" 关键词（每出现一次 +1 漂移点）
+//   3) 最新 M_N 是否在 01/02.md 出现（CHANGELOG 有但 01/02 漏 → 漂移）
+
+function detectDocDrift() {
+  try {
+    const findings = [];
+    const root = WORKSPACE_ROOT;
+    const p04 = path.join(root, '04_自我演进路线.md');
+    const pCl = path.join(root, 'CHANGELOG.md');
+    const p01 = path.join(root, '01_AI-ClaudeCode-最佳实践精简.md');
+    const p02 = path.join(root, '02_工作空间功能介绍.md');
+
+    const c04 = readFileSafe(p04);
+    const cCl = readFileSafe(pCl);
+    const c01 = readFileSafe(p01);
+    const c02 = readFileSafe(p02);
+    if (!c04 || !cCl) return []; // 必读文件缺失 = 不报警（其他维度会报 stale）
+
+    // 提取最新 M_N 标识（CHANGELOG 顶部 [Unreleased] 或第一个 M 段）
+    const latestM = (cCl.match(/^##\s*\[?[Uu]nreleased\]?\s*\n+###?\s*([A-Z][\w-]*M\d+)/m)
+      || cCl.match(/^##\s*\[?v[\d.]+\]?\s*\(\d{4}-\d{2}-\d{2}\)\s*\n+###?\s*([A-Z][\w-]*M\d+)/m)
+      || [])[1] || null;
+
+    // ① 04.md "最近一次同步"日期 vs CHANGELOG 最近日期
+    const syncMatch = c04.match(/\*\*最近一次同步\*\*[：:]?\s*(\d{4}-\d{2}-\d{2})/);
+    const clMatch = cCl.match(/^##\s*\[?v?[\d.]*\]?\s*\(?(\d{4}-\d{2}-\d{2})/m) || cCl.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+    if (syncMatch && clMatch) {
+      const syncDate = syncMatch[1];
+      const clDate = clMatch[1];
+      if (syncDate < clDate) {
+        findings.push({
+          dimension: 'doc-drift',
+          severity: 'warning',
+          message: `04.md 同步日期 (${syncDate}) 早于 CHANGELOG (${clDate})`,
+          hint: '跑 npm run roadmap:sync 自动同步 04.md',
+        });
+      }
+    }
+
+    // ② 04.md §0.4 段是否残留 "🆕 计划中" 关键词
+    const section04 = c04.match(/## 0\.4[^#]+/s);
+    if (section04) {
+      const lines = section04[0].split('\n').filter(l => l.includes('🆕 计划中'));
+      if (lines.length > 0) {
+        findings.push({
+          dimension: 'doc-drift',
+          severity: 'info',
+          message: `04.md §0.4 残留 ${lines.length} 行 "🆕 计划中" 标记`,
+          hint: '把已完成的增量段标记改为 ✅ 已完成',
+        });
+      }
+    }
+
+    // ③ 最新 M_N 是否在 01/02.md 出现
+    if (latestM) {
+      const in01 = c01 && c01.includes(latestM);
+      const in02 = c02 && c02.includes(latestM);
+      if (!in01 || !in02) {
+        findings.push({
+          dimension: 'doc-drift',
+          severity: 'warning',
+          message: `${latestM} 在 ${!in01 ? '01.md' : ''}${!in01 && !in02 ? ' + ' : ''}${!in02 ? '02.md' : ''} 缺失`,
+          hint: '按 .claude/rules/doc-sync.md v3 8 文档同步表补 01/02',
+        });
+      }
+    }
+
+    return findings;
+  } catch {
+    return [];
+  }
+}
+
 // ── 主入口 ─────────────────────────────────────────
 
 function detectAll(force = false) {
@@ -368,6 +446,7 @@ function detectAll(force = false) {
     ['deps-outdated', detectDepsOutdated],
     ['stale-files', detectStaleFiles],
     ['candidate-pending', detectCandidatePending],
+    ['doc-drift', detectDocDrift],
   ];
 
   const findings = [];
@@ -412,7 +491,7 @@ function formatReport(result) {
 
   const s = result.summary;
   if (s.total === 0) {
-    return '✨ 主动扫描：项目状态健康（7 维度全过）';
+    return '✨ 主动扫描：项目状态健康（8 维度全过）';
   }
 
   const lines = [];
@@ -495,5 +574,6 @@ module.exports = {
   detectDepsOutdated,
   detectStaleFiles,
   detectCandidatePending,
+  detectDocDrift,
   ANOMALY_FILE,
 };

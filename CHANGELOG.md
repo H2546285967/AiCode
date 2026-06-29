@@ -28,6 +28,33 @@
 
 **关联**：`.claude/audits/audit-20260629-2330-deep.md`（深度审计完整报告）
 
+### Fixed - M54 /audit batch 2 主题 A：proactive-scan doc-drift 维度补齐（2026-06-30 · v3.0.9）
+
+> **背景**：`.claude/rules/doc-sync.md` 自 2026-06-27 v3 起就承诺"proactive-scan 7 维度之一 = doc-drift"，但工程实际只 7 维度（不含 doc-drift），文档承诺与现实偏差。本批次兑现承诺的 1/4。
+
+- **`scripts/orchestrator/proactive/proactive-scan.js`** — 第 8 维度 `doc-drift` 补齐：
+  - 新增 `detectDocDrift()` 函数（~80 行）— 实现 3 段检查：
+    1. 04.md "最近一次同步"日期 ≥ CHANGELOG 最近日期（防漂移）
+    2. 04.md §0.4 段是否残留 "🆕 计划中" 关键词（每条 +1 漂移点）
+    3. 最新 M_N 是否在 01.md + 02.md 出现（漏文档 → 漂移）
+  - `DIMENSIONS_ENABLED` 加 `doc-drift: true`
+  - `detectors` 数组插入 `['doc-drift', detectDocDrift]`
+  - 文件头注释 7 维度 → 8 维度
+  - `formatReport` 健康提示"7 维度全过" → "8 维度全过"
+  - 模块 export 加 `detectDocDrift`（供测试用）
+- **`scripts/orchestrator/proactive/test-proactive-scan-doc-drift.js`**（新建）— 4 场景断言（函数契约 / 真实仓库体检 / 04.md 字段解析 / detectAll 集成）
+- **`package.json`**：
+  - 主 `test` 串接入 `test-proactive-scan-doc-drift.js`（保持 39/39 总通过）
+  - 新增 `test:proactive-scan-doc-drift` 单跑 alias
+- **`.claude/skills/left-brain/memory/evolution-plan.json`** — 候选 `AUDIT-M54-batch2-A-doc-drift` 从 `next` 移到 `history`，加 started/completed 时间戳 + summary
+- **`04_自我演进路线.md`**：
+  - 顶部"最近一次同步"字段更新到 `2026-06-30`
+  - §十二 ⏳ 段 A 行标 ✅（保留原位，下次 sync-roadmap 自动移走）
+  - M48 段后加"M48 兑现补遗"说明
+- **测试**：`test-proactive-scan-doc-drift.js 4/4` + `test-proactive-scan.js 35/35`（无 regression，合计 39/39）+ `npm run doc:check 26/26` 通过
+- **剩余**：A 主题 4 维度中的 3 维度（hook-fail / config-drift / memory-health）另立 P1 候选（避免单次合 4 维度失焦）
+- **关联**：`.claude/rules/doc-sync.md` 第 8 维度承诺 · M48 neat-freak 借鉴 · batch 2 audit 报告 `.claude/audits/audit-20260629-2330-deep.md` 主题 A
+
 ### Added - M52 「两大神级 Prompt」方法论沉淀：0.5 步思维闸门（v3.0.8 · 2026-06-29）
 
 - **背景**：[AIHOT 作者饭桌心得](两大神级prompt.md) 总结的"两大神级 Prompt"（第一性原理 + 对抗式审查）已在 AiCode 半显式存在——CLAUDE.md 最高指令「先问这能帮 Claude 变智能吗」/ M48 借鉴方法论 / ECC 评估 5 理由 / qa-reviewer / swarm-coordinator，但**没有作为统一方法论 + 必跑动作沉淀**。
