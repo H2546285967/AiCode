@@ -109,6 +109,62 @@ bash .claude/skills/left-brain/scripts/session-summary.sh cleanup 30
 - `/handoff` vs `/compact`：compact 压缩上下文但保持 momentum，handoff 跨会话
 - `/handoff` vs `/autonomous`：handoff 人工接力（需粘贴 prompt），autonomous 机器接力（runner 自动）
 
+### 完整 4 步流程（6 类场景 · v3.0.8+）
+
+> **速查版**：见 `01_AI-ClaudeCode-最佳实践精简.md` §🚀 自主模式 + handoff 高频场景
+
+#### 场景 1：现在 23:00 还没干完，得睡觉
+
+**前提**：正在调试 / 写代码 / 做 P3，**没 commit 完**。
+
+1. **睡前执行**：`/handoff`（无参数） — AI 自动做：存快照 + 更新 autonomous-state + 生成接续 prompt + 复制剪贴板
+2. **看输出确认**（30 秒）：标题 / 下一阶段 / 状态 / 第一句话模板
+3. **关电脑 / 关窗口** — 不用 `/clear` / `/compact`（状态已存盘）
+4. **明早接续**：`cc` 启动 → SessionStart hook 自动加载 latest_summary.md → 你说"继续做 X"即可
+
+#### 场景 2：出去吃饭 1 小时
+
+**前提**：P3 进度过半。
+
+1. **出门前执行**：`/autonomous single` — 把 `autonomous-state.json` 改成 `enabled=true, mode=single`
+2. **可选 runner**（仅限 `-p` 子会话模式）：`npm run autonomous:runner` 在另一窗口
+3. **AI 自动跑**：完成当前 1 阶段 → 自动 commit → 写快照 → 模式切回 OFF
+4. **回来查进度**：`/status` 或 `git log --oneline -5`
+
+#### 场景 3：周末出去爬山 1 天
+
+**前提**：想 AI 整天循环跑 next 队列。
+
+1. **出门前执行**：`/autonomous always`
+2. **必须启动 runner**：`Start-Process powershell -ArgumentList "npm run autonomous:runner" -WindowStyle Hidden`
+3. **runner 守护**：子会话完成 → 自动启动新子会话 → 无限循环（5 次失败自动停）
+4. **回家查进度**：`git log --oneline -10` + `evolution-lock.js peek` + `/autonomous off`
+
+#### 场景 4：调试 BUG 调一半要开会
+
+**前提**：发现根因线索但未修完。
+
+1. **会前执行**（显式标题）：`/handoff "BUG-X 调一半：根因在 Y 函数 Z 边界条件" "继续修 BUG-X"`
+2. **dry-run 确认**：`/handoff --dry-run "BUG-X 调一半" "继续修 BUG-X"` 看 prompt
+3. **去开会**
+4. **开会回来**：`cc` + 说"继续修 BUG-X（从快照看到根因）"
+
+#### 场景 5：完成 v3.0.8 大版本
+
+**前提**：v3.0.8 最后一个 P0/P1 commit 完。
+
+1. **执行 handoff 带 tag**：`/handoff "v3.0.8 完成（M50-M53）" "v3.0.9 待规划" --tags "milestone v3.0.8"`
+2. **AI 自动写里程碑**：CHANGELOG 新增 `[v3.0.8]` 段 + 04.md §十二追加行 + tag 入快照
+3. **可选归档**：`npm run archive` 归档 v3.0.7 之前的旧文件
+4. **开新会话规划**：`cc` + 说"v3.0.8 完成，现在规划 v3.0.9 看 next 队列剩啥"
+
+#### 场景 6：完成 1 个小修复，想看下一个
+
+**前提**：刚 commit 完 1 个小修复。
+
+- **不用任何命令** — 直接说"做 next[0]"，AI 读 evolution-plan.json + 给 plan 块
+- **判断**：你在场 + 想立刻继续 → 不用 handoff / autonomous / clear 任何命令
+
 ### `/autonomous` 详细使用场景（机器接续 · 4 类）
 
 | # | 场景 | 模式 | 行为 |
