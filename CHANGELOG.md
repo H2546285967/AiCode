@@ -38,6 +38,29 @@
 - **commit**：M52 (即将)
 - **关联**：KB `kb-aihot-two-prompts-2026.md`（local · gitignore）· [[priority-intelligent-evolution]] · [[m48-neat-freak-borrow]] · [first-principles.md](../../.claude/rules/first-principles.md) · [test-self-discipline.js](../../scripts/orchestrator/test-self-discipline.js)
 
+### Decision - close RESEARCH-research-skill-ecosystem-20260626 候选（2026-06-29）
+
+- **背景**：`/audit` 浅层报告 P2 唯一建议（2026-06-26），落 `.claude/audits/research-skill-ecosystem-20260626.md`，含 6 步推荐路径（Step 1+2 L5 文档同步/dashboard + Step 3-5 `/evolve` `/autonomous` `/go` 升 skill + Step 6 L5 趋势图远期）。
+- **本阶段动作**：对照 6 步路径与已落地增量：
+
+  | Step | 推荐 | 实际增量 | 状态 |
+  |:----:|:-----|:--------|:----:|
+  | 1 | L5 文档同步（30min P0）| M42 `sync-l5-progress.js`（14/14 测试）| ✅ |
+  | 2 | left-brain dashboard 接 L5（半天 P1）| M42 dashboard L5 段 | ✅ |
+  | 3 | 升格 `/evolve` 为 skill（1-2 天 P1）| M25 `.claude/skills/evolve/SKILL.md` v1.0（2026-06-27）| ✅ |
+  | 4 | 升格 `/autonomous` 为 skill（1-2 天 P1）| M25 `.claude/skills/autonomous/SKILL.md` v1.0（2026-06-27）| ✅ |
+  | 5 | 升格 `/go` 为 skill（0.5-1 天 P2）| M43 `.claude/skills/go/SKILL.md` v1.0（19/19 测试 + 4 阶段流水线）| ✅ |
+  | 6 | L5 趋势折线图（远期）| 等 2026-08 第 3 份月度报告 | ⏸ 保留 |
+
+- **决策**：
+  - ✅ **候选 close**（6 步路径 100% 落地，无需重复实施）
+  - ⏸ **Step 6 保留**为远期候选（写 `04.md` §十二 ⏳ 段"保留作下次调研参考"）
+  - ✅ **bridge 测试基线 55/55 保持**（无回归）
+- **L5 影响**：
+  - 第 4 条"完成质量"↑：研究报告落地率 100%（从"建议性文档" → "可勾选的实施清单"）
+  - 第 5 条"自治可观测"↑：候选兑现可关闭（避免 next 队列堆积已实施的候选）
+- **关联**：`AUDIT-roadmap-item-skill`（同 P3 仍 ⏳） · [[kb-research-skill-ecosystem-2026]]
+
 ### Fixed - 合并 package.json 重复 npm script（AUDIT-cleanup-npm-script · 2026-06-29）
 
 - **背景**：`/audit` 浅层报告 P1（2026-06-29 13:08）发现 `package.json` line 23-24 两条命令值完全相同：
