@@ -10,6 +10,25 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Added - M49 deep-research 升级：吸收 hv-analysis 横纵双轴方法论（2026-06-29）
+
+- **背景**：[khazix/hv-analysis](https://github.com/KKKKhazix/khazix-skills) 的双轴分析方法论（纵向=时间 + 横向=同期对比 + 交汇=新判断）适合"研究 / 调研 / 摸清楚"等系统化深度研究需求。但其 PDF 输出（WeasyPrint）+ 卡兹克公众号文风不适合工程场景 → **借鉴方法论核心，砍掉 PDF + 文风**，改为 AiCode 风格的离线 CLI + 模板驱动。
+- **本阶段动作**：
+  - 新建 `scripts/orchestrator/deep-research.js`（330 行）— 纯函数离线 CLI 4 子命令：`analyze "对象名"` 生成报告框架 / `--json` 输出 JSON / `template "对象名"` 输出空模板 / `from-data data.json` 从 JSON 生成报告
+  - 新建 `.claude/skills/deep-research/SKILL.md`（**第 8 个正式 skill**）— 触发词 + 方法论 3 段 + 竞品场景 A/B/C + 字数参考 10k-30k 字 + 写作禁区
+  - 新建 `scripts/orchestrator/test-deep-research.js` **14/14 通过**（METHODOLOGY / loadObject / renderVertical / renderHorizontal / renderIntersection / generateReport / CLI 4 子命令）
+  - 新 npm scripts：`deep-research` + `test:deep-research`
+- **核心方法论**（保留自 hv-analysis）：
+  - **纵向 5 维度**：起源追溯 / 诞生节点 / 演进历程 / 决策逻辑 / 阶段划分（6000-15000 字）
+  - **横向 3 场景**：A 无竞品 / B 少量竞品 / C 充分竞品（3000-10000 字）
+  - **交汇 5 核心问题**：历史如何塑造当下 / 竞品的纵向对比 / 优势历史根源 / 劣势历史根源 / 未来 3 剧本（最可能/最危险/最乐观）（1500-3000 字）
+- **砍掉**（不适合工程）：❌ PDF 输出（WeasyPrint）· ❌ 卡兹克公众号个人文风 · ❌ 强口语化
+- **L5 影响**：
+  - 第 4 条「完成质量」↑：方法论驱动 → Claude 不再写"千字流水账"
+  - 第 5 条「自治覆盖率」↑：双轴方法论可应用到 /evolve 候选分析 / /audit 工程体检 / /dispatch 任务委派 多场景
+- **commit**：见 git log (M49-XXX)
+- **关联**：KB `kb-khazix-skills-borrow-2026.md` · 04.md §0.4 M49 增量段 · §十二里程碑表追加 M49 行 · 8 文档同步完成
+
 ### Added - M48 neat-freak 完整借鉴（A+B+C+D · 4 子模块 · 2026-06-29）
 
 - **背景**：`github.com/KKKKhazix/khazix-skills` 的 `neat-freak` skill 91 行母本关系 — CLAUDE.md 红线 + doc-sync 8 文档同步均抄自它。差距分析见 [kb-khazix-skills-borrow-2026.md](.claude/skills/left-brain/memory/knowledge/kb-khazix-skills-borrow-2026.md) 识别 3 个核心缺：**毕业机制 / sync-matrix / 特殊情况段**。本增量全补。

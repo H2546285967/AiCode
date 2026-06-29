@@ -1,7 +1,7 @@
 # AiCode — Claude Code 客户端 Agent 增强工程
 
-> **v3.0.6** · 一个**会自己调度、自己记忆、自己审计、自己进化**的 Claude Code 工作空间。
-> **30+ 个测试文件 / 455+ 项断言全过**，L1→L5 5 级智能增量路径打通（L4 ✅ / L5 🟡 3/5）。
+> **v3.0.7** · 一个**会自己调度、自己记忆、自己审计、自己进化**的 Claude Code 工作空间。
+> **32+ 个测试文件 / 469+ 项断言全过**，L1→L5 5 级智能增量路径打通（L4 ✅ / L5 🟡 3/5）。
 
 **定位**：我们**不增强 Claude 大模型本身**，而是增强 **Claude Code 客户端 Agent** —— 通过调度 / 记忆 / 工具 / 工作流 / 自动化，让同样的 Claude 模型发挥出 2-10 倍效率。
 
@@ -12,7 +12,7 @@
 ```bash
 git clone <your-fork>.git && cd AiCode
 bash .workspace/setup.sh     # 一键适配当前环境（生成 .workspace/workspace.env）
-npm test                     # 跑 30+ 个测试文件 / 455+ 项断言，确认环境正常
+npm test                     # 跑 32+ 个测试文件 / 469+ 项断言，确认环境正常
 ```
 
 然后启动 Claude Code：
@@ -43,6 +43,7 @@ claude
 | 📊 **效果量化** | 月度报告：耗时 / 成功率 / KB 召回 / 人工干预 | `metrics` |
 | 🛡️ **自动收尾** | 改完代码自动测试 + 快照 + KB + 8 文档同步（5 步法）| `self-discipline` |
 | 🧹 **KB 毕业 + MEMORY 体检** | 把稳定 KB 升 docs + 缩源为 pointer，治 memory 膨胀（neat-freak 借鉴）| `kb-promote` + `memory-health` |
+| 🔬 **深度研究（横纵双轴）** | 借鉴 hv-analysis：纵向 5 维度 + 横向 3 场景 + 交汇 5 核心问题 | `deep-research` |
 
 > **L1→L5 智能演进路径**：L1 工具能用 ✅ → L2 记得住 ✅ → L3 会决策 ✅ → L4 会学习 ✅ → L5 自治运行 🟡
 > **6 个 Skill 速览**：`.claude/SKILL_INDEX.md`（1 张表 + 5 场景脚本 · v3.0.6 M48 增 sync-matrix / memory-promote / special-cases 3 个规则文件）

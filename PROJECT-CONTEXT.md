@@ -2,7 +2,7 @@
 
 > **用途**：新会话启动时自动加载（`session-init.sh` top-list 包含本文件），快速建立项目心智模型，避免扫描整个仓库浪费 token。
 > **更新时间**：2026-06-29
-> **版本**：v3.0.6（M48 neat-freak 完整借鉴 4 子模块 + M44/M45 · 8 skill（含 M48 kb-promote/memory-health）+ 9 规则文件 + self-discipline v4 5 步法）
+> **版本**：v3.0.7（M48 neat-freak 完整借鉴 4 子模块 + M49 deep-research 升级 · 9 技能（含 M49 deep-research）+ 12 规则文件 + self-discipline v4 5 步法）
 > **加载方式**：session-init 自动加载（≈ 100 行 · token 友好）
 
 ---
@@ -34,6 +34,7 @@
 | **🎨 ui-skill-installer** (M36A) | `/ui-install` 或 `npm run ui-install` | 5 场景 UI 模板脚手架（landing/dashboard/chat/admin/portfolio + shadcn+Tailwind+v0）| L4 ✅ |
 | **🧹 kb-promote** (M48) | `npm run kb:promote -- --report` | 借鉴 neat-freak：KB 毕业三触发 + 反向阀门（17/17 测试 + 实测 16 条毕业建议）| L4 |
 | **🩺 memory-health** (M48) | `npm run memory:health` | MEMORY.md 200/25KB 硬约束 + 单条 100 行 + 体量倒挂 4 项体检（15/15 测试，退出码 0/1/2）| L4 |
+| **🔬 deep-research** (M49) | `npm run deep-research -- analyze "对象名"` | 横纵双轴深度研究（hv-analysis 借鉴）：纵向 5 维度 + 横向 3 场景 + 交汇 5 核心问题（14/14 测试）| L4 |
 | **📦 skill-registry** (M36B+C) | `/skill-install` 或 `npm run skill-install` | skill 自动发现+安装（GitHub 3 仓 + npm 20+ 关键词 + 5 维评分 ≥ 7.0 + 路径穿越防护 + 营销号过滤）| L4 ✅ |
 | **🎯 aris-poc** (M38) | `npm run aris-poc:demo` 或 `aris-poc:review` / `aris-poc:idea` | 借鉴 wanshuiyin/ARIS：6-state verdict 合约 + cross-model review loop（5 视角）+ idea discovery（5 维评分 + Top-K），95/95 测试 | L4 |
 | **🧠 mem-poc** (M39) | `npm run mem-poc:demo` 或 `mem-poc:inject "query"` | 借鉴 thedotmack/claude-mem：78 session → 35 事件压缩 + 按 query 注入最相关历史决策/教训，71/71 测试 | L2 |
@@ -48,7 +49,7 @@
 AiCode/
 ├── .claude/                         # Claude Code 配置
 │   ├── rules/                       # 行为规则（12 个：auto-perceive / behavior / cost-control / doc-sync / evolution-lock / git-branch / self-discipline / session-memory / autonomous + memory-promote / sync-matrix / special-cases M48 3 个新）
-│   ├── skills/                      # 🆕 6 个 skill (v3.0.5 M25+M43 升格：evolve + autonomous + go)
+│   ├── skills/                      # 🆕 8 个 skill (v3.0.7 M25+M43+M48+M49 升格：evolve + autonomous + go + dispatch + deep-research 等)
 │   │   ├── left-brain/              # 🧠 跨会话记忆
 │   │   ├── audit/                   # 🔍 工程自查
 │   │   ├── autonomous/              # 🤖 自主模式
