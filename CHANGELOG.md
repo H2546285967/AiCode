@@ -10,6 +10,67 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Added - M48 neat-freak 完整借鉴（A+B+C+D · 4 子模块 · 2026-06-29）
+
+- **背景**：`github.com/KKKKhazix/khazix-skills` 的 `neat-freak` skill 91 行母本关系 — CLAUDE.md 红线 + doc-sync 8 文档同步均抄自它。差距分析见 [kb-khazix-skills-borrow-2026.md](.claude/skills/left-brain/memory/knowledge/kb-khazix-skills-borrow-2026.md) 识别 3 个核心缺：**毕业机制 / sync-matrix / 特殊情况段**。本增量全补。
+- **本阶段动作（4 子模块）**：
+
+  - **M48-A 毕业（promote）机制**：
+    - 新建 `.claude/rules/memory-promote.md`（独立规则文件）— 毕业三触发（主题反复 ≥3 / 系统机制描述 / 事件类 >14 天）+ "下一个接手的人需不需要知道" 判据
+    - 新建 `scripts/knowledge/promote-kb.js`（289 行）— 半自动 promote 工具，CLI 4 子命令（`--report` / `--dry-run` / `--apply` / `--apply --delete`）+ 5 参数（`--target` / `--kb` / `--delete`）
+    - 测试 `scripts/knowledge/test-promote-kb.js` **17/17 通过**
+    - 真实体检：75 条 KB 命中 16 条毕业建议（含真实重复主题 'clau' 10 次 / 'tier' 3 次）
+
+  - **M48-B sync-matrix 变更影响矩阵**：
+    - 新建 `.claude/rules/sync-matrix.md`（独立规则文件）— 5 段映射：反向删除反模式 / 代码层 → 8 文档映射 / 记忆层变更 / 跨项目检查 / 文档结构通用约定
+    - 与 [doc-sync.md](.claude/rules/doc-sync.md) 互引，扩展 self-discipline 决策树
+
+  - **M48-C self-discipline 5 步法升级**：
+    - 重写 `.claude/rules/self-discipline.md`（v3 → v4）— 加入"零步尺寸体检 → 一步盘点 → 二步 sync-matrix → 三步修改 → 四步 14 项自检 → 五步变更摘要" 5 步法
+    - 嵌入 MEMORY.md 200 行 / 25KB 硬红线 + CLAUDE.md 300 行 / 15KB 软上限 + 单条 memory 100 行 + 体量倒挂 4 项指标
+    - 4a 决策树从 6 文档升级到 8 文档（含 `PROJECT-CONTEXT.md` + `README.md`）
+    - 引用新规则文件 4 个（memory-promote / sync-matrix / special-cases / 旧 doc-sync）
+
+  - **M48-D 特殊情况段 + MEMORY.md 体检脚本**：
+    - 新建 `.claude/rules/special-cases.md`（独立规则文件）— 5 种特殊情况处理（无 README / 无新事实 / 记忆矛盾 / 跨项目 / 历史漏改）
+    - 新建 `scripts/knowledge/memory-health-check.js`（310 行）— 4 项体检（MEMORY.md 200/25KB 硬约束 + 单条 KB 100 行 + 体量倒挂 + 跳过条件）+ 退出码 0/1/2（OK/WARN/ERROR）+ `--json` 输出
+    - 测试 `scripts/knowledge/test-memory-health-check.js` **15/15 通过**
+
+- **npm scripts（5 个新增）**：
+  - `kb:promote` / `kb:promote:apply` — 跑 promote-kb 工具
+  - `memory:health` — 跑 MEMORY.md 体检
+  - `test:promote-kb` / `test:memory-health` — 测试
+- **测试**：32/32 全过（17 promote + 15 health-check）
+- **L5 影响**：
+  - 第 5 条「自治覆盖率」↑：self-discipline 5 步法纳入"尺寸体检"零步，防 memory 膨胀 → L5 数据基础稳固
+  - 第 4 条「完成质量」↑：4a 决策树 + sync-matrix 引用 → 不漏改
+  - 第 3 条「自治可观测」↑：memory-health-check 给 L5 月报"memory 体量 / 倒挂"新指标
+- **commit**：见 git log (M48-XXX)
+- **关联**：KB `kb-khazix-skills-borrow-2026.md` · 04.md §0.4 M48-A/B/C/D 增量段 · §十二里程碑表追加 M48 行 · 8 文档同步完成
+
+### Decision - khazix-skills 借鉴分析 + 候选入队（2026-06-29）
+
+- **背景**：用户问 `github.com/KKKKhazix/khazix-skills`（MIT 协议 · 5 个 skill）哪些可吸收借鉴。
+- **评估结论**（5 skill 横向对比）：
+
+| Skill | 评估 | 决策 |
+|:------|:-----|:-----|
+| 🧹 **neat-freak** | 母本关系（CLAUDE.md 红线 + doc-sync 8 文档同步均抄自它）| 🟡 **M48 入队 P0**（缺 3 条：毕业机制 / sync-matrix / 特殊情况段）|
+| 🔥 **aihot** | 已通过 agent-reach 覆盖 | ✅ 跳过 |
+| 🔭 **hv-analysis** | 横纵双轴方法论可吸收 | 🟡 **M49 入队 P1**（方法论 → deep-research）|
+| 💽 **storage-analyzer** | 零交集（磁盘清理 vs Claude 增强壳）| ❌ 跳过（决策记录）|
+| ✍️ **khazix-writer** | 零交集（公众号文风 vs 工程化）| ❌ 跳过（决策记录）|
+
+- **本轮动作**（**只做分析 + 入队，不立即实现 M48**）：
+  - KB `kb-khazix-skills-borrow-2026.md` 写入左脑（71 → 72 条）
+  - KB-20260629-001 索引追加 MEMORY.md（决策类目）
+  - 决策记录 `autonomous-decision-20260629-001.json`
+  - `evolution-plan.json` next 队列追加 3 条候选（M48 P0 / M49 P1 / AUDIT-khazix-skip P3；M48-A 自带的"memory 毕业审计"已合入 M48 一并完成）
+  - 锁已获取后释放（owner=main-session-20260629）
+  - 会话快照已存（`20260629-090533`）
+- **下一步**：M48 neat-freak 完整借鉴（4h · 8 文档同步）由 /autonomous runner 自动选 P0 推进
+- **理由**：M48 改 3 个核心规则文件 + 1 个新文件 = 🔴 大级别工作量，本轮分析 + 入队是稳妥的"新会话起手式"，避免在单次会话内塞太多（cost-control.md "new task = new session" 原则）
+
 ### Added - M45 KB 分类质量提升（2026-06-29）
 
 - **背景**：71 条 KB 中 49.3% 标"其他"（35 条）+ 20 条无 frontmatter 纯文本 → L5 第 3 条「自治可观测」的命中率数据基础是噪声，无法信任。

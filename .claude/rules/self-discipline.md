@@ -1,8 +1,26 @@
-# AI 自我约束（Self-Discipline · 6 文档版）
+# AI 自我约束（Self-Discipline · 5 步法 · M48 升级）
 
 > **作用**：让 AI 在完成改动后**自动**保存快照、更新文档、写 KB，**不需要用户提醒**。
 > **完整规范**：[`scripts/orchestrator/自我约束规范.md`](../../scripts/orchestrator/自我约束规范.md)
-> **最后更新**：2026-06-26（v2 6 文档自检决策树 + 1 快照 0 commit 根除）
+> **最后更新**：2026-06-29（v4 · M48 neat-freak 完整借鉴 + 5 步法 + sync-matrix 引用 + MEMORY.md 200/25KB 硬红线）
+
+---
+
+## 🔴 5 步法（M48 升级 · 来源 neat-freak）
+
+> **适用**：🔴 大 / 🏁 里程碑级别必跑。
+> **依据**：neat-freak 第零步到第五步「End-of-session knowledge cleanup」流程。
+
+| 步 | 名称 | 工具 | 入口 |
+|:---|:-----|:-----|:-----|
+| **零** | **尺寸体检**（防膨胀）| `wc -l` + [memory-health-check.js](../../scripts/knowledge/memory-health-check.js) | [§尺寸红线](#尺寸红线硬约束-🚨-m48-起) |
+| **一** | **盘点现状**（不漏文件）| `ls docs/` + 读关键文件 | 见 [sync-matrix.md](sync-matrix.md) |
+| **二** | **变更影响矩阵**（不漏文档）| [sync-matrix.md](sync-matrix.md) | [§必同步的 8 个根目录文档](doc-sync.md) |
+| **三** | **实际修改** | Edit/Write + 减优于加 + 毕业机制 | [memory-promote.md](memory-promote.md) |
+| **四** | **14 项自检** | [§🔴 动作 4a 8 文档自检](#🔴-动作-4a8-文档自检决策树🔴-大--🏁-级别必跑) | — |
+| **五** | **变更摘要** | 记忆变更 + 文档变更 + 未处理 | — |
+
+**关键**：先精简（破除膨胀）→ 再做本次增量同步（补漏）。两件事**不能合并**——精简时心态是"什么不该在这"，补漏时心态是"什么该补到这"，混着做会两头不到位。
 
 ---
 
@@ -21,6 +39,7 @@
 >
 > 1. **"文档更新"从 4 文档升级到 6 文档**（[doc-sync v2](doc-sync.md)）— 01.md + 02.md 也必同步
 > 2. **"快照"已从可选项明确为 commit 前必跑**（动作 0）— 杜绝 1 快照 0 commit
+> 3. **2026-06-29 强化（v4 M48）**：升级到 5 步法（含尺寸体检） + 引入 [sync-matrix.md](sync-matrix.md) + [memory-promote.md](memory-promote.md) + 200/25KB 硬红线
 >
 > 失败教训：
 > - 2026-06-25：完成 4 commit（04 真实化 / doc-sync 串联 / 01-02 补全 / B 方案正交化），全程没主动调 `save.js` → 1 快照 0 commit
@@ -36,44 +55,17 @@
 ### 4 文档职责正交化（再强调）
 
 | 文档 | 职责 | 粒度 | 用户场景 |
-|:-----|:-----|:-----|:---------|
+|:-----|:-----|:-----|:--------|
 | **`01.md` §三** | 速查主表 | **一句话 + 一行命令** | 扫一眼就懂 |
 | **`.claude/commands/`** | 命令字典 | 完整参数 + 例子 | 写命令时查 |
 | **`02.md` §2.X** | 功能字典 | 章节级（实现 + 用法 + 测试）| 深入了解某能力 |
 | **`.claude/handoff/TUTORIAL.md`** | 场景教程 | 真实场景 + 决策树 | 不知道用什么时翻 |
 
-**违反案例**（2026-06-27 M29 修复前）：
-```bash
-# ❌ 错：01.md 速查表塞了 5 种命令变体 + 4 节点决策树 + 实现细节
-node scripts/orchestrator/handoff.js
-node scripts/orchestrator/handoff.js --auto
-node scripts/orchestrator/handoff.js "今天做 M22" "M23: 文档清理" --auto
-node scripts/orchestrator/handoff.js --runner
-node scripts/orchestrator/handoff.js --resume
-npm run roadmap:sync:status
-npm run roadmap:sync:dry
-npm run roadmap:sync
-+ 日常用法决策树（4 节点 ASCII 图）
-+ M29 新增能力（4 层 fallback 解释）
-```
-
-```bash
-# ✅ 对：01.md 只留用户真正会用的
-/handoff           # 🌟 一句话就够，不用写标题
-/handoff --auto    # + 开 VS Code 新窗口 + 复制启动命令
-```
-
 **判断标准**（写文档前问 3 问）：
+
 1. **用户会用这个吗？** —— 99% 的命令变体用户不会直接用，他们只输入 `/handoff`
 2. **这属于"速查"还是"字典"？** —— 速查 = 一行；字典 = 完整章节
 3. **多写这行能帮用户吗？** —— 不能 = 删
-
-### 写到错误文档的迹象
-
-- 01.md 出现 3 行以上代码块 → 拆到 commands/*.md 或 02.md
-- 01.md 出现 ASCII 决策树 → 删或拆到 TUTORIAL.md
-- 01.md 出现"实现细节" / "M_N 新增能力" → 拆到 02.md
-- 用户问"这为啥写这些" → 99% 是过度工程化
 
 ### 决策表（写在哪个文档）
 
@@ -86,13 +78,25 @@ npm run roadmap:sync
 | 路线图 / 状态 | 04.md §十二 | M1-M29 表 |
 | 改了什么 + 为什么 | CHANGELOG.md | "M29 智能标题" |
 
-### 自动检测（doc-sync 增强候选）
+---
 
-写入前问自己：这段内容是给"用户用"还是"开发者维护"？
-- 用户用 → 01.md（一行）
-- 开发者维护 → 02.md / 04.md / commands/*.md（详细）
+## 尺寸红线（硬约束 · 🚨 M48 起）
 
-> **下次违规参考**：M29 完成后 01.md 一度 27 行命令代码块 → 用户反馈"看不懂" → 简化到 2 行。**用户用不上 = 不写**。
+> **超尺寸是这个 skill 的最高优先级，大于"补本次会话漏掉的同步"。**
+> 原因：`MEMORY.md` 超 200 行 / 25KB 部分**会话开始时静默不加载 = 等于没记**；超尺寸的 CLAUDE.md 让真正的规则被叙事段挤出 adherence。
+
+| 文件 | 上限 | 超出怎么办 |
+|:-----|:-----|:-----------|
+| `MEMORY.md` | **≤200 行 且 ≤25KB（硬）** | 跑 `npm run kb:promote -- --report`，把稳定 KB 升 docs；MEMORY.md 只留 1 行 pointer |
+| `CLAUDE.md` / `AGENTS.md` | ~300 行 / ~15KB（软）| 先精简顶部 blockquote / 历史叙事段 → 删 / 迁 docs |
+| 单条 memory 文件 | ~100 行（软）| 通常是塞多件事 / 写成事故复盘 → 拆 / 删 / 改 reference |
+| `docs/<single>.md` | ~1500 行（软）| 切分成多文件，加目录索引 |
+| **净涨幅（每次同步）**| **≤ 30 行** | 写历史叙事而非补规则 → 回头删 / 迁 docs / 进 memory |
+
+**额外做一次「体量倒挂」体检**：`du -sh <memory 目录>` 对比 `du -sh docs/`。
+**健康态是 docs 厚、memory 薄**。若 memory 反而比 docs 大，几乎一定是「本该毕业进 docs 的稳定知识还赖在松散记忆文件里」，按 [memory-promote.md](memory-promote.md) 往上泵。
+
+**自动检测**：M48-D 起，跑 [`npm run memory:health`](../../scripts/knowledge/memory-health-check.js) 看 MEMORY.md 行数/字节/单条 size/体量倒挂 4 项指标，输出 warn / error 两级。
 
 ---
 
@@ -100,7 +104,7 @@ npm run roadmap:sync
 
 > **触发条件**：完成一个增量（Mn）/ 子模块（A+B+C+D）/ 里程碑（Mx）/ 发版（vX.Y.0）
 > **位置**：commit 前最后一步（动作 5）
-> **依据**：[doc-sync v3](doc-sync.md) §必同步的 8 个根目录文档
+> **依据**：[doc-sync v3](doc-sync.md) §必同步的 8 个根目录文档 + [sync-matrix.md](sync-matrix.md) §代码层变更映射
 
 ### 自检清单（按文件顺序）
 
@@ -113,7 +117,7 @@ npm run roadmap:sync
 
 # 2. PROJECT-CONTEXT.md — session-init 自动加载（🔴 大 必做）
 □ 顶部"更新时间"和"版本"字段
-□ 核心系统表完整（当前 11 个：left-brain/audit/autonomous/evolve/swarm/metrics/workflow/handoff/self-discipline/evolution-lock/sync-roadmap）
+□ 核心系统表完整（当前 11 个：left-brain/audit/autonomous/evolve/swarm/metrics/workflow/handoff/self-discipline/evolution-lock/sync-roadmap + memory-promote/sync-matrix/special-cases M48 3 个）
 □ 11 个常用命令路径对
 □ L5 自治运行 5 条进度表
 
@@ -188,10 +192,11 @@ npm run roadmap:sync
 | # | 动作 | 触发级别 | 来源 |
 |:--|:-----|:---------|:-----|
 | 0 | commit 前**先存快照**（防 1 快照 0 commit）| 🟡+/必做 | v1 强化（2026-06-25）|
+| 0.5 | **尺寸体检**（MEMORY.md 200/25KB + CLAUDE.md 300/15KB + 体量倒挂）| 🔴 大/必做 | **v4 M48 强化（2026-06-29）** |
 | 1 | 写测试（test-first 闸门）| 🟡+/必做 | v1 |
 | 2 | 写 KB（左脑 memory）| 🟡+/必做 | v1 |
 | 3 | commit（带规范 message）| 🟡+/必做 | v1 |
-| 4a | **6 文档自检 + 同步** | 🔴 大/必做 | **v2 强化（2026-06-26 M24 触发）** |
+| 4a | **8 文档自检 + 同步** | 🔴 大/必做 | **v4 M48 强化（2026-06-29）** |
 | 4b | 全局归档（如里程碑）| 🏁 必做 | v1 |
 | 5 | 完成回执（汇报 commit hash）| 🟡+/必做 | v1 |
 
@@ -200,6 +205,9 @@ npm run roadmap:sync
 ## 🔗 关联
 
 - [`.claude/rules/doc-sync.md`](doc-sync.md) — v2 6 文档版同步规则
+- [`.claude/rules/sync-matrix.md`](sync-matrix.md) — 变更影响矩阵（M48 新增）
+- [`.claude/rules/memory-promote.md`](memory-promote.md) — 毕业机制（M48 新增）
+- [`.claude/rules/special-cases.md`](special-cases.md) — 特殊情况兜底（M48 新增）
 - [`.claude/rules/auto-perceive.md`](auto-perceive.md) — 自动记忆
 - [`.claude/rules/behavior.md`](behavior.md) — 总行为约定
 - [`.claude/rules/cost-control.md`](cost-control.md) — 成本控制 + Git 工作流

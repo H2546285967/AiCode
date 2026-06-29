@@ -1,6 +1,6 @@
 {
   "name": "ai-workspace",
-  "version": "3.0.5",
+  "version": "3.0.6",
   "description": "可移植的个人 AI 开发工作空间 —— 自调度、自记忆、自归档、自兜底",
   "main": "scripts/orchestrator/index.js",
   "scripts": {
@@ -159,6 +159,11 @@
     "kb:report": "node scripts/knowledge/auto-classify.js --report",
     "kb:enrich": "node scripts/knowledge/enrich-kb.js --apply",
     "kb:enrich:dry": "node scripts/knowledge/enrich-kb.js --dry-run",
+    "kb:promote": "node scripts/knowledge/promote-kb.js",
+    "kb:promote:apply": "node scripts/knowledge/promote-kb.js --apply",
+    "memory:health": "node scripts/knowledge/memory-health-check.js",
+    "test:promote-kb": "node scripts/knowledge/test-promote-kb.js",
+    "test:memory-health": "node scripts/knowledge/test-memory-health-check.js",
     "test:auto-classify": "node scripts/orchestrator/test-auto-classify.js",
     "test:explorer-structure": "node scripts/orchestrator/test-explorer-structure.js"
   },

@@ -1,8 +1,8 @@
 # 项目上下文速览（1 分钟掌握全貌）
 
 > **用途**：新会话启动时自动加载（`session-init.sh` top-list 包含本文件），快速建立项目心智模型，避免扫描整个仓库浪费 token。
-> **更新时间**：2026-06-28
-> **版本**：v3.0.5（M25~M43 · 6 skill（v3.0.5 M43 新增 /go）+ swarm 协调 + SKILL 索引 + README/PROJECT-CONTEXT 重写 + doc-sync v3 8 文档 + GEPA skill 自我进化 + 扫描盲区解决 + 一键安装 UI/skill + ARIS POC + claude-mem POC + skill-hub POC）
+> **更新时间**：2026-06-29
+> **版本**：v3.0.6（M48 neat-freak 完整借鉴 4 子模块 + M44/M45 · 8 skill（含 M48 kb-promote/memory-health）+ 9 规则文件 + self-discipline v4 5 步法）
 > **加载方式**：session-init 自动加载（≈ 100 行 · token 友好）
 
 ---
@@ -27,11 +27,13 @@
 | **📊 metrics** | `node scripts/orchestrator/metrics/report.js` | 月度报告（4 指标：耗时/成功率/KB 召回/人工干预）| L4 |
 | **📋 workflow** | `/workflow` / `/workflow learn` | 学用户工作模式，主动建议下一步 | L4 |
 | **🔄 handoff** | `/handoff` 或 `node scripts/orchestrator/handoff.js` | 会话交接（自动快照 + 接续 prompt）| L4 |
-| **🛡️ self-discipline** | (自动) | 完成改动后自动收尾（测试/快照/KB/6 文档同步）| L4 |
+| **🛡️ self-discipline** | (自动) | 完成改动后自动收尾（5 步法：尺寸体检→盘点→sync-matrix→修改→自检→摘要 · 8 文档同步）| L4 |
 | **🔒 evolution-lock** | `node scripts/orchestrator/evolution-lock.js status\|queue\|complete` | 防止多窗口同时改 04/CLAUDE/CHANGELOG 导致漂移 | P0-0 |
 | **🌳 sync-roadmap** | `node scripts/orchestrator/sync-roadmap.js` | 自动同步 04.md §十二 ⏳ 段 + evolution-plan.json | M24-D |
 | **🧬 gepa** | `npm run gepa:evolve` 或 `node scripts/evolution/daily-evolution.js self-evolve` | SKILL.md 自我进化（5 模块 + 5 道护栏 + 26/26 测试，借鉴 Hermes GEPA）| L4 |
 | **🎨 ui-skill-installer** (M36A) | `/ui-install` 或 `npm run ui-install` | 5 场景 UI 模板脚手架（landing/dashboard/chat/admin/portfolio + shadcn+Tailwind+v0）| L4 ✅ |
+| **🧹 kb-promote** (M48) | `npm run kb:promote -- --report` | 借鉴 neat-freak：KB 毕业三触发 + 反向阀门（17/17 测试 + 实测 16 条毕业建议）| L4 |
+| **🩺 memory-health** (M48) | `npm run memory:health` | MEMORY.md 200/25KB 硬约束 + 单条 100 行 + 体量倒挂 4 项体检（15/15 测试，退出码 0/1/2）| L4 |
 | **📦 skill-registry** (M36B+C) | `/skill-install` 或 `npm run skill-install` | skill 自动发现+安装（GitHub 3 仓 + npm 20+ 关键词 + 5 维评分 ≥ 7.0 + 路径穿越防护 + 营销号过滤）| L4 ✅ |
 | **🎯 aris-poc** (M38) | `npm run aris-poc:demo` 或 `aris-poc:review` / `aris-poc:idea` | 借鉴 wanshuiyin/ARIS：6-state verdict 合约 + cross-model review loop（5 视角）+ idea discovery（5 维评分 + Top-K），95/95 测试 | L4 |
 | **🧠 mem-poc** (M39) | `npm run mem-poc:demo` 或 `mem-poc:inject "query"` | 借鉴 thedotmack/claude-mem：78 session → 35 事件压缩 + 按 query 注入最相关历史决策/教训，71/71 测试 | L2 |
@@ -45,7 +47,7 @@
 ```
 AiCode/
 ├── .claude/                         # Claude Code 配置
-│   ├── rules/                       # 行为规则（9 个：auto-perceive / behavior / cost-control / doc-sync / evolution-lock / git-branch / self-discipline / session-memory / autonomous）
+│   ├── rules/                       # 行为规则（12 个：auto-perceive / behavior / cost-control / doc-sync / evolution-lock / git-branch / self-discipline / session-memory / autonomous + memory-promote / sync-matrix / special-cases M48 3 个新）
 │   ├── skills/                      # 🆕 6 个 skill (v3.0.5 M25+M43 升格：evolve + autonomous + go)
 │   │   ├── left-brain/              # 🧠 跨会话记忆
 │   │   ├── audit/                   # 🔍 工程自查

@@ -115,6 +115,8 @@ AiCode/
 | **`skill-hub`** (M40) | **buildwithclaude 借鉴 + skill 统一发现** | **借鉴 davepoon/buildwithclaude：已装 + 本地 + 远程缓存三源聚合，统一搜索/推荐 skill + CLI（npm run skill-hub:demo）** |
 | **`go`** (M43) | **交付流水线自动化** | **测试 → 简化 → 审查 → 提交 4 阶段一气呵成（失败立即停止），纯函数 + 19/19 测试 + `--dry-run/--skip/--only` 5 参数（v3.0.5）** |
 | **`kb-classify`** (M45) | **KB 分类质量提升** | **71 条 KB 「其他」从 49.3% → 4.2%（远超 20% 目标），L5 第 3 条数据真实性 ↑；`npm run kb:report` 看分布 + `npm run kb:enrich` 补 frontmatter + 24/24 测试（v3.0.5）** |
+| **`kb-promote`** (M48) | **KB 毕业机制 + memory 体检** | **借鉴 neat-freak 91 行：毕业三触发（主题反复 ≥3 / 系统机制 / 事件 >14 天）+ sync-matrix 变更映射 + self-discipline 5 步法 + memory-health-check 4 项硬约束；`npm run kb:promote -- --report` 看毕业建议 + `npm run memory:health` 体检 MEMORY.md 200/25KB + 17+15 测试（v3.0.6）** |
+| **下一阶段** (M49) | **deep-research 升级（待办）** | **下一个 P1 候选：吸收 hv-analysis 横纵双轴方法论升级 deep-research（预计 2h · 见 evolution-plan.json）** |
 | MCP servers | 工具链 | 本地文件/数据库/网页能力 |
 | `hooks/` | 环境集成 | 自动执行启动/停止逻辑 |
 | `自我约束规范.md` | 工作流 | 改完代码自动收尾 |
@@ -209,8 +211,11 @@ AiCode/
 | `session-memory.md` | 会话记忆、智能丢弃 |
 | `cost-control.md` | 成本控制 + Git 工作流（个人工程） |
 | `daily-maintenance.md` | 每日更新、Changelog |
-| `self-discipline.md` | 改动后自动收尾（测试/快照/KB/文档） |
+| `self-discipline.md` | 改动后自动收尾（测试/快照/KB/文档）+ 5 步法（M48 升级） |
 | `doc-sync.md` | 里程碑/增量后同步 04/03/CLAUDE/CHANGELOG，防漂移 |
+| **`memory-promote.md`** (M48) | **KB 毕业机制 — 把稳定 KB 升 docs + 缩源为指针，治 memory 膨胀** |
+| **`sync-matrix.md`** (M48) | **变更影响矩阵 — 代码层 → 8 文档系统化映射表** |
+| **`special-cases.md`** (M48) | **特殊情况段 — 5 种非典型场景兜底（无 README / 无新事实 / 记忆矛盾 / 跨项目 / 历史漏改）** |
 | `autonomous.md` | 🤖 自主模式 ON 期间行为规则（选题后快照、切题前清理上下文） |
 ---
 

@@ -144,6 +144,9 @@
 | **Skill Hub** | `npm run skill-hub:demo` 或 `skill-hub:search "chart"` | 借鉴 davepoon/buildwithclaude：三源聚合（已装+本地+远程缓存）统一搜索/推荐 skill（v3.0.5 M40），详见 02 §2.34 |
 | **/go 一键交付** | `/go` 或 `npm run go` / `npm run go:dry` | 测试 → 简化 → 审查 → 提交 4 阶段流水线，失败立即停止（v3.0.5 M43，19/19 测试），详见 02 §2.35 |
 | **KB 分类质量** | `npm run kb:report` | 看 KB 分类分布 + 「其他」占比（v3.0.5 M45，49.3% → 4.2%）|
+| **KB 毕业机制** | `npm run kb:promote -- --report` | 借鉴 neat-freak：把稳定 KB 升 docs + 缩源为 pointer，治 memory 膨胀（v3.0.6 M48-A，17/17 测试）|
+| **MEMORY.md 体检** | `npm run memory:health` | 4 项硬约束（200/25KB + 单条 100 行 + 体量倒挂），超了 WARN/ERROR（v3.0.6 M48-D，15/15 测试）|
+| **下一阶段** | M49 待办 | 下一个 P1 候选：deep-research 升级（吸收 hv-analysis 横纵双轴方法论，预计 2h · 见 evolution-plan.json）|
 | **文档基线** | 看 `README.md` + `PROJECT-CONTEXT.md` | v3.0.5 用户首看 + session-init 自动加载（M33 重写，告别 v2.0.0 / v1.9 过期）|
 | **handoff 接续（推荐 · 一键接续）** | `/handoff` 或 `node handoff.js` | 上下文 40% 时 / 想换窗口 / 5 场景教程见 `.claude/handoff/TUTORIAL.md`（自动复制启动命令到剪贴板 + 打印接续 prompt，由你决定怎么打开）|
 | **handoff 接续（VS Code 新窗口）** | `/handoff "..." --auto` | 开 VS Code 新窗口 + 复制启动命令到剪贴板（v3.0.4 M22） |
