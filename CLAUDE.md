@@ -222,6 +222,7 @@ AiCode/
 | `auto-perceive.md` | 自动感知、纠正学习规则 |
 | `behavior.md` | 文件读取、输出控制、任务切换、子代理调度 |
 | `session-memory.md` | 会话记忆、智能丢弃 |
+| `plan-protocol.md` | 智能任务规划协议（[plan] 块格式 + agent/files 字段 + 状态机 + 与 dispatcher 边界，M54 兑现 CLAUDE.md:239 引用）|
 | `cost-control.md` | 成本控制 + Git 工作流（个人工程） |
 | `daily-maintenance.md` | 每日更新、Changelog |
 | `self-discipline.md` | 改动后自动收尾（测试/快照/KB/文档）+ 6 步法（M52 升级 = 5 步 + 0.5 步思维闸门） |

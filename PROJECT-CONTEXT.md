@@ -1,8 +1,8 @@
 # 项目上下文速览（1 分钟掌握全貌）
 
 > **用途**：新会话启动时自动加载（`session-init.sh` top-list 包含本文件），快速建立项目心智模型，避免扫描整个仓库浪费 token。
-> **更新时间**：2026-06-29
-> **版本**：v3.0.7（M48 neat-freak 完整借鉴 4 子模块 + M49 deep-research 升级 · 9 技能（含 M49 deep-research）+ 12 规则文件 + self-discipline v4 5 步法）
+> **更新时间**：2026-06-29（M54 /audit full 深度审计 P0 批次 4 真风险修复 + 5 主题入队）
+> **版本**：v3.0.8（M52 两大神级 Prompt 思维闸门 + M53 RESEARCH 候选关闭 + M54 /audit P0 修复 · 9 技能 + 13 规则文件 + self-discipline v5 6 步法）
 > **加载方式**：session-init 自动加载（≈ 100 行 · token 友好）
 
 ---
@@ -48,7 +48,7 @@
 ```
 AiCode/
 ├── .claude/                         # Claude Code 配置
-│   ├── rules/                       # 行为规则（12 个：auto-perceive / behavior / cost-control / doc-sync / evolution-lock / git-branch / self-discipline / session-memory / autonomous + memory-promote / sync-matrix / special-cases M48 3 个新）
+│   ├── rules/                       # 行为规则（13 个：auto-perceive / behavior / cost-control / doc-sync / evolution-lock / git-branch / self-discipline / session-memory / plan-protocol / autonomous + memory-promote / sync-matrix / special-cases M48 3 个新）
 │   ├── skills/                      # 🆕 8 个 skill (v3.0.7 M25+M43+M48+M49 升格：evolve + autonomous + go + dispatch + deep-research 等)
 │   │   ├── left-brain/              # 🧠 跨会话记忆
 │   │   ├── audit/                   # 🔍 工程自查

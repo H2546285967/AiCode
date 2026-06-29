@@ -10,6 +10,24 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Fixed - M54 /audit full 深度审计 P0 批次（2026-06-29）
+
+> **背景**：/audit full 派 9 个 explorer 子代理并发调研（dispatcher / evolution / left-brain / autonomous / proactive / workflow / planning / reflection / recall），挖出 26 个具体问题集中在 5 大共性主题（文档-工程不一致 / 观察链断裂 / 默认参数不合理 / 状态机并发竞态 / 过设计）。本批先做 4 个真风险 / 快赢 P0：
+
+- **`scripts/evolution/implementer.js`** — 4 处 `master` 硬编码改为 `getCurrentBranch() || "main"`（CLAUDE.md §🌿 默认 main）。原因：auto-implement 一旦跑必因分支不匹配失败
+- **`scripts/evolution/auto-implement.js`** — 回滚路径 fallback 改为 `main || master` 兼容链（合并 #1）
+- **`scripts/knowledge/promote-kb.js`** — `--apply` 永远打 `[DRY-RUN]` 误报。修复：
+  - 拆 `--dry-run`（新 cmdDryRun）+ `--apply`（cmdApply 真写）3 模式 + `--yes` 闸门
+  - 默认 `--apply` 走"打印计划 + 要求 --yes 才执行"，避免误删
+  - 新增 `shrinkKB()`：KB 缩源为 1 行 HTML 注释 pointer
+- **`.claude/settings.json`**（本地配置，无需 commit）— 注册 `hooks.PostToolUse[matcher=Edit|Write] → bash posttool-hook.sh`。原因：posttool-hook.sh 早存在但从未注册，self-reflect + plan-detect 自动触发链从未生效
+- **`.claude/rules/plan-protocol.md`**（新建）— 兑现 CLAUDE.md:239 引用。包含：触发条件 / 标准格式 / agent+files 字段 / 状态机 / 与 dispatcher 边界 / 3 命令
+- **`CLAUDE.md`** — 规则文件清单加 `plan-protocol.md` 一行
+
+**测试**：`test-promote-kb.js 17/17` + npm test 全过（与基线 28/1 一致，1 fail 是 preexisting auto-implement "只通过 1 个（实际 7）" 断言 bug）
+
+**关联**：`.claude/audits/audit-20260629-2330-deep.md`（深度审计完整报告）
+
 ### Added - M52 「两大神级 Prompt」方法论沉淀：0.5 步思维闸门（v3.0.8 · 2026-06-29）
 
 - **背景**：[AIHOT 作者饭桌心得](两大神级prompt.md) 总结的"两大神级 Prompt"（第一性原理 + 对抗式审查）已在 AiCode 半显式存在——CLAUDE.md 最高指令「先问这能帮 Claude 变智能吗」/ M48 借鉴方法论 / ECC 评估 5 理由 / qa-reviewer / swarm-coordinator，但**没有作为统一方法论 + 必跑动作沉淀**。
