@@ -358,11 +358,12 @@ async function implementOne(candidate, opts = {}) {
   } catch (err) {
     console.error(`  ❌ 失败: ${err.message}`);
 
-    // 回滚
+    // 回滚（CLAUDE.md §🌿 个人工程默认 main，不再硬编码 master）
     try {
-      gitExec('git checkout ' + (getCurrentBranch() === branchName ? 'HEAD~0' : 'master'));
-      // 简化：直接 checkout master
-      try { gitExec('git checkout master 2>/dev/null || git checkout main 2>/dev/null'); } catch {}
+      // 保留进入前的分支（默认 main），master 兜底
+      const fallbackBranch = getCurrentBranch() === branchName ? 'HEAD~0' : (getCurrentBranch() || 'main');
+      gitExec('git checkout ' + fallbackBranch);
+      try { gitExec('git checkout main 2>/dev/null || git checkout master 2>/dev/null'); } catch {}
       deleteBranch(branchName);
     } catch (e) {
       console.error(`  ⚠ 回滚失败: ${e.message}`);

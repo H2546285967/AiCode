@@ -115,7 +115,9 @@ function createBranch(name) {
 }
 
 function mergeBranch(branchName) {
-  gitExec('git checkout master')
+  // 合并前先记录当前分支（CLAUDE.md §🌿 个人工程默认 main）
+  const targetBranch = getCurrentBranch() || 'main'
+  gitExec(`git checkout ${targetBranch}`)
   try {
     gitExec(`git merge ${branchName} --no-ff -m "合并: ${branchName}"`)
     return true
@@ -232,13 +234,13 @@ async function implementCandidate(candidate, index) {
     console.log(`    1. 阅读 ${promptFile}`)
     console.log(`    2. 在 Claude Code 中执行实现`)
     console.log(`    3. 运行 npm test 验证`)
-    console.log(`    4. 合并: git checkout master && git merge ${branchName}`)
+    console.log(`    4. 合并: git checkout ${getCurrentBranch() || 'main'} && git merge ${branchName}`)
 
     return { success: true, branch: branchName, featureDir }
   } catch (err) {
     console.error(`  ❌ 实现失败: ${err.message}`)
-    // 回滚
-    gitExec('git checkout master')
+    // 回滚（CLAUDE.md §🌿 个人工程默认 main，不再硬编码 master）
+    gitExec('git checkout ' + (getCurrentBranch() || 'main'))
     deleteBranch(branchName)
     return { success: false, error: err.message }
   }
@@ -338,7 +340,7 @@ function rollback(branchName) {
     gitExec('git stash')
   }
 
-  gitExec('git checkout master')
+  gitExec('git checkout ' + (getCurrentBranch() || 'main'))
   deleteBranch(branchName)
 
   console.log(`  ✅ 已回滚，分支 ${branchName} 已删除`)
@@ -362,10 +364,10 @@ function status() {
     }
   }
 
-  // 当前分支
+  // 当前分支（CLAUDE.md §🌿 个人工程默认 main，master 应警告）
   const currentBranch = getCurrentBranch()
-  if (currentBranch !== 'master') {
-    console.log(`\n  ⚠ 当前在分支: ${currentBranch}`)
+  if (currentBranch !== 'main') {
+    console.log(`\n  ⚠ 当前在分支: ${currentBranch}（默认应 main）`)
   }
 }
 
