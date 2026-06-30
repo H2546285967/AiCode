@@ -81,13 +81,17 @@ check('CliAdapter.prototype 有 judge', typeof CliAdapter.prototype.judge === 'f
   const r6 = await new HeuristicAdapter().judge(altFields);
   check('score/effort 字段别名兼容 → accept', r6.verdict === 'accept');
 
-  // ========== 3. AnthropicAdapter.judge 抛错（接口预留）============
+  // ========== 3. AnthropicAdapter.judge 已实现（M54 Phase 2）============
 
   process.env.ANTHROPIC_API_KEY = 'test-key';
+  process.env.ANTHROPIC_BASE_URL = 'http://127.0.0.1:9'; // 无效地址，确保快速失败
   const anthropic = new AnthropicAdapter();
-  let threw = false;
-  try { await anthropic.judge(acceptCandidate); } catch (e) { threw = true; }
-  check('AnthropicAdapter.judge 未启用 → 抛错', threw);
+  check('AnthropicAdapter 有 judge 方法', typeof anthropic.judge === 'function');
+  let anthropicRejected = false;
+  try { await anthropic.judge(acceptCandidate); } catch (e) { anthropicRejected = true; }
+  check('AnthropicAdapter.judge 无效 key/地址时拒绝', anthropicRejected);
+  delete process.env.ANTHROPIC_API_KEY;
+  delete process.env.ANTHROPIC_BASE_URL;
 
   // ========== 4. judgeCandidateWithFallback 永不抛错 ==========
 

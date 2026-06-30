@@ -10,20 +10,19 @@
  * 用法：
  *   const adapter = createAdapter();              // 根据 LLM_BACKEND 环境变量选择
  *   const result = await adapter.score(taskText, grayData);
+ *   const gen = await adapter.generate(prompt);
+ *   const ev = await adapter.evaluate(prompt, { dimensions: ['clarity', 'coverage'] });
  *
  * 环境变量：
  *   LLM_BACKEND=heuristic  (默认) | anthropic | ollama | cli
+ *   ANTHROPIC_API_KEY       (anthropic backend 需要)
+ *   ANTHROPIC_MODEL         (可选，默认 claude-haiku-4-5-20251001)
  *
  * @since v1.6.0 (2026-06-22) Tier 1 改造 T1.1
+ * @changed v3.0.8 (2026-07-01) M54 Phase 2：实现 AnthropicAdapter.generate / evaluate（raw fetch，无新依赖）
  */
 
 const { heuristicScore } = require('./heuristic-scorer');
-
-/**
- * LLMAdapter 接口（duck typing，无需继承）：
- *   - async score(taskText, grayData) → { scores, composite, reasons, backend }
- *   - string name                          // backend 名称
- */
 
 // ==================== Heuristic Adapter（默认，零依赖）====================
 
@@ -36,11 +35,19 @@ class HeuristicAdapter {
 
   /**
    * 启发式生成（零成本 fallback）
-   * 根据 prompt 关键词返回模板化建议，不调用真实 LLM
    */
   async generate(prompt, opts = {}) {
     const p = (prompt || '').toLowerCase();
     const maxTokens = opts.maxTokens || 500;
+
+    // prompt-optimizer rewrite 场景
+    if (p.includes('rewrite') || p.includes('优化') || p.includes('改写') || p.includes('improve this prompt')) {
+      return {
+        text: '优化后的 prompt 版本（启发式占位）：\n1. 明确角色与目标\n2. 补充输入/输出格式约束\n3. 添加逐步推理要求\n4. 给出示例（few-shot）\n5. 声明禁止项与边界',
+        backend: this.name,
+        tokens: { prompt: p.length, completion: 80 },
+      };
+    }
 
     // test-coverage
     if (p.includes('test') || p.includes('测试') || p.includes('coverage')) {
@@ -78,17 +85,75 @@ class HeuristicAdapter {
   }
 
   /**
+   * 启发式 evaluate：对 prompt 按维度做 keyword-based 评估
+   */
+  async evaluate(prompt, opts = {}) {
+    const p = prompt || '';
+    const lower = p.toLowerCase();
+    const dimensions = opts.dimensions || ['clarity', 'coverage', 'actionability', 'safety'];
+
+    const dimScores = {};
+    const weaknesses = [];
+
+    for (const dim of dimensions) {
+      switch (dim) {
+        case 'clarity': {
+          let s = 7;
+          if (lower.length < 50) { s -= 2; weaknesses.push('prompt 过短，角色/目标可能不明确'); }
+          if (!/你是|你作为|as a|role:|角色/.test(p)) { s -= 1.5; weaknesses.push('缺少显式角色定义'); }
+          if (!/目标|目的|goal|objective|task/.test(p)) { s -= 1; weaknesses.push('缺少显式目标/任务描述'); }
+          dimScores[dim] = Math.max(0, s);
+          break;
+        }
+        case 'coverage': {
+          let s = 7;
+          if (!/示例|example|few.shot|sample/.test(p)) { s -= 1; weaknesses.push('缺少示例（few-shot）'); }
+          if (!/边界|edge case|exception|错误处理|error/.test(p)) { s -= 1; weaknesses.push('未提及边界/错误处理'); }
+          dimScores[dim] = Math.max(0, s);
+          break;
+        }
+        case 'actionability': {
+          let s = 7;
+          if (!/步骤|step|逐步|first|then|finally|请按/.test(p)) { s -= 1.5; weaknesses.push('缺少分步执行指示'); }
+          if (!/输出|output|format|返回|json|markdown/.test(p)) { s -= 1; weaknesses.push('未指定输出格式'); }
+          dimScores[dim] = Math.max(0, s);
+          break;
+        }
+        case 'safety': {
+          let s = 8;
+          if (/eval\s*\(|Function\s*\(|exec\s*\(/.test(p)) { s -= 3; weaknesses.push('包含 eval/exec/Function 等危险模式'); }
+          if (/(password|secret|api[_-]?key|token)\s*[:=]/.test(p)) { s -= 2; weaknesses.push('疑似要求输出密钥'); }
+          dimScores[dim] = Math.max(0, s);
+          break;
+        }
+        default:
+          dimScores[dim] = 6;
+      }
+    }
+
+    const scores = Object.values(dimScores);
+    const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+    const verdict = avg >= 7 ? 'PASS' : (avg >= 5 ? 'WARN' : 'FAIL');
+
+    return {
+      verdict,
+      score: avg,
+      dimensions: dimScores,
+      reasons: [`heuristic: 平均 ${avg.toFixed(1)} 分（维度: ${Object.keys(dimScores).join(', ')}）`],
+      weaknesses: Array.from(new Set(weaknesses)),
+      actions: weaknesses.map(w => `修复: ${w}`),
+      backend: this.name,
+    };
+  }
+
+  /**
    * 启发式 judge（零成本 fallback）
-   * 根据 candidate 字段 + criteria 阈值返回 accept/reject/skip 判定
-   * 判定逻辑：score >= criteria.minComposite && effort ∈ criteria.allowedEffort → accept
-   * 对 null/非对象 candidate 永不抛错（返回 reject 兜底）
    */
   async judge(candidate, criteria = {}) {
     const minComposite = criteria.minComposite ?? 7.0;
     const allowedEffort = criteria.allowedEffort ?? ['small'];
     const forbiddenDeps = criteria.forbiddenDeps ?? [];
 
-    // null/非对象兜底
     if (!candidate || typeof candidate !== 'object') {
       return {
         verdict: 'reject',
@@ -102,7 +167,6 @@ class HeuristicAdapter {
     const effort = (candidate.estimated_effort || candidate.effort || 'medium').toLowerCase();
     const desc = `${candidate.name || ''} ${candidate.description || ''} ${candidate.summary || ''}`.toLowerCase();
 
-    // 禁止依赖一票否决
     for (const dep of forbiddenDeps) {
       if (desc.includes(dep.toLowerCase())) {
         return {
@@ -151,13 +215,14 @@ class HeuristicAdapter {
   }
 }
 
-// ==================== Anthropic Adapter（接口预留）====================
+// ==================== Anthropic Adapter（raw fetch，无 SDK 依赖）====================
 
 class AnthropicAdapter {
   constructor(opts = {}) {
     this.apiKey = opts.apiKey || process.env.ANTHROPIC_API_KEY;
-    this.model = opts.model || 'claude-haiku-4-5-20251001';  // 便宜快
-    this.timeoutMs = opts.timeoutMs || 5000;
+    this.model = opts.model || process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001';
+    this.baseUrl = opts.baseUrl || process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com';
+    this.timeoutMs = opts.timeoutMs || 30000;
     if (!this.apiKey) {
       throw new Error('AnthropicAdapter 需要 ANTHROPIC_API_KEY 环境变量');
     }
@@ -165,29 +230,137 @@ class AnthropicAdapter {
 
   get name() { return 'anthropic'; }
 
+  async _callMessages(system, messages, opts = {}) {
+    const maxTokens = opts.maxTokens || 1024;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    try {
+      const res = await fetch(`${this.baseUrl}/v1/messages`, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': this.apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: this.model,
+          max_tokens: maxTokens,
+          system,
+          messages,
+          temperature: opts.temperature ?? 0.3,
+        }),
+      });
+
+      clearTimeout(timer);
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`Anthropic API ${res.status}: ${text.slice(0, 200)}`);
+      }
+
+      const data = await res.json();
+      const text = data.content
+        ?.filter(c => c.type === 'text')
+        ?.map(c => c.text)
+        ?.join('') || '';
+
+      return {
+        text,
+        usage: data.usage || { input_tokens: 0, output_tokens: 0 },
+        model: data.model || this.model,
+      };
+    } catch (e) {
+      clearTimeout(timer);
+      throw e;
+    }
+  }
+
   async score(taskText, grayData) {
-    // 接口预留：实际接入需 @anthropic-ai/sdk 依赖
-    // 当前抛错 → 由工厂方法降级到 HeuristicAdapter
-    throw new Error(
-      '[AnthropicAdapter] 实际接入未启用（v1.6 仅保留接口）\n' +
-      '  启用方式：npm install @anthropic-ai/sdk 并实现此方法\n' +
-      '  或使用 cli adapter 通过 Claude Code CLI 调用'
-    );
+    // 暂不实现真实 score，抛错降级到 heuristic
+    throw new Error('[AnthropicAdapter] score 未实现，将降级到 heuristic');
   }
 
   async generate(prompt, opts = {}) {
-    throw new Error(
-      '[AnthropicAdapter] generate 未启用\n' +
-      '  启用方式：npm install @anthropic-ai/sdk，用 messages.create 实现 generate'
+    const res = await this._callMessages(
+      'You are a helpful coding assistant. Be concise and actionable.',
+      [{ role: 'user', content: prompt }],
+      opts
     );
+    return {
+      text: res.text,
+      backend: this.name,
+      tokens: {
+        prompt: res.usage.input_tokens,
+        completion: res.usage.output_tokens,
+      },
+      model: res.model,
+    };
+  }
+
+  async evaluate(prompt, opts = {}) {
+    const dimensions = opts.dimensions || ['clarity', 'coverage', 'actionability', 'safety'];
+    const system = `You are a rigorous prompt-engineering evaluator. Respond ONLY with valid JSON (no markdown, no explanation) matching this schema:
+{
+  "verdict": "PASS|WARN|FAIL",
+  "score": 0-10 number,
+  "dimensions": { "clarity": 0-10, "coverage": 0-10, "actionability": 0-10, "safety": 0-10 },
+  "reasons": ["string"],
+  "weaknesses": ["string"],
+  "actions": ["string"]
+}`;
+    const userPrompt = `Evaluate the following prompt across these dimensions: ${dimensions.join(', ')}.
+
+Prompt:\n---\n${prompt}\n---\n
+Return JSON only.`;
+
+    const res = await this._callMessages(system, [{ role: 'user', content: userPrompt }], { maxTokens: 1024, temperature: 0.2 });
+
+    let parsed;
+    try {
+      const cleaned = res.text.replace(/^```json\s*|\s*```$/g, '').trim();
+      parsed = JSON.parse(cleaned);
+    } catch (e) {
+      throw new Error(`Anthropic evaluate JSON parse failed: ${e.message}\nRaw: ${res.text.slice(0, 200)}`);
+    }
+
+    return {
+      verdict: parsed.verdict || 'ERROR',
+      score: typeof parsed.score === 'number' ? parsed.score : 0,
+      dimensions: parsed.dimensions || {},
+      reasons: Array.isArray(parsed.reasons) ? parsed.reasons : [],
+      weaknesses: Array.isArray(parsed.weaknesses) ? parsed.weaknesses : [],
+      actions: Array.isArray(parsed.actions) ? parsed.actions : [],
+      backend: this.name,
+      model: res.model,
+    };
   }
 
   async judge(candidate, criteria = {}) {
-    throw new Error(
-      '[AnthropicAdapter] judge 未启用\n' +
-      '  启用方式：npm install @anthropic-ai/sdk，用 messages.create 实现 judge\n' +
-      '  Prompt 模板建议：给定 candidate JSON + criteria，输出 {verdict, score, reasons} JSON'
-    );
+    const system = `You are a gatekeeper deciding whether to auto-implement a candidate feature. Respond ONLY with valid JSON matching:
+{
+  "verdict": "accept|reject|skip",
+  "score": 0-10 number,
+  "reasons": ["string"]
+}`;
+    const userPrompt = `Candidate:\n${JSON.stringify(candidate, null, 2)}\n\nCriteria:\n${JSON.stringify(criteria, null, 2)}\n\nReturn JSON only.`;
+    const res = await this._callMessages(system, [{ role: 'user', content: userPrompt }], { maxTokens: 512, temperature: 0.2 });
+
+    let parsed;
+    try {
+      const cleaned = res.text.replace(/^```json\s*|\s*```$/g, '').trim();
+      parsed = JSON.parse(cleaned);
+    } catch (e) {
+      throw new Error(`Anthropic judge JSON parse failed: ${e.message}`);
+    }
+
+    return {
+      verdict: parsed.verdict || 'skip',
+      score: typeof parsed.score === 'number' ? parsed.score : 0,
+      reasons: Array.isArray(parsed.reasons) ? parsed.reasons : [],
+      backend: this.name,
+    };
   }
 }
 
@@ -203,25 +376,19 @@ class OllamaAdapter {
   get name() { return 'ollama'; }
 
   async score(taskText, grayData) {
-    throw new Error(
-      '[OllamaAdapter] 实际接入未启用（v1.6 仅保留接口）\n' +
-      '  启用方式：实现 POST ' + this.baseUrl + '/api/generate 调用\n' +
-      '  或使用 cli adapter'
-    );
+    throw new Error('[OllamaAdapter] 实际接入未启用（v1.6 仅保留接口）');
   }
 
   async generate(prompt, opts = {}) {
-    throw new Error(
-      '[OllamaAdapter] generate 未启用\n' +
-      '  启用方式：POST ' + this.baseUrl + '/api/generate'
-    );
+    throw new Error('[OllamaAdapter] generate 未启用');
+  }
+
+  async evaluate(prompt, opts = {}) {
+    throw new Error('[OllamaAdapter] evaluate 未启用');
   }
 
   async judge(candidate, criteria = {}) {
-    throw new Error(
-      '[OllamaAdapter] judge 未启用\n' +
-      '  启用方式：POST ' + this.baseUrl + '/api/generate，prompt 包含 candidate JSON + criteria'
-    );
+    throw new Error('[OllamaAdapter] judge 未启用');
   }
 }
 
@@ -236,34 +403,24 @@ class CliAdapter {
   get name() { return 'cli'; }
 
   async score(taskText, grayData) {
-    throw new Error(
-      '[CliAdapter] 实际接入未启用（v1.6 仅保留接口）\n' +
-      '  启用方式：用 child_process.spawn 调 ' + this.command + ' -p "<prompt>"\n' +
-      '  解析 stdout 提取 JSON 评分'
-    );
+    throw new Error('[CliAdapter] 实际接入未启用（v1.6 仅保留接口）');
   }
 
   async generate(prompt, opts = {}) {
-    throw new Error(
-      '[CliAdapter] generate 未启用\n' +
-      '  启用方式：用 child_process.spawn 调 ' + this.command + ' -p "<prompt>" 并解析 stdout'
-    );
+    throw new Error('[CliAdapter] generate 未启用');
+  }
+
+  async evaluate(prompt, opts = {}) {
+    throw new Error('[CliAdapter] evaluate 未启用');
   }
 
   async judge(candidate, criteria = {}) {
-    throw new Error(
-      '[CliAdapter] judge 未启用\n' +
-      '  启用方式：用 child_process.spawn 调 ' + this.command + ' -p "<judge prompt>" 并解析 stdout JSON'
-    );
+    throw new Error('[CliAdapter] judge 未启用');
   }
 }
 
 // ==================== 工厂方法 ====================
 
-/**
- * 根据 LLM_BACKEND 环境变量创建 adapter
- * 默认 heuristic；任何 backend 创建失败 → 返回 HeuristicAdapter（永不抛错）
- */
 function createAdapter(backendName) {
   const backend = (backendName || process.env.LLM_BACKEND || 'heuristic').toLowerCase();
   try {
@@ -279,17 +436,11 @@ function createAdapter(backendName) {
         return new HeuristicAdapter();
     }
   } catch (e) {
-    // 创建失败（缺 API key 等）→ 降级到 heuristic
     process.stderr.write(`[llm-adapter] ${backend} 创建失败，降级到 heuristic: ${e.message}\n`);
     return new HeuristicAdapter();
   }
 }
 
-/**
- * 带降级的 score 方法（推荐使用）
- *   - 任何 adapter 抛错 → 自动 fallback 到 heuristic
- *   - 永不抛错给调用方
- */
 async function scoreWithFallback(taskText, grayData) {
   const adapter = createAdapter();
   try {
@@ -300,11 +451,6 @@ async function scoreWithFallback(taskText, grayData) {
   }
 }
 
-/**
- * 带降级的 generate 方法（推荐使用）
- *   - 任何 adapter 抛错 → 自动 fallback 到 HeuristicAdapter.generate
- *   - 永不抛错给调用方
- */
 async function generateWithFallback(prompt, opts = {}) {
   const adapter = createAdapter();
   try {
@@ -315,20 +461,23 @@ async function generateWithFallback(prompt, opts = {}) {
   }
 }
 
-/**
- * 带降级的 judge 方法（M12 LLM-judge 闸门，推荐使用）
- *   - judge 候选是否值得自动实现
- *   - 返回 { verdict: 'accept'|'reject'|'skip', score, reasons, backend }
- *   - 任何 adapter 抛错 → 自动 fallback 到 HeuristicAdapter.judge
- *   - 永不抛错给调用方
- */
+async function evaluateWithFallback(prompt, opts = {}) {
+  const adapter = createAdapter();
+  try {
+    return await adapter.evaluate(prompt, opts);
+  } catch (e) {
+    process.stderr.write(`[llm-adapter] ${adapter.name} 评估失败，降级到 heuristic: ${e.message}\n`);
+    return new HeuristicAdapter().evaluate(prompt, opts);
+  }
+}
+
 async function judgeCandidateWithFallback(candidate, criteria = {}, opts = {}) {
   const adapter = createAdapter();
   try {
     return await adapter.judge(candidate, criteria, opts);
   } catch (e) {
     process.stderr.write(`[llm-adapter] ${adapter.name} 判定失败，降级到 heuristic: ${e.message}\n`);
-    return new HeuristicAdapter().judge(candidate, criteria, opts);
+    return new HeuristicAdapter().judge(candidate, criteria);
   }
 }
 
@@ -340,5 +489,6 @@ module.exports = {
   createAdapter,
   scoreWithFallback,
   generateWithFallback,
+  evaluateWithFallback,
   judgeCandidateWithFallback,
 };

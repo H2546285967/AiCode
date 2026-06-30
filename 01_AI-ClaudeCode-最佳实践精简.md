@@ -149,6 +149,7 @@
 | **KB 毕业机制** | `npm run kb:promote -- --report` | 借鉴 neat-freak：把稳定 KB 升 docs + 缩源为 pointer，治 memory 膨胀（v3.0.6 M48-A，17/17 测试）|
 | **MEMORY.md 体检** | `npm run memory:health` | 4 项硬约束（200/25KB + 单条 100 行 + 体量倒挂），超了 WARN/ERROR（v3.0.6 M48-D，15/15 测试）|
 | **深度研究（横纵双轴）** | `npm run deep-research -- analyze "对象名"` | 借鉴 hv-analysis：纵向 5 维度（时间）+ 横向 3 场景（同期对比）+ 交汇 5 核心问题（v3.0.7 M49，14/14 测试）|
+| **提示词优化闭环** | `npm run po:run -- --file .claude/agents/qa-reviewer.md --rounds 3` | 分析→评估→对比→智能改写，支持 LLM backend 与 heuristic fallback（v3.0.8 M54 Phase 2，22/22 测试）|
 | **文档基线** | 看 `README.md` + `PROJECT-CONTEXT.md` | v3.0.5 用户首看 + session-init 自动加载（M33 重写，告别 v2.0.0 / v1.9 过期）|
 | **handoff 接续（推荐 · 一键接续）** | `/handoff` 或 `node handoff.js` | 上下文 40% 时 / 想换窗口 / 5 场景教程见 `.claude/handoff/TUTORIAL.md`（自动复制启动命令到剪贴板 + 打印接续 prompt，由你决定怎么打开）|
 | **handoff 接续（VS Code 新窗口）** | `/handoff "..." --auto` | 开 VS Code 新窗口 + 复制启动命令到剪贴板（v3.0.4 M22） |

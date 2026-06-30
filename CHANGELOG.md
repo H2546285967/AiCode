@@ -25,6 +25,31 @@
 
 **关联**：[[prompt-optimizer-eval-2026]] · Phase 1 of "吸收借鉴 prompt-optimizer" roadmap
 
+### Added - M54 借鉴 prompt-optimizer：LLM 驱动的提示词优化闭环（2026-07-01）
+
+> **背景**：prompt-optimizer 的核心价值在于"分析 → 评估 → 对比 → 智能改写"的提示词优化闭环。AiCode 已有 llm-adapter / ARIS 6-state verdict / GEPA 遗传优化的骨架，但都是 heuristic-only。本批补齐真实 LLM 调用接口，并建立独立的 `scripts/prompt-optimizer/` 模块。
+
+- **`scripts/orchestrator/llm-adapter.js`** — 实现 `AnthropicAdapter.generate()` 和 `evaluate()`（raw fetch，无新增 npm 依赖）
+  - 支持 `ANTHROPIC_API_KEY` / `ANTHROPIC_MODEL` / `ANTHROPIC_BASE_URL` 环境变量
+  - 无 API key 时工厂自动降级到 `HeuristicAdapter`
+  - 新增 `evaluateWithFallback()` 统一入口
+- **`scripts/prompt-optimizer/`** — 新增 6 文件优化流水线：
+  - `analyzer.js` — 语义分析，输出弱点/优点/摘要
+  - `evaluator.js` — 按 clarity/coverage/actionability/safety 维度评估，返回 6-state verdict
+  - `comparator.js` — 多 backend 评估，检测分歧
+  - `rewriter.js` — 根据弱点清单改写 prompt
+  - `pipeline.js` — 串联 analyze → evaluate → compare → rewrite，支持多轮迭代
+  - `cli.js` — 命令行入口
+- **`scripts/prompt-optimizer/test-prompt-optimizer.js`** — 22 项测试覆盖 analyzer/evaluator/comparator/rewriter/pipeline/CLI
+- **`scripts/orchestrator/test-judge-candidate.js`** — 更新断言：AnthropicAdapter.judge 已实现，无效 key/地址时拒绝
+- **`package.json`** — 新增 `po:run` / `po:analyze` / `test:prompt-optimizer`，并把新测试加入 `test` 主链
+
+**验证**：`npm run test:llm` 27/27 通过；`npm run test:prompt-optimizer` 22/22 通过
+
+**注意**：`npm test` 中 `scripts/evolution/test-auto-implement.js` 有 1 个**前置失败**（"只通过 1 个（实际 7）"），与本批改动无关，系该测试对候选池的计数假设在当前数据下不成立。
+
+**关联**：[[prompt-optimizer-eval-2026]] · Phase 2 of "吸收借鉴 prompt-optimizer" roadmap
+
 ### Changed - next 队列按优先级自动排序（2026-07-01）
 
 > **背景**：`evolution-plan.json` 中 `AUDIT-roadmap-item-skill`（P3）因最早入队排在 `next[0]`，但队列中还有 10 条 P0 真风险。`SessionStart` 虽已警告，但"做 next[0]"仍会指向低优先级项。
