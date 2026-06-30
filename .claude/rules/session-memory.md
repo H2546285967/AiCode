@@ -88,96 +88,25 @@ bash .claude/skills/left-brain/scripts/session-summary.sh cleanup 30
 | **想看工程漂移 / 8 文档一致性** | `/audit`（按需，慢但精确）|
 | **当前会话上下文超 30%** | `/compact` 压缩（不交接）|
 | **当前会话有未固化临时状态**（调试中/讨论中）| `/handoff` 打包后 `/clear`（罕见）|
-| **离开几小时让 AI 自主跑** | `/autonomous always` + 后台 runner |
-| **完成 1 个增量就停** | `/autonomous single` |
+| **完成 1 个核心功能就停** | `/autonomous single` |
+| **长期离开，让 AI 循环进化** | `/autonomous always` + 后台 runner |
 | **纯收工**（已 commit + 8 文档同步完）| 直接关，**啥都不跑**（最常见）|
 
-### `/handoff` 详细使用场景（人工接续 · 7 类）
+### 会话交接（3 个命令）
 
-| # | 场景 | 命令 |
-|:-:|:-----|:-----|
-| 1 | 晚 12 点想睡觉（当天没 commit 完 + 明天想接着）| `/handoff` 无参数（自动从 summary 提标题）|
-| 2 | 上下文 40% 触顶（对话还有信息但 token 不够）| `/handoff --dry-run` 先看 → 确认 → 再跑 |
-| 3 | 完成里程碑（v3.0.X 大版本收尾）| `/handoff "v3.0.5 完成" "v3.0.6 待规划" --tags "milestone"` |
-| 4 | 双会话并行（想换个窗口继续）| `/handoff "A 窗口做 X" --auto` 开 VS Code 新窗口 + 剪贴板命令 |
-| 5 | 调试线索打包（BUG 调一半 + 发现根因线索）| `/handoff "BUG-X 调一半：根因在 Y 函数" "继续修 BUG-X"` |
-| 6 | 决策痕迹打包（刚做完多个 commit / KB / CHANGELOG）| `/handoff "决策完成：3 commit" "下一会话选 next[0]"` |
-| 7 | 纯收工（已 commit + 8 文档同步完 + 无进行中任务）| **不需要 `/handoff`**（直接关）|
+> 用户只需判断 2 件事：当前任务是否没处理完 / 是否想让 AI 自己跑。
+
+| 用户意图 | 命令 | 说明 |
+| :------- | :--- | :--- |
+| 任务没处理完，要离开 | `/handoff "状态" "下一步"` | 快照替代 next 队列待执行项 |
+| 让 AI 自主完成单个大功能 | `/autonomous single` | 完成 → commit → 快照 → 自动关闭 |
+| 长期离开，循环进化 | `/autonomous always` | 循环取 next[0]，5 次失败自动停 |
+| 正常完成任务 | 什么都不做 | 文档和快照已自动更新 |
 
 **关键边界**：
-- `/handoff` vs `/clear`：handoff 必带状态转移，clear 是纯重置
+- `/handoff` vs `/clear`：handoff 保存状态转移，clear 是纯重置
 - `/handoff` vs `/compact`：compact 压缩上下文但保持 momentum，handoff 跨会话
-- `/handoff` vs `/autonomous`：handoff 人工接力（需粘贴 prompt），autonomous 机器接力（runner 自动）
-
-### 完整 4 步流程（6 类场景 · v3.0.8+）
-
-> **速查版**：见 `01_AI-ClaudeCode-最佳实践精简.md` §🚀 自主模式 + handoff 高频场景
-
-#### 场景 1：现在 23:00 还没干完，得睡觉
-
-**前提**：正在调试 / 写代码 / 做 P3，**没 commit 完**。
-
-1. **睡前执行**：`/handoff`（无参数） — AI 自动做：存快照 + 更新 autonomous-state + 生成接续 prompt + 复制剪贴板
-2. **看输出确认**（30 秒）：标题 / 下一阶段 / 状态 / 第一句话模板
-3. **关电脑 / 关窗口** — 不用 `/clear` / `/compact`（状态已存盘）
-4. **明早接续**：`cc` 启动 → SessionStart hook 自动加载 latest_summary.md → 你说"继续做 X"即可
-
-#### 场景 2：出去吃饭 1 小时
-
-**前提**：P3 进度过半。
-
-1. **出门前执行**：`/autonomous single` — 把 `autonomous-state.json` 改成 `enabled=true, mode=single`
-2. **可选 runner**（仅限 `-p` 子会话模式）：`npm run autonomous:runner` 在另一窗口
-3. **AI 自动跑**：完成当前 1 阶段 → 自动 commit → 写快照 → 模式切回 OFF
-4. **回来查进度**：`/status` 或 `git log --oneline -5`
-
-#### 场景 3：周末出去爬山 1 天
-
-**前提**：想 AI 整天循环跑 next 队列。
-
-1. **出门前执行**：`/autonomous always`
-2. **必须启动 runner**：`Start-Process powershell -ArgumentList "npm run autonomous:runner" -WindowStyle Hidden`
-3. **runner 守护**：子会话完成 → 自动启动新子会话 → 无限循环（5 次失败自动停）
-4. **回家查进度**：`git log --oneline -10` + `evolution-lock.js peek` + `/autonomous off`
-
-#### 场景 4：调试 BUG 调一半要开会
-
-**前提**：发现根因线索但未修完。
-
-1. **会前执行**（显式标题）：`/handoff "BUG-X 调一半：根因在 Y 函数 Z 边界条件" "继续修 BUG-X"`
-2. **dry-run 确认**：`/handoff --dry-run "BUG-X 调一半" "继续修 BUG-X"` 看 prompt
-3. **去开会**
-4. **开会回来**：`cc` + 说"继续修 BUG-X（从快照看到根因）"
-
-#### 场景 5：完成 v3.0.8 大版本
-
-**前提**：v3.0.8 最后一个 P0/P1 commit 完。
-
-1. **执行 handoff 带 tag**：`/handoff "v3.0.8 完成（M50-M53）" "v3.0.9 待规划" --tags "milestone v3.0.8"`
-2. **AI 自动写里程碑**：CHANGELOG 新增 `[v3.0.8]` 段 + 04.md §十二追加行 + tag 入快照
-3. **可选归档**：`npm run archive` 归档 v3.0.7 之前的旧文件
-4. **开新会话规划**：`cc` + 说"v3.0.8 完成，现在规划 v3.0.9 看 next 队列剩啥"
-
-#### 场景 6：完成 1 个小修复，想看下一个
-
-**前提**：刚 commit 完 1 个小修复。
-
-- **不用任何命令** — 直接说"做 next[0]"，AI 读 evolution-plan.json + 给 plan 块
-- **判断**：你在场 + 想立刻继续 → 不用 handoff / autonomous / clear 任何命令
-
-### `/autonomous` 详细使用场景（机器接续 · 4 类）
-
-| # | 场景 | 模式 | 行为 |
-|:-:|:-----|:-----|:-----|
-| 1 | 离开 1 小时 | `single` | 完成当前 1 阶段后自动停，写快照，关会话 |
-| 2 | 离开 1 整天 | `always` | 循环跑 next 队列，每阶段自动快照 + 新子会话接力 |
-| 3 | 只想开开关 | `on` / `off` | 状态机切换，不实际启动 runner |
-| 4 | 后台无人值守 | `always` + `autonomous:runner` | runner 守护进程：子会话退出 → 启动新子会话 |
-
-**关键边界**：
-- `/autonomous` ON 期间不主动询问：5 次失败 / 关键决策 → 写快照不询问
-- `/autonomous` ≠ `/handoff`：autonomous 不用写"下一阶段 prompt"，runner 启动的新子会话**通过 SessionStart hook 自动加载 `latest_state.json`**
-- `/autonomous` vs `/status`：status 是查询当前状态，autonomous 是切换开关
+- `/handoff` vs `/autonomous`：handoff 是"我离开但状态要接上"，autonomous 是"我离开 AI 自己跑"
 
 ### session-init 速度优化（v3.0.8+）
 
