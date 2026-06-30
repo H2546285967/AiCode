@@ -388,6 +388,10 @@ function markAwaitingHandoff(nextTitle, reason) {
   state.handoff_next = nextTitle;
   state.handoff_reason = reason || null;
   state.next_action = nextTitle;
+  // v0.2 (2026-06-30): 用户原始意图, SessionStart 第一屏显示
+  state.last_user_intent = nextTitle;
+  state.last_user_intent_at = now();
+  if (reason) state.last_user_intent_reason = reason;
   saveAutonomousState(state);
 
   // M24-B: 写 handoff_lifecycle.jsonl（数据基础 · L5 第 5 条）

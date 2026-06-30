@@ -4,32 +4,87 @@
 # 主要用于：
 #   1. 用户手动 /clear 或新开会话后自动恢复现场
 #   2. 自主模式 runner 启动的 claude -p 子会话加载上下文
+#   3. v0.2 (2026-06-30): 🔥 紧急提醒 + 🎯 自动推荐 next[0] 段
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 MEMORY_DIR="$WORKSPACE_ROOT/.claude/skills/left-brain/memory"
 SESSIONS_DIR="$MEMORY_DIR/sessions"
 STATE_FILE="$SESSIONS_DIR/latest_state.json"
 AUTONOMOUS_FILE="$MEMORY_DIR/autonomous-state.json"
+EVOLUTION_PLAN="$MEMORY_DIR/evolution-plan.json"
+ANOMALIES_FILE="$MEMORY_DIR/anomalies.json"
 
 echo ""
 echo "🧠 SessionStart: 恢复工作现场..."
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# 1. 加载左脑会话摘要
+# ── Step 1: 🔥 紧急提醒（新窗口第一眼看到的） ──────────────
+echo ""
+echo "🔥 紧急提醒（先看这里）:"
+HANDOFF_FLAG=$(cd "$WORKSPACE_ROOT" && node -e "
+const fs = require('fs');
+const path = require('path');
+const f = path.join('.claude', 'skills', 'left-brain', 'memory', 'autonomous-state.json');
+if (!fs.existsSync(f)) process.exit(0);
+try {
+  const s = JSON.parse(fs.readFileSync(f, 'utf8'));
+  if (s.awaiting_handoff) console.log('handoff_pending');
+  if (s.last_user_intent) console.log('user_intent:' + s.last_user_intent);
+  if (s.last_user_intent_at) console.log('user_intent_at:' + s.last_user_intent_at);
+} catch {}
+" 2>/dev/null || echo "")
+
+if echo "$HANDOFF_FLAG" | grep -q "handoff_pending"; then
+  echo "  ⚠️ 检测到 awaiting_handoff=true（用户标记待接续）"
+fi
+if echo "$HANDOFF_FLAG" | grep -q "^user_intent:"; then
+  INTENT=$(echo "$HANDOFF_FLAG" | grep "^user_intent:" | head -1 | sed 's/^user_intent://')
+  INTENT_AT=$(echo "$HANDOFF_FLAG" | grep "^user_intent_at:" | head -1 | sed 's/^user_intent_at://')
+  echo "  📌 用户上次说: \"$INTENT\""
+  if [ -n "$INTENT_AT" ] && [ "$INTENT_AT" != "undefined" ]; then
+    echo "     时间: $INTENT_AT"
+  fi
+fi
+
+# 读 anomalies.json 顶 3 条
+if [ -f "$ANOMALIES_FILE" ]; then
+  TOP=$(cd "$WORKSPACE_ROOT" && node -e "
+const fs = require('fs');
+const path = require('path');
+const af = path.join('.claude', 'skills', 'left-brain', 'memory', 'anomalies.json');
+try {
+  const a = JSON.parse(fs.readFileSync(af, 'utf8'));
+  const findings = (a.findings || []).filter(f => f.severity === 'error' || f.severity === 'warning').slice(0, 3);
+  findings.forEach(f => {
+    const icon = f.severity === 'error' ? '🔴' : '🟡';
+    console.log(\`  \${icon} [\${f.dimension || 'unknown'}] \${(f.message || '').slice(0, 70)}\`);
+  });
+  if (findings.length === 0) console.log('  ✅ 项目状态健康');
+} catch {}
+" 2>/dev/null || echo "")
+  if [ -n "$TOP" ]; then
+    echo "$TOP" | head -5
+  fi
+fi
+
+# ── Step 2: 📋 上一会话摘要 ──────────────
 SUMMARY_SCRIPT="$WORKSPACE_ROOT/.claude/skills/left-brain/scripts/session-summary.sh"
 if [ -f "$SUMMARY_SCRIPT" ]; then
   bash "$SUMMARY_SCRIPT" load 2>/dev/null || true
 fi
 
-# 2. 如果存在状态快照，打印关键信息
+# ── Step 3: 📋 最新状态快照 ──────────────
 if [ -f "$STATE_FILE" ]; then
   echo ""
   echo "📋 最新状态快照:"
-  node -e "
+  cd "$WORKSPACE_ROOT" && node -e "
 const fs = require('fs');
-const s = JSON.parse(fs.readFileSync('$STATE_FILE', 'utf8'));
+const path = require('path');
+const sf = path.join('.claude', 'skills', 'left-brain', 'memory', 'sessions', 'latest_state.json');
+const s = JSON.parse(fs.readFileSync(sf, 'utf8'));
 console.log('  时间:', s.saved_at || '(无)');
 console.log('  摘要:', (s.summary || '').slice(0, 80));
 if (s.stage) {
@@ -38,20 +93,77 @@ if (s.stage) {
   console.log('  下一步:', s.stage.next || s.next_action || '(无)');
   console.log('  已完成:', (s.stage.completed || []).length, '个');
 }
-" 2>/dev/null || true
+" 2>&1 | sed 's/^/  /'
 fi
 
-# 3. 自主模式提示
+# ── Step 4: 🎯 自动推荐 next[0] ──────────────
+echo ""
+echo "🎯 自动推荐:"
+if [ -f "$EVOLUTION_PLAN" ]; then
+  cd "$WORKSPACE_ROOT" && node -e "
+const fs = require('fs');
+const path = require('path');
+const planPath = path.join('.claude', 'skills', 'left-brain', 'memory', 'evolution-plan.json');
+const p = JSON.parse(fs.readFileSync(planPath, 'utf8'));
+const next = p.next || [];
+if (next.length === 0) {
+  console.log('  ✅ 队列已空');
+  process.exit(0);
+}
+const n0 = next[0];
+const p0Count = next.filter(c => c.priority === 'P0').length;
+const p3Count = next.filter(c => c.priority === 'P3').length;
+const total = next.length;
+const n0PriorityIcon = n0.priority === 'P0' ? '🔴' : '🟢';
+const n0PriorityLabel = n0.priority === 'P0' ? 'P0 真风险' : (n0.priority === 'P3' ? 'P3 长期' : n0.priority);
+
+console.log(\`  next[0] = \${n0.id}\`);
+console.log(\`  优先级: \${n0PriorityIcon} \${n0PriorityLabel}\`);
+console.log(\`  标题: \${(n0.title || '').slice(0, 70)}\`);
+console.log(\`  ───────────────\`);
+console.log(\`  📊 队列总数: \${total} 条（\${p0Count} P0 + \${p3Count} P3）\`);
+if (p0Count > 0 && n0.priority !== 'P0') {
+  console.log(\`  ⚠️ 建议: next[0] 是 P3，但有 \${p0Count} 条 P0 真风险，优先级更紧迫\`);
+} else if (p0Count > 0) {
+  console.log(\`  ✅ next[0] 已是 P0，优先级正确\`);
+} else {
+  console.log(\`  ✅ 无 P0，可放心做 next[0]\`);
+}
+" 2>&1 | sed 's/^/  /'
+else
+  echo "  ⚠️ evolution-plan.json 不存在"
+fi
+
+# ── Step 5: 🤖 自主模式提示 ──────────────
 if [ -f "$AUTONOMOUS_FILE" ]; then
-  ENABLED=$(node -e "try { console.log(require('$AUTONOMOUS_FILE').enabled ? '1' : '0'); } catch { console.log('0'); }" 2>/dev/null || echo "0")
+  ENABLED=$(cd "$WORKSPACE_ROOT" && node -e "
+const fs = require('fs');
+const path = require('path');
+const f = path.join('.claude', 'skills', 'left-brain', 'memory', 'autonomous-state.json');
+try { console.log(require(f).enabled ? '1' : '0'); } catch { console.log('0'); }
+" 2>/dev/null || echo "0")
+  MODE=$(cd "$WORKSPACE_ROOT" && node -e "
+const fs = require('fs');
+const path = require('path');
+const f = path.join('.claude', 'skills', 'left-brain', 'memory', 'autonomous-state.json');
+try { console.log(require(f).mode || 'always'); } catch { console.log('always'); }
+" 2>/dev/null || echo "always")
   if [ "$ENABLED" = "1" ]; then
     echo ""
-    echo "🤖 自主模式当前为 ON"
+    echo "🤖 自主模式当前为 ON（模式: $MODE）"
     echo "   如需无人值守循环执行：node scripts/orchestrator/autonomous.js runner"
     echo "   如需停止自主模式：node scripts/orchestrator/autonomous.js off"
+  else
+    echo ""
+    echo "🤖 自主模式: OFF"
   fi
 fi
 
+# ── Step 6: 💡 一句话可执行 ──────────────
 echo ""
+echo "💡 一句话可执行:"
+echo "   \"做 next[0]\" / \"做 next[1]\" / \"做 [ID]\" / \"/status\" / \"/handoff\""
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "✅ SessionStart 完成"
 echo ""
