@@ -42,8 +42,19 @@ try {
 } catch {}
 try {
   const p = JSON.parse(fs.readFileSync(planFile, 'utf8'));
-  const n0 = (p.next || [])[0];
-  if (n0) {
+  const next = p.next || [];
+  if (next.length > 0) {
+    // 按优先级排序（P0 > P1 > P2 > P3，同优先级按入队时间）
+    const PRIORITY_RANK = { P0: 0, P1: 1, P2: 2, P3: 3 };
+    const sorted = [...next].sort((a, b) => {
+      const pa = PRIORITY_RANK[a.priority] ?? 1;
+      const pb = PRIORITY_RANK[b.priority] ?? 1;
+      if (pa !== pb) return pa - pb;
+      const ta = a.queued_at ? new Date(a.queued_at).getTime() : 0;
+      const tb = b.queued_at ? new Date(b.queued_at).getTime() : 0;
+      return ta - tb;
+    });
+    const n0 = sorted[0];
     const icon = n0.priority === 'P0' ? '🔴' : (n0.priority === 'P3' ? '🟢' : '⚪');
     out.push('🚀 推荐 next[0]: ' + n0.id + ' | ' + n0.title + ' | ' + icon + ' ' + n0.priority);
   }

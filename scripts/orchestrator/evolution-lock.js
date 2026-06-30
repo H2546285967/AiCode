@@ -43,6 +43,9 @@ const STATE_FILE = path.join(MEMORY_DIR, 'evolution-plan.json');
 // 锁超时（毫秒）
 const LOCK_TIMEOUT_MS = 5 * 60 * 1000; // 5 分钟
 
+// 优先级排序权重（数字越小越优先）
+const PRIORITY_RANK = { P0: 0, P1: 1, P2: 2, P3: 3 };
+
 // 状态默认值
 const DEFAULT_STATE = {
   schema_version: 1,
@@ -78,6 +81,7 @@ function loadState() {
 function saveState(state) {
   ensureDir(MEMORY_DIR);
   state.updated_at = new Date().toISOString();
+  state.next = sortNextByPriority(state.next);
   const tmp = STATE_FILE + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(state, null, 2));
   fs.renameSync(tmp, STATE_FILE);
@@ -87,6 +91,22 @@ function isStale(current) {
   if (!current || !current.locked_at) return true;
   const lockedAt = new Date(current.locked_at).getTime();
   return Date.now() - lockedAt > LOCK_TIMEOUT_MS;
+}
+
+/**
+ * 按优先级排序 next 队列（P0 > P1 > P2 > P3，同优先级按入队时间先后）
+ * @param {object[]} next
+ * @returns {object[]}
+ */
+function sortNextByPriority(next) {
+  return [...next].sort((a, b) => {
+    const pa = PRIORITY_RANK[a.priority] ?? 1;
+    const pb = PRIORITY_RANK[b.priority] ?? 1;
+    if (pa !== pb) return pa - pb;
+    const ta = a.queued_at ? new Date(a.queued_at).getTime() : 0;
+    const tb = b.queued_at ? new Date(b.queued_at).getTime() : 0;
+    return ta - tb;
+  });
 }
 
 // ── 核心 API ────────────────────────────────────────
@@ -357,6 +377,7 @@ module.exports = {
   peek,
   loadState,
   saveState,
+  sortNextByPriority,
   STATE_FILE,
   LOCK_TIMEOUT_MS,
 };

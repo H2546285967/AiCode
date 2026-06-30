@@ -10,6 +10,17 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Changed - next 队列按优先级自动排序（2026-07-01）
+
+> **背景**：`evolution-plan.json` 中 `AUDIT-roadmap-item-skill`（P3）因最早入队排在 `next[0]`，但队列中还有 10 条 P0 真风险。`SessionStart` 虽已警告，但"做 next[0]"仍会指向低优先级项。
+
+- **`scripts/orchestrator/evolution-lock.js`** — `saveState()` 保存前自动按 `P0 > P1 > P2 > P3` 排序 `next` 队列；同优先级按 `queued_at` 先后；新增导出 `sortNextByPriority()`
+- **`.claude/hooks/SessionStart`** — 自动推荐段先排序再取 `next[0]`，确保展示最紧迫项
+- **`.claude/skills/left-brain/scripts/session-init.sh`** — 快速唤醒段同样按优先级排序后推荐
+- **`04_自我演进路线.md` §十二 当前队列状态** — `next[0]` 描述更新为排序后的 P0 项
+
+**验证**：`node scripts/orchestrator/evolution-lock.js queue` 入队后 evolution-plan.json `next[0]` 为 P0；`SessionStart` 不再出现"next[0] 是 P3 但有 P0"警告
+
 ### Changed - M54 batch2 G：会话交接文档精简（2026-06-30）
 
 > **背景**：`04.md` §十一 把 handoff / autonomous 写成 6 场景生活指南，和用户真实用法错位。按第一性原理精简为 3 个命令。
