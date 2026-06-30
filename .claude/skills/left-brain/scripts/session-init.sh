@@ -233,7 +233,14 @@ if [ -n "$WORKSPACE_ROOT" ] && [ -f "$WORKSPACE_ROOT/scripts/orchestrator/metric
   if [ -d "$KNOWLEDGE_DIR" ] && [ "$(ls -A "$KNOWLEDGE_DIR" 2>/dev/null)" ]; then
     KB_HIT="true"
     KB_COUNT=$(ls -1 "$KNOWLEDGE_DIR"/*.md 2>/dev/null | wc -l)
-    echo "  ✅ KB 召回命中（$KB_COUNT 条知识）"
+    # M54 batch2 leftbrain-promote-warning: KB 计数预警（200/25KB 硬红线）
+    if [ "$KB_COUNT" -ge 180 ]; then
+      echo "  🔴 KB 预警：${KB_COUNT} 条知识（红线 200，剩 $((200-KB_COUNT)) 条）— 立即跑 npm run kb:promote -- --apply"
+    elif [ "$KB_COUNT" -ge 150 ]; then
+      echo "  🟡 KB 预警：${KB_COUNT} 条知识（黄线 150，红线 200，剩 $((200-KB_COUNT)) 条）— 建议跑 npm run kb:promote -- --report"
+    else
+      echo "  ✅ KB 召回命中（${KB_COUNT} 条知识）"
+    fi
   else
     KB_HIT="false"
     echo "  ⚠️ KB 召回未命中（knowledge 目录为空）"

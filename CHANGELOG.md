@@ -10,6 +10,25 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Fixed - M54 cleanup batch：next 队列清理 + 承诺兑现 + KB 健康度预警（2026-06-30）
+
+> **背景**：深度审计 M54 batch2 后 next 队列堆积 12 条（11 P0 + 1 P1，优先级过松）+ D-autonomous-l3 是「文档说一套工程做一套」的真风险（evolution-lock.md 写 L3 hook 强制，plan-detect.js PostToolUse 钩子从未接 allowed_docs 检查）。本批按第一性原理做 3 件诚实清理（≤30 min）：
+
+- **`.claude/skills/left-brain/scripts/session-init.sh` Step 10** — KB 召回加 150/180 阈值预警（200/25KB 硬红线）
+  - `KB_COUNT ≥ 180` → 🔴 立即跑 `npm run kb:promote -- --apply`
+  - `KB_COUNT ≥ 150` → 🟡 建议跑 `npm run kb:promote -- --report`
+  - 复用现有 KB_HIT 逻辑，**0 新增机制**，纯 1 行判断扩展
+- **`.claude/rules/evolution-lock.md`** — L3 降级为「设计目标」
+  - 标题「三层锁机制」→「两层锁机制（L3 设计中 · 工程未实现）」
+  - L3 行加状态列「⏳ 设计目标（M54 D 主题 2026-06-29 决策：工程未实现）」
+  - 「L1 是关键，L2/L3 是兜底」→「L1 是关键，L2 是兜底。L3 是未来目标」
+  - 加诚实声明段（候选 AUDIT-M54-batch2-D-autonomous-l3 仍在 next 列表，可随时领取）
+- **`.claude/skills/left-brain/memory/evolution-plan.json`** — 删 #11 重复 handoff 占位条目（next 12→11，剩 10 P0 + 1 P3）+ history 新增本批完成记录
+
+**测试**：session-init 验证 KB 79/200 显示 ✅（远低于 150 阈值，未触发预警，符合预期）。evolution-plan.json next.length 验证 11
+
+**关联**：L5 自治运行 · 5 条达标进度（KB 健康度预警机制兑现）· [[m54-cleanup-batch-20260630]]（history 详见 evolution-plan.json）
+
 ### Added - M49+3 deep-research 6 段方法论闭环（2026-06-30）
 
 - **`scripts/orchestrator/deep-research.js`** — deep-research 升级：4 段 → 6 段方法论闭环
