@@ -96,69 +96,69 @@ else
 fi
 echo ""
 
-echo "📚 Step 1: 加载知识索引"
-if [ -f "$MEMORY_FILE" ]; then
-    knowledge_count=$(grep -E '知识总数:' "$MEMORY_FILE" | sed 's/.*知识总数: //')
-    echo "  知识条目: ${knowledge_count:-0}"
-else
-    echo "  知识条目: 0"
-fi
-echo ""
+# echo "📚 Step 1: 加载知识索引"
+# if [ -f "$MEMORY_FILE" ]; then
+#     knowledge_count=$(grep -E '知识总数:' "$MEMORY_FILE" | sed 's/.*知识总数: //')
+#     echo "  知识条目: ${knowledge_count:-0}"
+# else
+#     echo "  知识条目: 0"
+# fi
+# echo ""
 
-echo "📝 Step 2: 加载上次会话摘要（模式: ${SESSION_INIT_MODE}）"
-if [ -f "$SUMMARY_FILE" ]; then
-    if [ "$SESSION_INIT_MODE" = "fast" ]; then
-        # fast 模式：只显示摘要存在 + 第一行标题
-        echo "  ✅ 上次会话摘要存在（用 SESSION_INIT_MODE=full 查看完整）"
-        head -1 "$SUMMARY_FILE" | sed 's/^/    /'
-    else
-        echo "  ✅ 找到上次会话摘要"
-        grep -A 100 '## 对话内容' "$SUMMARY_FILE" | head -20
-        if grep -q '## 关键决策' "$SUMMARY_FILE"; then
-            grep -A 10 '## 关键决策' "$SUMMARY_FILE" | grep -E '^\s*[-·]' | head -5
-        fi
-        if grep -q '## 待办事项' "$SUMMARY_FILE"; then
-            grep -A 10 '## 待办事项' "$SUMMARY_FILE" | grep -E '^\s*[-·]' | head -5
-        fi
-    fi
-else
-    echo "  📝 暂无历史会话摘要"
-fi
-echo ""
+# echo "📝 Step 2: 加载上次会话摘要（模式: ${SESSION_INIT_MODE}）"
+# if [ -f "$SUMMARY_FILE" ]; then
+#     if [ "$SESSION_INIT_MODE" = "fast" ]; then
+#         # fast 模式：只显示摘要存在 + 第一行标题
+#         echo "  ✅ 上次会话摘要存在（用 SESSION_INIT_MODE=full 查看完整）"
+#         head -1 "$SUMMARY_FILE" | sed 's/^/    /'
+#     else
+#         echo "  ✅ 找到上次会话摘要"
+#         grep -A 100 '## 对话内容' "$SUMMARY_FILE" | head -20
+#         if grep -q '## 关键决策' "$SUMMARY_FILE"; then
+#             grep -A 10 '## 关键决策' "$SUMMARY_FILE" | grep -E '^\s*[-·]' | head -5
+#         fi
+#         if grep -q '## 待办事项' "$SUMMARY_FILE"; then
+#             grep -A 10 '## 待办事项' "$SUMMARY_FILE" | grep -E '^\s*[-·]' | head -5
+#         fi
+#     fi
+# else
+#     echo "  📝 暂无历史会话摘要"
+# fi
+# echo ""
 
-echo "🔗 Step 3: 加载相关知识（模式: ${SESSION_INIT_MODE}）"
-if [ -d "$KNOWLEDGE_DIR" ]; then
-    if [ "$SESSION_INIT_MODE" = "fast" ]; then
-        # fast 模式：只显示 KB 数量（不进 ls/head）
-        kb_count=$(ls -1 "${KNOWLEDGE_DIR}"/*.md 2>/dev/null | wc -l)
-        echo "  ✅ 知识库就绪（${kb_count} 条 KB · 详细见 /status 或 evolution-plan.json）"
-    else
-        recent_files=$(ls -1t "${KNOWLEDGE_DIR}"/*.md 2>/dev/null | head -5)
-        if [ -n "$recent_files" ]; then
-            echo "  最近访问的知识:"
-            echo "$recent_files" | while read file; do
-                id=$(basename "$file" .md)
-                content=$(head -20 "$file" | grep -E '^content:' | sed 's/^content: //' | head -c 50)
-                echo "    - $id: $content..."
-            done
-        fi
-    fi
-fi
-echo ""
+# echo "🔗 Step 3: 加载相关知识（模式: ${SESSION_INIT_MODE}）"
+# if [ -d "$KNOWLEDGE_DIR" ]; then
+#     if [ "$SESSION_INIT_MODE" = "fast" ]; then
+#         # fast 模式：只显示 KB 数量（不进 ls/head）
+#         kb_count=$(ls -1 "${KNOWLEDGE_DIR}"/*.md 2>/dev/null | wc -l)
+#         echo "  ✅ 知识库就绪（${kb_count} 条 KB · 详细见 /status 或 evolution-plan.json）"
+#     else
+#         recent_files=$(ls -1t "${KNOWLEDGE_DIR}"/*.md 2>/dev/null | head -5)
+#         if [ -n "$recent_files" ]; then
+#             echo "  最近访问的知识:"
+#             echo "$recent_files" | while read file; do
+#                 id=$(basename "$file" .md)
+#                 content=$(head -20 "$file" | grep -E '^content:' | sed 's/^content: //' | head -c 50)
+#                 echo "    - $id: $content..."
+#             done
+#         fi
+#     fi
+# fi
+# echo ""
 
-echo "⚙️ Step 4: 系统状态"
-echo "  日期: $(date '+%Y-%m-%d %H:%M:%S')"
-echo "  知识库: $KNOWLEDGE_DIR"
-echo "  会话记录: $SESSIONS_DIR"
-echo ""
+# echo "⚙️ Step 4: 系统状态"
+# echo "  日期: $(date '+%Y-%m-%d %H:%M:%S')"
+# echo "  知识库: $KNOWLEDGE_DIR"
+# echo "  会话记录: $SESSIONS_DIR"
+# echo ""
 
-# v2.0 P0-5: 记录会话开始事件
-if [ -n "$WORKSPACE_ROOT" ] && [ -f "$WORKSPACE_ROOT/scripts/orchestrator/workflow/workflow-cli.js" ]; then
-    SESSION_ID="session_$(date '+%Y%m%d-%H%M%S')"
-    node "$WORKSPACE_ROOT/scripts/orchestrator/workflow/workflow-cli.js" record session_start "{\"source\":\"session-init\"}" "{\"session\":\"$SESSION_ID\"}" >/dev/null 2>&1
-fi
+# # v2.0 P0-5: 记录会话开始事件
+# if [ -n "$WORKSPACE_ROOT" ] && [ -f "$WORKSPACE_ROOT/scripts/orchestrator/workflow/workflow-cli.js" ]; then
+#     SESSION_ID="session_$(date '+%Y%m%d-%H%M%S')"
+#     node "$WORKSPACE_ROOT/scripts/orchestrator/workflow/workflow-cli.js" record session_start "{\"source\":\"session-init\"}" "{\"session\":\"$SESSION_ID\"}" >/dev/null 2>&1
+# fi
 
-echo "🔍 Step 5: 自我反思反馈（v1.9.1+ 智能增量 A）"
+echo "🔍 Step 1: 自我反思反馈（v1.9.1+ 智能增量 A）"
 REFLECTION_FILE="${SKILL_DIR}/memory/reflections.jsonl"
 if [ -f "$REFLECTION_FILE" ] && [ -s "$REFLECTION_FILE" ]; then
     count=$(wc -l < "$REFLECTION_FILE")
@@ -180,7 +180,7 @@ else
 fi
 echo ""
 
-echo "🔍 Step 6: 主动发现问题（v1.9.1+ 智能增量 C）"
+echo "🔍 Step 2: 主动发现问题（v1.9.1+ 智能增量 C）"
 ANOMALY_FILE="${SKILL_DIR}/memory/anomalies.json"
 if [ -f "$ANOMALY_FILE" ] && [ -s "$ANOMALY_FILE" ]; then
     # 用 node 解析并格式化（避免 jq/grep 转义坑）
