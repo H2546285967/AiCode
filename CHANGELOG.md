@@ -17,6 +17,7 @@
 - **`04_自我演进路线.md` §十一** — 从 6 场景 352 行精简为 3 个命令 38 行
   - 只保留：任务没处理完 `/handoff`、单个大功能 `/autonomous single`、长期进化 `/autonomous always`
   - 删除：吃饭 1h / 爬山 1d / 里程碑 handoff / 小修复继续 等生活场景
+  - **修正**：默认推荐 `/handoff` 无参数（AI 自动总结已完成/未完成），显式参数仅用于具体根因线索
 - **`01_AI-ClaudeCode-最佳实践精简.md` §十一** — 同步精简 handoff 子章节为 3 命令版本
 - **`.claude/rules/session-memory.md`** — 替换 7 类 handoff + 6 类场景为 3 命令简化模型
 - **`.claude/handoff/TUTORIAL.md`** — 从 5 场景教程精简为 3 场景教程，删除"完成里程碑用 handoff"等冲突内容

@@ -6,14 +6,17 @@
 
 | 你的情况 | 命令 |
 |:---------|:-----|
-| 任务没处理完，要离开 | `/handoff "正在处理 XXX，进度 YYY，后续 ZZZ"` |
+| 任务没处理完，要离开 | `/handoff` |
 | 让 AI 自主完成单个大功能 | `/autonomous single` |
 | 长期离开，让 AI 循环进化 | `/autonomous always` + `npm run autonomous:runner` |
 
 ## 场景 1：任务没处理完要离开
 
 ```bash
-/handoff "M54 G 设计已定，待写 00_会话交接速查.md" "继续写速查文档"
+/handoff          # AI 自动从 summary 总结已完成/未完成
+
+# 可选：调试到一半有具体线索时
+/handoff "BUG-X 根因在 Y 函数" "继续修 BUG-X"
 ```
 
 AI 会：

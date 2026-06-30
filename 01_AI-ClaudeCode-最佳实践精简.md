@@ -373,7 +373,8 @@ echo '{"tool_name":"UserPromptSubmit","tool_input":{"prompt":"排查 BUG"}}' | n
 #### 1. 当前任务没处理完 → 保存快照
 
 ```bash
-/handoff "正在处理 XXX，当前进度 YYY，后续需要 ZZZ"
+/handoff          # 默认：AI 自动总结已完成/未完成
+/handoff "根因线索" "下一步"   # 可选：调试到一半有具体线索时用
 ```
 
 **什么时候用**：任务处理到一半，你要离开或开新窗口。

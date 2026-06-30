@@ -98,7 +98,8 @@ bash .claude/skills/left-brain/scripts/session-summary.sh cleanup 30
 
 | 用户意图 | 命令 | 说明 |
 | :------- | :--- | :--- |
-| 任务没处理完，要离开 | `/handoff "状态" "下一步"` | 快照替代 next 队列待执行项 |
+| 任务没处理完，要离开 | `/handoff` | AI 自动总结已完成/未完成 |
+| 有具体根因线索时 | `/handoff "根因" "下一步"` | 显式标注避免丢失 |
 | 让 AI 自主完成单个大功能 | `/autonomous single` | 完成 → commit → 快照 → 自动关闭 |
 | 长期离开，循环进化 | `/autonomous always` | 循环取 next[0]，5 次失败自动停 |
 | 正常完成任务 | 什么都不做 | 文档和快照已自动更新 |
