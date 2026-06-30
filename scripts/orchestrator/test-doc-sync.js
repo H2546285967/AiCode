@@ -177,7 +177,7 @@ if (m04) {
     const startIdx = m04.indexOf('### ✅ 已完成');
     const endIdx = m04.indexOf('### ⏳ 计划中', startIdx);
     const section = m04.slice(startIdx, endIdx === -1 ? m04.length : endIdx);
-    const actual = (section.match(/^\| (\*\*)?M\d+(\*\*)? \|/gm) || []).length;
+    const actual = (section.match(/^\| (\*\*)?(?:M\d+(?:-P\d+)?|AUDIT-[\w-]+)(\*\*)? \|/gm) || []).length;
     check('✅ 段声明数量 = 实际行数', declared === actual, `声明 ${declared} vs 实际 ${actual}`);
   } else {
     warn('✅ 段', '未找到 "### ✅ 已完成（N 项）" 标题');
