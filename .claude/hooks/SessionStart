@@ -10,6 +10,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 MEMORY_DIR="$WORKSPACE_ROOT/.claude/skills/left-brain/memory"
 SESSIONS_DIR="$MEMORY_DIR/sessions"
 STATE_FILE="$SESSIONS_DIR/latest_state.json"
@@ -17,6 +18,11 @@ AUTONOMOUS_FILE="$MEMORY_DIR/autonomous-state.json"
 EVOLUTION_PLAN="$MEMORY_DIR/evolution-plan.json"
 ANOMALIES_FILE="$MEMORY_DIR/anomalies.json"
 
+echo ""
+echo ""
+echo "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"
+echo "┃  🤖 Claude Code 已启动 · 下面是新会话上下文恢复（SessionStart）  ┃"
+echo "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"
 echo ""
 echo "🧠 SessionStart: 恢复工作现场..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

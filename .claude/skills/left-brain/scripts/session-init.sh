@@ -21,6 +21,45 @@ echo "🧠 左脑会话初始化"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
+# v0.2 (2026-06-30): 快速唤醒段 — 启动时第一眼看到 handoff + next 推荐
+echo "🎯 快速唤醒（直接说“继续做” / “做 [ID]”）："
+WORKSPACE_ROOT_QUICK="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
+if [ -n "$WORKSPACE_ROOT_QUICK" ]; then
+  QUICK_STATE=$(cd "$WORKSPACE_ROOT_QUICK" && node -e "
+const fs = require('fs');
+const path = require('path');
+const mem = path.join('.claude', 'skills', 'left-brain', 'memory');
+const autoFile = path.join(mem, 'autonomous-state.json');
+const planFile = path.join(mem, 'evolution-plan.json');
+let out = [];
+try {
+  const a = JSON.parse(fs.readFileSync(autoFile, 'utf8'));
+  if (a.awaiting_handoff && a.next_action) {
+    out.push('📌 handoff 待接续: ' + a.next_action);
+  } else if (a.next_action) {
+    out.push('📌 下一阶段: ' + a.next_action);
+  }
+} catch {}
+try {
+  const p = JSON.parse(fs.readFileSync(planFile, 'utf8'));
+  const n0 = (p.next || [])[0];
+  if (n0) {
+    const icon = n0.priority === 'P0' ? '🔴' : (n0.priority === 'P3' ? '🟢' : '⚪');
+    out.push('🚀 推荐 next[0]: ' + n0.id + ' | ' + n0.title + ' | ' + icon + ' ' + n0.priority);
+  }
+} catch {}
+console.log(out.join('\n'));
+" 2>/dev/null)
+  if [ -n "$QUICK_STATE" ]; then
+    echo "$QUICK_STATE" | sed 's/^/  /'
+  else
+    echo "  ℹ️ 暂无 handoff / next 状态"
+  fi
+else
+  echo "  ⚠️ 无法定位工作区根目录"
+fi
+echo ""
+
 # P0-0 演进治理：启动时检查演进锁状态
 echo "🔒 Step 0: 演进计划锁状态（P0-0 元能力）"
 WORKSPACE_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
