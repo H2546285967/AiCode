@@ -294,7 +294,7 @@ async function fixCandidatePending(dryRun = false, useLLM = false) {
   // 调 implementer 链路
   let implementer;
   try {
-    implementer = require('../evolution/implementer');
+    implementer = require('../../evolution/implementer');
   } catch {
     addProposal(
       'candidate-pending',

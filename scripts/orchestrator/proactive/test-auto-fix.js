@@ -193,6 +193,17 @@ clearProposals();
   }
 }
 
+// AUDIT-20260701-P0-002: implementer 路径修复后能正常加载
+{
+  // 路径错误会走 catch 分支返回 error；路径正确则进入 proposal 路径
+  const r = await fixCandidatePending(false, false);
+  if (r.error && r.error.includes('not loadable')) {
+    assert(false, 'implementer 路径应能加载（修复 ../evolution → ../../evolution）', JSON.stringify(r));
+  } else {
+    assert(true, 'implementer 路径已修复（无 not loadable error）');
+  }
+}
+
 // ==================== 5. autoFixConservative ====================
 section('保守模式: autoFixConservative');
 

@@ -10,6 +10,25 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Fixed - auto-fix.js candidate-pending implementer 相对路径错（2026-07-01 · AUDIT-20260701-P0-002）
+
+**背景**：`scripts/orchestrator/proactive/auto-fix.js:297` 的 `fixCandidatePending()` 调 `require('../evolution/implementer')`，但 `auto-fix.js` 实际在 `scripts/orchestrator/proactive/` 下，要到 `scripts/evolution/implementer.js` 必须 `require('../../evolution/implementer')`（`../` = orchestrator/，`../../` = scripts/）。结果：require 抛错，try/catch 退化到「implementer 加载失败 → 仅记 proposal + 让用户手动跑 `node scripts/evolution/daily-evolution.js implement`」。Fix 4 维度等于不工作。
+
+**修复**：
+- **`scripts/orchestrator/proactive/auto-fix.js`** — 第 297 行相对路径从 `../evolution/implementer` 改为 `../../evolution/implementer`
+- **`scripts/orchestrator/proactive/test-auto-fix.js`** — 新增 1 个断言验证修复后 implementer 能正常加载（不再走 `not loadable` 错误分支）
+
+**验证**：
+- `node scripts/orchestrator/proactive/test-auto-fix.js` 38/38 通过（原 36 + 新增 2：路径加载成功 + 不再返回 `not loadable` 错误）
+- 手动 `require('../../evolution/implementer')` from auto-fix.js 解析到 `H:\AI-han\AiCode\scripts\evolution\implementer.js`（存在）
+- `npm test` 全量：所有测试套件通过（除预存的 `semantic-recall` "不存在的查询返回空" 1 条，与本修复无关）
+- `npm run doc:check` 36/0/1 通过
+- **L5 影响**：proactive 子系统「候选落地」环节从「永远走退化路径」→「真实调 implementer」，自动消化 GitHub trending 候选恢复可用
+
+**Files**（修改/新增清单）：
+- `scripts/orchestrator/proactive/auto-fix.js`（第 297 行 require 路径）
+- `scripts/orchestrator/proactive/test-auto-fix.js`（新增 1 个路径修复断言）
+
 ### Fixed - self-reflect.js PostToolUse 输入解析 Bug（2026-07-01 · AUDIT-20260701-P0-001）
 
 **背景**：`scripts/orchestrator/reflection/self-reflect.js` 的 CLI 入口只读顶层字段 `data.file_path` / `data.content`，但 Claude Code PostToolUse hook 传入的是**嵌套结构** `{tool_use_name, tool_input: {file_path, new_content}}`。结果：当 hook 通过 stdin 喂入真实 JSON 时，`filePath` 永远是 null，5 个内置规则（code-completeness / test-trigger / todo-scan / doc-version / high-stakes-trigger）全部失效，JSONL 一条都不写。
