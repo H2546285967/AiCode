@@ -35,18 +35,14 @@
 
 const fs = require('fs');
 const path = require('path');
-
-// ── 配置 ─────────────────────────────────────────────
-
-const WORKSPACE_ROOT = path.join(__dirname, '..', '..', '..');
-const SKILL_DIR = path.join(WORKSPACE_ROOT, '.claude', 'skills', 'left-brain');
-const MEMORY_DIR = path.join(SKILL_DIR, 'memory');
-const EVENTS_FILE = process.env.WORKFLOW_EVENTS_FILE
-  ? path.resolve(process.env.WORKFLOW_EVENTS_FILE)
-  : path.join(MEMORY_DIR, 'workflow-events.jsonl');
-const PATTERNS_FILE = process.env.WORKFLOW_PATTERNS_FILE
-  ? path.resolve(process.env.WORKFLOW_PATTERNS_FILE)
-  : path.join(MEMORY_DIR, 'workflow-patterns.json');
+const {
+  WORKSPACE_ROOT,
+  MEMORY_DIR,
+  EVENTS_FILE,
+  PATTERNS_FILE,
+  ensureDir,
+  readFileSafe,
+} = require('./utils');
 
 // 默认阈值
 const DEFAULT_MIN_SUPPORT = 2;
@@ -66,20 +62,6 @@ const RULE_TEMPLATES = [
 ];
 
 // ── 工具函数 ─────────────────────────────────────────
-
-function ensureDir(dir) {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-}
-
-function readFileSafe(fp) {
-  try {
-    return fs.readFileSync(fp, 'utf8');
-  } catch {
-    return null;
-  }
-}
 
 function readEvents() {
   if (!fs.existsSync(EVENTS_FILE)) return [];

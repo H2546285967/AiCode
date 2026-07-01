@@ -39,15 +39,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-
-// ── 配置 ─────────────────────────────────────────────
-
-const WORKSPACE_ROOT = path.join(__dirname, '..', '..', '..');
-const SKILL_DIR = path.join(WORKSPACE_ROOT, '.claude', 'skills', 'left-brain');
-const MEMORY_DIR = path.join(SKILL_DIR, 'memory');
-const EVENTS_FILE = process.env.WORKFLOW_EVENTS_FILE
-  ? path.resolve(process.env.WORKFLOW_EVENTS_FILE)
-  : path.join(MEMORY_DIR, 'workflow-events.jsonl');
+const { EVENTS_FILE, MEMORY_DIR, ensureDir, readFileSafe } = require('./utils');
 
 // 数据保留 30 天
 const RETENTION_DAYS = 30;
@@ -65,20 +57,6 @@ const VALID_TYPES = new Set([
 ]);
 
 // ── 工具函数 ─────────────────────────────────────────
-
-function ensureDir(dir) {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-}
-
-function readFileSafe(fp) {
-  try {
-    return fs.readFileSync(fp, 'utf8');
-  } catch {
-    return null;
-  }
-}
 
 function execSafe(cmd, cwd) {
   try {

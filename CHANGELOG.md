@@ -10,6 +10,46 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Added - workflow：抽取 utils.js 统一路径常量与安全工具函数（2026-07-01 · AUDIT-20260701-P1-001）
+
+**背景**：`scripts/orchestrator/workflow/` 下 4 个文件（pattern-miner.js / suggestion-engine.js / workflow-observer.js / workflow-cli.js）重复定义：
+- `WORKSPACE_ROOT` / `SKILL_DIR` / `MEMORY_DIR` 路径常量（4 文件重复）
+- `EVENTS_FILE` / `PATTERNS_FILE`（3 文件重复，含 env 覆盖逻辑）
+- `ensureDir` / `readFileSafe` 函数（2 文件重复）
+
+**抽取**：
+- **新增 `scripts/orchestrator/workflow/utils.js`** — 导出：
+  - **路径**：`WORKSPACE_ROOT` / `SKILL_DIR` / `MEMORY_DIR` / `EVENTS_FILE` / `PATTERNS_FILE`
+  - **工具**：`ensureDir` / `readFileSafe`
+  - **保留 env 覆盖能力**：`process.env.WORKFLOW_EVENTS_FILE` / `WORKFLOW_PATTERNS_FILE`
+- **修改 4 文件** import utils 删除本地重复：
+  - `pattern-miner.js` 删 11 行
+  - `workflow-observer.js` 删 12 行
+  - `suggestion-engine.js` 删 5 行（只 `WORKSPACE_ROOT`）
+  - `workflow-cli.js` 删 5 行
+
+**不抽取的范围**（v3.0.8 P1-001 决策）：
+- `execSafe`（只 suggestion-engine.js 用）
+- `loadJsonSafe`（语义不同，避免歧义）
+- `DEFAULT_*` 阈值 / `RULE_TEMPLATES`（pattern-miner 独有）
+- `loadObserver` / `loadMiner`（处理循环引用，需调用方控制）
+
+**新增测试**：
+- **`scripts/orchestrator/workflow/test-utils.js`** — 15/15 通过：
+  - 路径常量（5 项）+ env 覆盖（2 项）+ ensureDir（2 项）+ readFileSafe（2 项）+ 4 文件 require 不抛（4 项）
+
+**集成**：
+- `package.json` `npm test` 链新增 `test-utils.js`（在 workflow-observer 之前）
+
+**验证**：
+- `npm test`：除预存 `semantic-recall` "不存在的查询返回空" 1 条外全部通过（与本次无关）
+- `npm run test:workflow`：pattern-miner 5/5 + workflow-observer 7/7 + suggestion-engine 5/5 + utils 15/15 = 32/32
+- `node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'))"` 合法
+
+**L5 影响**：workflow 子系统 4 文件路径/工具统一，新增工具函数只需改 utils.js 一处
+
+**关联**：AUDIT-20260701-P1-001
+
 ### Fixed - workflow：getRecentModifiedFiles 改用 Observer + git diff HEAD（2026-07-01 · AUDIT-20260701-P0-008）
 
 **背景**：

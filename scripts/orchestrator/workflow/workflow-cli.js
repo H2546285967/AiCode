@@ -26,10 +26,7 @@
 
 const fs = require('fs');
 const path = require('path');
-
-const WORKSPACE_ROOT = path.join(__dirname, '..', '..', '..');
-const SKILL_DIR = path.join(WORKSPACE_ROOT, '.claude', 'skills', 'left-brain');
-const MEMORY_DIR = path.join(SKILL_DIR, 'memory');
+const { WORKSPACE_ROOT, SKILL_DIR, MEMORY_DIR } = require('./utils');
 
 // 加载依赖
 function loadModule(name) {

@@ -34,12 +34,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-
-// ── 配置 ─────────────────────────────────────────────
-
-const WORKSPACE_ROOT = path.join(__dirname, '..', '..', '..');
-const SKILL_DIR = path.join(WORKSPACE_ROOT, '.claude', 'skills', 'left-brain');
-const MEMORY_DIR = path.join(SKILL_DIR, 'memory');
+const { WORKSPACE_ROOT } = require('./utils');
 
 // 模块默认建议映射（冷启动 / 兜底）
 const MODULE_SUGGESTIONS = {
