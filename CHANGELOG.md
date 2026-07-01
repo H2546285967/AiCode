@@ -29,6 +29,25 @@
 - `node scripts/orchestrator/workflow/test-suggestion-engine.js` 4/4 通过
 - 手动模拟 PostToolUse hook 调用，成功写入 `file_modified` 事件
 
+### Fixed - M54 版本号 metadata 漂移：建立 package.json 为唯一真实源（2026-07-01）
+
+> **背景**：`01.md` 顶部/版本状态段/底部、`04.md` 顶部/当前版本段、`02.md` 顶部、`README.md` 测试基线、`PROJECT-CONTEXT.md` 顶部的版本号 metadata 多处手工维护，出现 `v2.6.0` / `v3.0.1` / `v3.0.5` / `v3.0.8` 不一致。
+
+- **`scripts/orchestrator/sync-roadmap.js`** — 扩展版本号 metadata 同步：
+  - 读取 `package.json` 的 `version` 作为唯一真实源
+  - 自动同步到 `01.md`（顶部/版本状态段/底部）、`04.md`（顶部/当前版本段）、`02.md`（顶部版本+最后更新日期）、`PROJECT-CONTEXT.md`（顶部）、`README.md`（测试基线）
+  - 默认开启，`--no-version` 跳过
+- **`scripts/orchestrator/test-doc-sync.js`** — 新增 10 项版本号一致性断言：
+  - 验证 01/02/03/04/PROJECT-CONTEXT/README 的 metadata 版本号与 `package.json` 一致
+  - 漂移时 `npm run doc:check` 直接失败
+- **`.claude/rules/doc-sync.md` / `.claude/rules/self-discipline.md`** — 8 文档自检清单加入版本号 metadata 检查项
+
+**验证**：
+- `npm run doc:check` 36/36 通过
+- `npm run roadmap:sync:dry` 无额外 diff
+
+**关联**：M54 文档治理 · doc-sync v3
+
 ### Added - M54 借鉴 prompt-optimizer：MCP 服务化 /audit（2026-07-01）
 
 > **背景**：prompt-optimizer 把提示词优化能力封装为 MCP tools（optimize-user-prompt / optimize-system-prompt / iterate-prompt），让 Claude Desktop 等 MCP 客户端可直接调用。AiCode 已具备 MCP 基础设施，先把最成熟、只读的 `/audit` 能力 MCP 服务化，作为吸收借鉴的第一步。

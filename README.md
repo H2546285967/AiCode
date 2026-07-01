@@ -92,7 +92,7 @@ grep -n "H:\|/c/Users\|/Users/" .claude/settings.local.json
 
 ---
 
-## 🧪 测试基线（v3.0.5）
+## 🧪 测试基线（v3.0.8）
 
 ```text
 npm test                    # 27+ 测试文件 / 320+ 断言全过

@@ -120,9 +120,11 @@
 □ 3 步快速开始命令
 □ 测试基线数字（测试数 / 断言数）
 □ 详细文档导航（4 文档链）
+□ **测试基线版本号与 package.json 一致**（M54 起自动同步）
 
 # 2. PROJECT-CONTEXT.md — session-init 自动加载（🔴 大 必做）
 □ 顶部"更新时间"和"版本"字段
+□ **顶部版本号与 package.json 一致**（M54 起自动同步）
 □ 核心系统表完整（当前 11 个：left-brain/audit/autonomous/evolve/swarm/metrics/workflow/handoff/self-discipline/evolution-lock/sync-roadmap + memory-promote/sync-matrix/special-cases M48 3 个 + first-principles M52）
 □ 11 个常用命令路径对
 □ L5 自治运行 5 条进度表
@@ -131,23 +133,27 @@
 □ §三 速查表新增命令/能力行（新增 handoff/runner/roadmap:sync 等）
 □ §二 行为约定新增条款（如有）
 □ §十一 "📌 副本" 段（如用户操作类）
+□ **顶部、版本状态段、底部版本号 metadata 与 package.json 一致**（M54 起自动同步）
 
 # 4. 02_工作空间功能介绍.md — 功能字典（🔴 大 必做）
 □ §2.X 新增功能章节（与 2.20~2.25 同级）
 □ §现状速览表追加 M_N 行
 □ 关联命令/文件路径对得上
+□ **顶部版本号 metadata 与 package.json 一致**（M54 起自动同步）
 
 # 5. 04_自我演进路线.md — 状态汇总（🔴 大 必做）
 □ §0.4 增量段：⏳ 计划中 → ✅ 已完成 + 写实现细节 + L5 影响
 □ §十二 里程碑表追加 M_N 行
 □ 顶部"最近一次同步"时间更新
 □ 顶部"next 队列状态"摘要更新
+□ **顶部"最近一次同步"和 §0.7 当前版本段版本号与 package.json 一致**（M54 起自动同步）
 □ §十二 ⏳ 段（如已完成移出 → sync-roadmap 自动）
 □ §十二 状态统计（已完成/计划中/合计 3 行）数字对
 
 # 6. 03_版本迭代计划.md — 整体进度（🔴 大 必做）
 □ 第四节 P0/P1 状态：⏳ → ✅
 □ 顶部"当前版本"字段（如发版）
+□ **顶部"当前版本"和"最后更新"中的版本号与 package.json 一致**（M54 起自动同步）
 
 # 7. CLAUDE.md — 启动导航（🔴 大 必做）
 □ 工作空间结构树（如新增/删除/重命名文件）
@@ -187,8 +193,9 @@
 
 ### 自动化兜底
 
-- `scripts/orchestrator/test-doc-sync.js` — 验证 6 文档日期一致性 + 01/02 必含 M_N 段
+- `scripts/orchestrator/test-doc-sync.js` — 验证 6 文档日期一致性 + 01/02 必含 M_N 段 + **版本号 metadata 与 package.json 一致性**
 - `npm run doc:check` — 手动检查漂移
+- `npm run roadmap:sync` — 自动同步 04.md 顶部元数据 + 版本号 metadata 到 01/04/03/PROJECT-CONTEXT/README
 - `proactive-scan.js` 7 维度之一 `doc-drift` — SessionStart 自动跑
 
 ---

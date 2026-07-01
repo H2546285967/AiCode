@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
- * sync-roadmap.js — 04.md §十二 ⏳ 段自动同步脚本（M24 子模块 D）
+ * sync-roadmap.js — 04.md §十二 ⏳ 段自动同步脚本（M24 子模块 D）+ 版本号 metadata 同步
  *
  * 作用：
  *   - 读 evolution-plan.json 的 next 队列
  *   - 解析 04_自我演进路线.md §十二 ⏳ 段 table
  *   - diff 后缺则 append / 已 complete 则从 table 删除
  *   - 同步"状态统计" + 顶部"最近一次同步" + "next 队列状态"
+ *   - 同步 package.json version 到 01.md / 04.md / PROJECT-CONTEXT.md 的 metadata
  *   - 写同步日志到 data/roadmap-sync-YYYYMMDD-HHMM.md
  *
  * 设计原则：
@@ -19,6 +20,7 @@
  *   node sync-roadmap.js           # 真同步
  *   node sync-roadmap.js --dry-run # 只打 diff
  *   node sync-roadmap.js --status  # 看当前同步状态
+ *   node sync-roadmap.js --no-version # 跳过版本号 metadata 同步
  *
  * @since v3.0.5 (2026-06-26) M24
  * @source 04_自我演进路线.md §0.7 演进计划的功能怎么来的
@@ -33,6 +35,7 @@ const WORKSPACE_ROOT = path.join(__dirname, '..', '..');
 const MEMORY_DIR = path.join(WORKSPACE_ROOT, '.claude', 'skills', 'left-brain', 'memory');
 const EVOLUTION_PLAN = path.join(MEMORY_DIR, 'evolution-plan.json');
 const ROADMAP_MD = path.join(WORKSPACE_ROOT, '04_自我演进路线.md');
+const PACKAGE_JSON = path.join(WORKSPACE_ROOT, 'package.json');
 const LOG_DIR = path.join(WORKSPACE_ROOT, 'data', 'roadmap-sync');
 
 // ── 工具函数 ─────────────────────────────────────────
@@ -40,6 +43,11 @@ const LOG_DIR = path.join(WORKSPACE_ROOT, 'data', 'roadmap-sync');
 function readJSON(file, def = null) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
   catch { return def; }
+}
+
+function loadPackageVersion() {
+  const pkg = readJSON(PACKAGE_JSON, null);
+  return pkg?.version || null;
 }
 
 function now() {
@@ -176,6 +184,119 @@ function findCompletedSection(md) {
   return { startIdx, endIdx, lineCount };
 }
 
+// ── 版本号 metadata 同步 ──────────────────────────────
+
+/**
+ * 同步各文档中的"项目当前版本"metadata，保持与 package.json 一致
+ * 只改明确标记为 metadata 的位置，不改功能首次上线版本号
+ */
+function syncVersionMetadata(result) {
+  const version = loadPackageVersion();
+  if (!version) {
+    result.warnings.push('无法读取 package.json version，跳过版本号同步');
+    return;
+  }
+
+  const today = now().slice(0, 10);
+  const files = [
+    {
+      path: ROADMAP_MD,
+      name: '04.md',
+      replacements: [
+        {
+          // 顶部 "最近一次同步"
+          pattern: /(\*\*最近一次同步\*\*：)[\d-]+(\s*\(v)\d+\.\d+\.\d+/m,
+          replacement: `$1${today}$2${version}`
+        },
+        {
+          // §0.7 "当前版本" 段
+          pattern: /(\*\*当前（)[\d-]+(）\*\*：)v\d+\.\d+\.\d+/m,
+          replacement: `$1${today}$2v${version}`
+        }
+      ]
+    },
+    {
+      path: path.join(WORKSPACE_ROOT, '01_AI-ClaudeCode-最佳实践精简.md'),
+      name: '01.md',
+      replacements: [
+        {
+          // 顶部 blockquote "最后更新"
+          pattern: /(最后更新：)[\d-]+（v\d+\.\d+\.\d+/m,
+          replacement: `$1${today}（v${version}`
+        },
+        {
+          // "## 十二、版本状态（vX.Y.Z）"
+          pattern: /(## 十二、版本状态（v)\d+\.\d+\.\d+(）)/m,
+          replacement: `$1${version}$2`
+        },
+        {
+          // 底部 "_最后更新：YYYY-MM-DD · vX.Y.Z..._"
+          pattern: /(_最后更新：)[\d-]+( · v)\d+\.\d+\.\d+/m,
+          replacement: `$1${today}$2${version}`
+        }
+      ]
+    },
+    {
+      path: path.join(WORKSPACE_ROOT, 'PROJECT-CONTEXT.md'),
+      name: 'PROJECT-CONTEXT.md',
+      replacements: [
+        {
+          // 顶部版本
+          pattern: /(> \*\*版本\*\*：)v\d+\.\d+\.\d+/m,
+          replacement: `$1v${version}`
+        }
+      ]
+    },
+    {
+      path: path.join(WORKSPACE_ROOT, '02_工作空间功能介绍.md'),
+      name: '02.md',
+      replacements: [
+        {
+          // 顶部版本
+          pattern: /(> \*\*版本\*\*：)v\d+\.\d+\.\d+/m,
+          replacement: `$1v${version}`
+        },
+        {
+          // 顶部最后更新日期
+          pattern: /(> \*\*最后更新\*\*：)\d{4}-\d{2}-\d{2}/m,
+          replacement: `$1${today}`
+        }
+      ]
+    },
+    {
+      path: path.join(WORKSPACE_ROOT, 'README.md'),
+      name: 'README.md',
+      replacements: [
+        {
+          // 测试基线版本
+          pattern: /(## 🧪 测试基线（v)\d+\.\d+\.\d+）/m,
+          replacement: `$1${version}）`
+        }
+      ]
+    },
+  ];
+
+  for (const file of files) {
+    if (!fs.existsSync(file.path)) continue;
+    let md = fs.readFileSync(file.path, 'utf8');
+    const original = md;
+    let applied = 0;
+    for (const { pattern, replacement } of file.replacements) {
+      const newMd = md.replace(pattern, replacement);
+      if (newMd !== md) {
+        applied++;
+        md = newMd;
+      }
+    }
+    if (md !== original) {
+      result.versionSync = result.versionSync || {};
+      result.versionSync[file.name] = { applied };
+      result.filesToWrite = result.filesToWrite || {};
+      result.filesToWrite[file.path] = md;
+    }
+  }
+}
+
 // ── 主同步逻辑 ────────────────────────────────────────
 
 function buildPlannedRow(entry) {
@@ -187,8 +308,8 @@ function buildPlannedRow(entry) {
   return `| **${id}** | ${title} | ${queuedAt} | ${priority} | ${noteShort} |`;
 }
 
-function sync() {
-  const result = { added: [], removed: [], updated: false, dryRun: false };
+function sync(options = {}) {
+  const result = { added: [], removed: [], updated: false, dryRun: false, warnings: [] };
 
   if (!fs.existsSync(ROADMAP_MD)) {
     return { ...result, error: `04.md 不存在: ${ROADMAP_MD}` };
@@ -211,8 +332,8 @@ function sync() {
 
   let updatedMd = findAndReplaceTopMeta(md, [
     {
-      pattern: /(\*\*最近一次同步\*\*：)[\d-]+(.*?)$/m,
-      replacement: `$1${now().slice(0, 10)} (v3.0.5 M24 sync-roadmap 自动同步顶部元数据；⏳ 段 table 由人工维护)`,
+      pattern: /(\*\*最近一次同步\*\*：)[\d-]+(\s*\(v)\d+\.\d+\.\d+(.*?)$/m,
+      replacement: `$1${now().slice(0, 10)}$2${loadPackageVersion() || '3.0.5'}$3`,
     },
     {
       pattern: /(\*\*当前 `next` 队列状态\*\*：)[^|]+$/m,
@@ -220,9 +341,17 @@ function sync() {
     },
   ]);
 
-  result.updated = updatedMd !== md;
+  // 同步版本号 metadata（默认开启，--no-version 跳过）
+  if (!options.noVersion) {
+    syncVersionMetadata(result);
+    if (result.filesToWrite?.[ROADMAP_MD]) {
+      updatedMd = result.filesToWrite[ROADMAP_MD];
+    }
+  }
+
+  result.updated = updatedMd !== md || Object.keys(result.filesToWrite || {}).some(p => p !== ROADMAP_MD);
   result.newMd = updatedMd;
-  result.message = result.updated ? '已同步顶部元数据' : '无需变更';
+  result.message = result.updated ? '已同步顶部元数据 + 版本号' : '无需变更';
   return result;
 }
 
@@ -248,6 +377,7 @@ function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes('--dry-run');
   const isStatus = args.includes('--status');
+  const noVersion = args.includes('--no-version');
 
   if (isStatus) {
     const next = loadNext();
@@ -269,7 +399,7 @@ function main() {
     return;
   }
 
-  const result = sync();
+  const result = sync({ noVersion });
   if (result.error) {
     log(`❌ 错误: ${result.error}`);
     process.exit(1);
@@ -277,6 +407,14 @@ function main() {
 
   if (result.added.length > 0) log(`  ➕ 新增: ${result.added.join(', ')}`);
   if (result.removed.length > 0) log(`  ➖ 删除: ${result.removed.join(', ')}`);
+  if (result.versionSync) {
+    for (const [name, { applied }] of Object.entries(result.versionSync)) {
+      log(`  🔢 版本号同步 (${name}): ${applied} 处`);
+    }
+  }
+  if (result.warnings.length > 0) {
+    result.warnings.forEach(w => log(`  ⚠️  ${w}`));
+  }
   log(result.message || (result.updated ? '✅ 已同步' : '⏭️ 无需变更'));
 
   if (dryRun) {
@@ -284,8 +422,17 @@ function main() {
     return;
   }
 
-  if (result.updated && result.newMd) {
-    fs.writeFileSync(ROADMAP_MD, result.newMd);
+  if (result.updated) {
+    // 04.md
+    if (result.newMd) {
+      fs.writeFileSync(ROADMAP_MD, result.newMd);
+    }
+    // 其它文档（01.md / PROJECT-CONTEXT.md）
+    for (const [filePath, content] of Object.entries(result.filesToWrite || {})) {
+      if (filePath !== ROADMAP_MD) {
+        fs.writeFileSync(filePath, content);
+      }
+    }
     const logFile = writeSyncLog(result);
     log(`📝 日志: ${logFile}`);
   }
@@ -304,6 +451,8 @@ module.exports = {
   findCompletedSection,
   findStatusStats,
   buildPlannedRow,
+  syncVersionMetadata,
+  loadPackageVersion,
   ROADMAP_MD,
   EVOLUTION_PLAN,
 };

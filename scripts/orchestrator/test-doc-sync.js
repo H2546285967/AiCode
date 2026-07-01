@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
- * doc-sync.js — 6 文档一致性检测（M24.6 + 2026-06-26 doc-sync v2）
+ * doc-sync.js — 6 文档一致性检测 + 版本号 metadata 一致性（M24.6 + 2026-06-26 doc-sync v2）
  *
  * 作用：
  *   - 验证 6 个核心文档（CLAUDE/01/02/04/CHANGELOG/package.json）日期一致性
  *   - 验证 01.md §三 速查表 / 02.md §2.X 是否提及最近完成 M_N
  *   - 验证 04.md 顶部"最近一次同步"日期 >= CHANGELOG 最近日期
  *   - 验证 §十二 状态统计数字 = ✅ + ⏳ 实际行数
+ *   - 验证 01.md / 04.md / PROJECT-CONTEXT.md / CLAUDE.md / 03.md 的版本号 metadata 与 package.json 一致
  *
  * 触发：
  *   - `node test-doc-sync.js`（手动）
@@ -28,6 +29,7 @@ const M01 = path.join(WORKSPACE_ROOT, '01_AI-ClaudeCode-最佳实践精简.md');
 const M02 = path.join(WORKSPACE_ROOT, '02_工作空间功能介绍.md');
 const M04 = path.join(WORKSPACE_ROOT, '04_自我演进路线.md');
 const M03 = path.join(WORKSPACE_ROOT, '03_版本迭代计划.md');
+const PROJECT_CONTEXT = path.join(WORKSPACE_ROOT, 'PROJECT-CONTEXT.md');
 const CHANGELOG = path.join(WORKSPACE_ROOT, 'CHANGELOG.md');
 const PACKAGE = path.join(WORKSPACE_ROOT, 'package.json');
 
@@ -111,6 +113,7 @@ check('01_AI-ClaudeCode-最佳实践精简.md 存在', fs.existsSync(M01));
 check('02_工作空间功能介绍.md 存在', fs.existsSync(M02));
 check('04_自我演进路线.md 存在', fs.existsSync(M04));
 check('03_版本迭代计划.md 存在', fs.existsSync(M03));
+check('PROJECT-CONTEXT.md 存在', fs.existsSync(PROJECT_CONTEXT));
 check('CHANGELOG.md 存在', fs.existsSync(CHANGELOG));
 check('package.json 存在', fs.existsSync(PACKAGE));
 
@@ -122,6 +125,7 @@ const m01 = readMd(M01);
 const m02 = readMd(M02);
 const m04 = readMd(M04);
 const m03 = readMd(M03);
+const projectContext = readMd(PROJECT_CONTEXT);
 const changelog = readMd(CHANGELOG);
 const pkg = readJson(PACKAGE);
 
@@ -209,7 +213,66 @@ if (pkg) {
   check('package.json version 是 semver', /^\d+\.\d+\.\d+/.test(pkg.version || ''));
 }
 
-// ==================== 7. sync-roadmap.js 集成 ====================
+// ==================== 7. 版本号 metadata 一致性 ====================
+console.log('\n── 7. 版本号 metadata 一致性（package.json 为唯一真实源）──');
+
+function checkVersionMetadata(md, fileName, pkgVersion, patterns) {
+  if (!md || !pkgVersion) return;
+  for (const { name, pattern } of patterns) {
+    const m = md.match(pattern);
+    if (!m) {
+      check(`${fileName} ${name} 可提取`, false, `未匹配到模式 ${pattern}`);
+      continue;
+    }
+    const foundVersion = m[1];
+    check(`${fileName} ${name} == package.json (${pkgVersion})`,
+      foundVersion === `v${pkgVersion}` || foundVersion === pkgVersion,
+      `got ${foundVersion}`);
+  }
+}
+
+if (pkg && pkg.version) {
+  const v = pkg.version;
+
+  checkVersionMetadata(m01, '01.md', v, [
+    { name: '顶部最后更新', pattern: /最后更新：\d{4}-\d{2}-\d{2}（(v\d+\.\d+\.\d+)/m },
+    { name: '版本状态标题', pattern: /## 十二、版本状态（(v\d+\.\d+\.\d+)）/m },
+    { name: '底部最后更新', pattern: /_最后更新：\d{4}-\d{2}-\d{2} · (v\d+\.\d+\.\d+)/m },
+  ]);
+
+  checkVersionMetadata(m04, '04.md', v, [
+    { name: '顶部最近一次同步', pattern: /\*\*最近一次同步\*\*：\d{4}-\d{2}-\d{2} \((v\d+\.\d+\.\d+)/m },
+    { name: '当前版本段', pattern: /当前（\d{4}-\d{2}-\d{2}）\*\*：(v\d+\.\d+\.\d+)/m },
+  ]);
+
+  checkVersionMetadata(m03, '03.md', v, [
+    { name: '顶部当前版本', pattern: /当前版本[：:]\s*\*\*(v\d+\.\d+\.\d+)\*\*/m },
+    { name: '顶部最后更新', pattern: /\*\*最后更新：\d{4}-\d{2}-\d{2}\*\*（(v\d+\.\d+\.\d+)/m },
+  ]);
+
+  checkVersionMetadata(m02, '02.md', v, [
+    { name: '顶部版本', pattern: /> \*\*版本\*\*：(v\d+\.\d+\.\d+)/m },
+  ]);
+
+  // PROJECT-CONTEXT.md 顶部版本
+  if (projectContext) {
+    const pcVersion = (projectContext.match(/> \*\*版本\*\*：(v\d+\.\d+\.\d+)/m) || [])[1];
+    if (pcVersion) {
+      check('PROJECT-CONTEXT.md 顶部版本 == package.json', pcVersion === `v${v}`, `got ${pcVersion}`);
+    }
+  }
+
+  // README.md 测试基线版本
+  const readme = readMd(path.join(WORKSPACE_ROOT, 'README.md'));
+  if (readme) {
+    const readmeVersion = (readme.match(/## 🧪 测试基线（(v\d+\.\d+\.\d+)）/m) || [])[1];
+    if (readmeVersion) {
+      check('README.md 测试基线版本 == package.json', readmeVersion === `v${v}`, `got ${readmeVersion}`);
+    }
+  }
+}
+
+// ==================== 8. sync-roadmap.js 集成 ====================
 console.log('\n── 7. sync-roadmap.js 集成 ──');
 
 const syncRoadmap = require('./sync-roadmap.js');

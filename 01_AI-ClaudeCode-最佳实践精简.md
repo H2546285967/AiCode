@@ -6,7 +6,7 @@
 > - 改动收尾规则见 `.claude/rules/doc-sync.md`（🔴 大 / 🏁 级别强制同步 4 文档 + CHANGELOG）
 >
 > 工作空间通用行为标准。所有 AI 助手和人类开发者共同遵守。
-> 最后更新：2026-06-25（v2.6.0：补 4 个能力 — 二次采样验证 / cron 主动报告 / LLM 辅助 auto-fix / 个人 workflow 智能化；M10 评分驱动 Agent 数量已闭环；新增 /audit 工程自查）
+> 最后更新：2026-07-01（v3.0.8：补 4 个能力 — 二次采样验证 / cron 主动报告 / LLM 辅助 auto-fix / 个人 workflow 智能化；M10 评分驱动 Agent 数量已闭环；新增 /audit 工程自查）
 
 ---
 
@@ -406,7 +406,7 @@ echo '{"tool_name":"UserPromptSubmit","tool_input":{"prompt":"排查 BUG"}}' | n
 
 **行为**：循环取 next[0] → 执行 → commit → 快照 → 取下一个。5 次失败自动停。
 
-## 十二、版本状态（v2.6.0）
+## 十二、版本状态（v3.0.8）
 
 | 增量 | 版本 | 状态 |
 |:-----|:-----|:-----|
@@ -427,4 +427,4 @@ echo '{"tool_name":"UserPromptSubmit","tool_input":{"prompt":"排查 BUG"}}' | n
 
 ---
 
-_最后更新：2026-06-25 · v2.6.0 · 个人 workflow 智能化完成 · 200+ 测试全过 · M9/M10 智能调度优化闭环 · M12~M15 v3.0.0 路线明确_
+_最后更新：2026-07-01 · v3.0.8 · 个人 workflow 智能化完成 · 200+ 测试全过 · M9/M10 智能调度优化闭环 · M12~M15 v3.0.0 路线明确_
