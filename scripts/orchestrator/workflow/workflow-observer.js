@@ -257,6 +257,44 @@ const Observer = {
   },
 
   /**
+   * 从 PostToolUse hook 数据自动记录事件
+   * @param {object} hookData { tool_use_name, tool_input, tool_output }
+   * @returns {object|null}
+   */
+  recordFromPostToolUse(hookData) {
+    if (!hookData || !hookData.tool_use_name) return null;
+
+    const { tool_use_name, tool_input } = hookData;
+
+    if (tool_use_name === 'Edit' || tool_use_name === 'Write') {
+      // PostToolUse hook 中直接取工具输入的文件路径，比 git status 更准更快
+      const file = tool_input && (tool_input.file_path || tool_input.path);
+      if (file) {
+        return this.record('file_modified', { files: [file], source: 'PostToolUse' });
+      }
+      // 无明确路径时 fallback 到 git status
+      return this.recordFromGitStatus();
+    }
+
+    if (tool_use_name === 'Bash') {
+      const command = (tool_input && tool_input.command) || '';
+      if (!command) return null;
+
+      if (/\bgit\s+commit\b/.test(command)) {
+        const events = this.recordFromGitLog(1);
+        if (events && events.length > 0) return events[0];
+        return this.record('commit', { command, source: 'PostToolUse' });
+      }
+      if (/\b(npm\s+test|jest|mocha|pytest|vitest)\b/.test(command)) {
+        return this.record('test_run', { command, source: 'PostToolUse' });
+      }
+      return this.record('command_run', { command, source: 'PostToolUse' });
+    }
+
+    return null;
+  },
+
+  /**
    * 从 git log 最近 commit 提取并记录
    * @param {number} [limit=1]
    */
@@ -349,6 +387,40 @@ if (require.main === module) {
 
   try {
     switch (cmd) {
+      case 'record-posttool': {
+        let data = '';
+        const finish = () => {
+          try {
+            const hookData = JSON.parse(data);
+            const ev = Observer.recordFromPostToolUse(hookData);
+            if (ev) {
+              console.log('✅ 已记录:', JSON.stringify(ev));
+            }
+          } catch {
+            // 静默忽略，避免阻塞主流程
+          }
+          process.exit(0);
+        };
+
+        // 优先从文件参数读取（posttool-hook.sh 用临时文件传 JSON，避免 Windows bash pipe 问题）
+        const fileArg = process.argv[3];
+        if (fileArg) {
+          try {
+            data = fs.readFileSync(fileArg, 'utf8');
+          } catch {
+            data = '';
+          }
+          finish();
+          return;
+        }
+
+        process.stdin.setEncoding('utf8');
+        process.stdin.on('data', chunk => { data += chunk; });
+        process.stdin.on('end', finish);
+        process.stdin.resume();
+        // 异步等待 stdin，不在这里 break
+        return;
+      }
       case 'record': {
         const type = process.argv[3];
         const payloadStr = process.argv[4] || '{}';
@@ -404,6 +476,7 @@ workflow-observer.js — 个人 workflow 事件采集器
 
 用法:
   node workflow-observer.js record <type> '<payload_json>' ['<meta_json>']
+  node workflow-observer.js record-posttool [file]   # 从文件或 stdin 读 PostToolUse JSON
   node workflow-observer.js recent [hours=24]
   node workflow-observer.js stats [hours=24]
   node workflow-observer.js cleanup [days=30]
@@ -412,6 +485,7 @@ workflow-observer.js — 个人 workflow 事件采集器
 
 示例:
   node workflow-observer.js record command_run '{"command":"npm test"}'
+  echo '{"tool_use_name":"Edit","tool_input":{"file_path":"x.js"}}' | node workflow-observer.js record-posttool
 `);
     }
   } catch (e) {

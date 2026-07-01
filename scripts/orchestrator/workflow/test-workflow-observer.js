@@ -104,6 +104,60 @@ function testRecordFromGitStatus() {
   console.log('✅ testRecordFromGitStatus passed');
 }
 
+function testRecordFromPostToolUse() {
+  reset();
+
+  // Edit 应触发 file_modified（无 git 改动时 fallback 到 file_path）
+  const ev1 = Observer.recordFromPostToolUse({
+    tool_use_name: 'Edit',
+    tool_input: { file_path: 'src/foo.js' },
+  });
+  assert(ev1, 'Edit 应返回事件');
+  assert.strictEqual(ev1.type, 'file_modified');
+  assert(ev1.payload.files.includes('src/foo.js'), 'Edit 应记录文件路径');
+  assert.strictEqual(ev1.payload.source, 'PostToolUse');
+
+  // Write 同上
+  const ev2 = Observer.recordFromPostToolUse({
+    tool_use_name: 'Write',
+    tool_input: { path: 'src/bar.md' },
+  });
+  assert(ev2 && ev2.type === 'file_modified', 'Write 应触发 file_modified');
+
+  // Bash npm test → test_run
+  const ev3 = Observer.recordFromPostToolUse({
+    tool_use_name: 'Bash',
+    tool_input: { command: 'npm test' },
+  });
+  assert(ev3, 'npm test 应返回事件');
+  assert.strictEqual(ev3.type, 'test_run');
+  assert.strictEqual(ev3.payload.command, 'npm test');
+
+  // Bash git commit → commit
+  const ev4 = Observer.recordFromPostToolUse({
+    tool_use_name: 'Bash',
+    tool_input: { command: 'git commit -m "test"' },
+  });
+  assert(ev4, 'git commit 应返回事件');
+  assert.strictEqual(ev4.type, 'commit');
+
+  // Bash 普通命令 → command_run
+  const ev5 = Observer.recordFromPostToolUse({
+    tool_use_name: 'Bash',
+    tool_input: { command: 'node scripts/foo.js' },
+  });
+  assert(ev5 && ev5.type === 'command_run', '普通命令应触发 command_run');
+
+  // 未知 tool → null
+  const ev6 = Observer.recordFromPostToolUse({
+    tool_use_name: 'Read',
+    tool_input: { file_path: 'x.js' },
+  });
+  assert.strictEqual(ev6, null, 'Read 工具不应触发事件');
+
+  console.log('✅ testRecordFromPostToolUse passed');
+}
+
 function testEventFilePath() {
   assert.strictEqual(Observer.EVENTS_FILE, TEST_EVENTS_FILE, '事件文件路径应为测试路径');
   console.log('✅ testEventFilePath passed');
@@ -118,6 +172,7 @@ function run() {
   testCleanup();
   testInvalidType();
   testRecordFromGitStatus();
+  testRecordFromPostToolUse();
   console.log('\n🎉 workflow-observer 测试全部通过');
 }
 

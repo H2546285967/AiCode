@@ -10,6 +10,25 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Fixed - AUDIT-M54-batch2-B：补 PostToolUse hook 自动埋点 workflow 事件（2026-07-01）
+
+> **背景**：`.claude/settings.json` 已注册 PostToolUse → `posttool-hook.sh`，但该脚本只跑 self-reflect + plan-detect，从未调用 `workflow-observer.js`，导致 97% 生产数据只有 session_start/end，`file_modified`/`command_run`/`test_run`/`commit` 全靠手动埋点。
+
+- **`.claude/skills/left-brain/scripts/posttool-hook.sh`** — 新增引擎 C：PostToolUse 后自动调用 `workflow-observer.js record-posttool`，让 workflow-observer 从"手动调用"升级为"自动采集"
+- **`scripts/orchestrator/workflow/workflow-observer.js`** — 新增 `recordFromPostToolUse(hookData)`：
+  - `Edit`/`Write` → `file_modified`（优先取 `tool_input.file_path/path`）
+  - `Bash` 中 `npm test`/`jest`/`mocha`/`pytest`/`vitest` → `test_run`
+  - `Bash` 中 `git commit` → `commit`（优先从 git log 提取）
+  - 其他 `Bash` 命令 → `command_run`
+- **`scripts/orchestrator/workflow/workflow-observer.js`** — CLI 新增 `record-posttool [file]` 命令，支持从文件参数或 stdin 读取 PostToolUse JSON（文件参数避免 Windows bash pipe 问题）
+- **`scripts/orchestrator/workflow/test-workflow-observer.js`** — 新增 `testRecordFromPostToolUse`，覆盖 Edit/Write/npm test/git commit/普通命令/未知工具 6 个场景
+
+**验证**：
+- `node scripts/orchestrator/workflow/test-workflow-observer.js` 7/7 通过
+- `node scripts/orchestrator/workflow/test-pattern-miner.js` 4/4 通过
+- `node scripts/orchestrator/workflow/test-suggestion-engine.js` 4/4 通过
+- 手动模拟 PostToolUse hook 调用，成功写入 `file_modified` 事件
+
 ### Added - M54 借鉴 prompt-optimizer：MCP 服务化 /audit（2026-07-01）
 
 > **背景**：prompt-optimizer 把提示词优化能力封装为 MCP tools（optimize-user-prompt / optimize-system-prompt / iterate-prompt），让 Claude Desktop 等 MCP 客户端可直接调用。AiCode 已具备 MCP 基础设施，先把最成熟、只读的 `/audit` 能力 MCP 服务化，作为吸收借鉴的第一步。
