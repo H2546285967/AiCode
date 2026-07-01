@@ -29,6 +29,8 @@ const {
   decide,
   recallBeforeDispatch,
   GRAPH_RECALL_THRESHOLDS,
+  REUSE_CONFIDENCE_MIN,
+  REUSE_CATEGORIES,
   RULES,
 } = dispatcher;
 
@@ -136,6 +138,65 @@ console.log('\n── 6. M14 hit=reuse 强制不派 ──');
   if (!reusedFound) {
     // 跳过此组（KB 没达到 0.5 阈值）——记为信息性 PASS（不计入 fail）
     console.log('ℹ️  跳过 M14 reuse 集成测试（KB 当前无 ≥0.5 命中）');
+  }
+}
+
+// ==================== 6.5 M14 reuse confidence / category 过滤（mock semantic-recall）====================
+console.log('\n── 6.5 M14 reuse confidence + category 过滤 ──');
+
+{
+  const SR_PATH = require.resolve('./recall/semantic-recall');
+  const savedSR = require.cache[SR_PATH];
+
+  function mockSR(kb) {
+    require.cache[SR_PATH] = {
+      id: SR_PATH,
+      filename: SR_PATH,
+      loaded: true,
+      exports: {
+        search: () => [kb],
+      },
+    };
+    delete require.cache[require.resolve('./dispatcher')];
+    return require('./dispatcher');
+  }
+
+  function restoreSR() {
+    require.cache[SR_PATH] = savedSR;
+    delete require.cache[require.resolve('./dispatcher')];
+  }
+
+  // 1) 高分 + 高 confidence + 可信类别 → reuse
+  {
+    const D = mockSR({ id: 'KB-TEST-001', category: '决策', content: '测试', score: 0.95, confidence: 0.9 });
+    const g = D.recallBeforeDispatch('任意查询');
+    check('高分+高置信+可信类别 → hit=reuse', g.hit === 'reuse', `实际=${g.hit}`);
+    check('reuse 时 confidence 字段回传', g.confidence === 0.9);
+    restoreSR();
+  }
+
+  // 2) 高分 + 低 confidence → similar（不被误复用）
+  {
+    const D = mockSR({ id: 'KB-TEST-002', category: '决策', content: '测试', score: 0.95, confidence: 0.3 });
+    const g = D.recallBeforeDispatch('任意查询');
+    check('高分+低置信 → hit=similar（不被误复用）', g.hit === 'similar', `实际=${g.hit}`);
+    restoreSR();
+  }
+
+  // 3) 高分 + 高 confidence + 不可信类别 → similar
+  {
+    const D = mockSR({ id: 'KB-TEST-003', category: '偏好', content: '测试', score: 0.95, confidence: 0.9 });
+    const g = D.recallBeforeDispatch('任意查询');
+    check('高分+高置信+不可信类别 → hit=similar', g.hit === 'similar', `实际=${g.hit}`);
+    restoreSR();
+  }
+
+  // 4) 边界：confidence 恰好等于阈值 → reuse
+  {
+    const D = mockSR({ id: 'KB-TEST-004', category: '技术', content: '测试', score: 0.6, confidence: REUSE_CONFIDENCE_MIN });
+    const g = D.recallBeforeDispatch('任意查询');
+    check('confidence 恰好等于阈值 → reuse', g.hit === 'reuse', `实际=${g.hit}`);
+    restoreSR();
   }
 }
 

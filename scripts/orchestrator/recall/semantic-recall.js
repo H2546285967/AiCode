@@ -30,6 +30,8 @@ const KNOWLEDGE_DIR = path.join(MEMORY_DIR, 'knowledge');
 const EMBEDDINGS_DIR = path.join(MEMORY_DIR, 'embeddings');
 const INDEX_FILE = path.join(EMBEDDINGS_DIR, 'tfidf-index.json');
 
+const INDEX_SCHEMA_VERSION = 2; // v2: + confidence
+
 // ── 分词（双字 unigram + 英文单词） ─────────────────
 
 // 中文常见停用词（避免影响 TF-IDF 区分度）
@@ -141,9 +143,10 @@ function buildIndex(kbList) {
     const tf = {};
     for (const t of tokens) tf[t] = (tf[t] || 0) + 1;
     for (const t of Object.keys(tf)) df[t] = (df[t] || 0) + 1;
-    docs.push({ id: kb.id, file: kb.file, category: kb.category, content: kb.content, tokens, tf, length: tokens.length });
+    docs.push({ id: kb.id, file: kb.file, category: kb.category, content: kb.content, confidence: kb.confidence, tokens, tf, length: tokens.length });
   }
   return {
+    schema_version: INDEX_SCHEMA_VERSION,
     built_at: new Date().toISOString(),
     kb_count: kbList.length,
     df,
@@ -172,7 +175,7 @@ function loadIndex() {
 function getIndex() {
   const kbList = loadAllKB();
   const cached = loadIndex();
-  if (cached && cached.kb_count === kbList.length) {
+  if (cached && cached.kb_count === kbList.length && cached.schema_version === INDEX_SCHEMA_VERSION) {
     // 检查是否 KB 文件本身变了（粗略：按 mtime）
     let needRebuild = false;
     for (const d of cached.docs) {
@@ -233,7 +236,7 @@ function search(query, opts = {}) {
     if (qNorm === 0 || dNorm === 0) continue;
     const sim = dot / (Math.sqrt(qNorm) * Math.sqrt(dNorm));
     if (sim >= minScore) {
-      scores.push({ id: doc.id, category: doc.category, content: doc.content, score: sim });
+      scores.push({ id: doc.id, category: doc.category, content: doc.content, confidence: doc.confidence, score: sim });
     }
   }
 

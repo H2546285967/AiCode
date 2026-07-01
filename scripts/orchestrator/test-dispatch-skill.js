@@ -26,6 +26,8 @@ const {
   agentsFromScore,
   recallBeforeDispatch,
   GRAPH_RECALL_THRESHOLDS,
+  REUSE_CONFIDENCE_MIN,
+  REUSE_CATEGORIES,
   RULES,
 } = require('./dispatcher');
 
@@ -137,11 +139,16 @@ assert(recallBeforeDispatch(null).hit === 'miss', 'null → hit=miss（不抛）
 // 阈值常量
 assert(GRAPH_RECALL_THRESHOLDS.reuse === 0.5, 'reuse 阈值 = 0.5');
 assert(GRAPH_RECALL_THRESHOLDS.similar === 0.05, 'similar 阈值 = 0.05');
+assert(REUSE_CONFIDENCE_MIN === 0.7, 'REUSE_CONFIDENCE_MIN = 0.7');
+assert(REUSE_CATEGORIES instanceof Set, 'REUSE_CATEGORIES 是 Set');
+assert(REUSE_CATEGORIES.has('决策') && REUSE_CATEGORIES.has('技术'), 'REUSE_CATEGORIES 包含决策/技术');
+assert(!REUSE_CATEGORIES.has('其他') && !REUSE_CATEGORIES.has('偏好'), 'REUSE_CATEGORIES 不包含其他/偏好');
 
 // 正常查询 → 返回结构合法
 const r1 = recallBeforeDispatch('修复 PowerShell 中文乱码');
 assert(r1 && ['reuse', 'similar', 'miss', 'no-graph'].includes(r1.hit),
   '正常查询 hit ∈ 四档', r1 ? `hit=${r1.hit}` : '返回 null');
+assert(typeof r1.confidence === 'number' || r1.confidence === undefined, 'graph.confidence 为 number 或 undefined');
 
 // ==================== 6. scoreComplexity 输出契约 ====================
 section('6. scoreComplexity 输出契约');

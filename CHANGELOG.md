@@ -10,6 +10,29 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Fixed - AUDIT-M54-batch2-dispatcher-m14：M14 reuse 加 confidence 下限 + category 过滤（2026-07-01）
+
+> **背景**：`/audit full` 深度审计指出 M14 reuse 仅以 `score ≥ 0.5` 触发，缺少 `kb.confidence` 下限与 `kb.category` 相关性保护，低 confidence 或闲聊/偏好类 KB 偶然命中时会被误复用。
+
+- **`scripts/orchestrator/dispatcher.js`** — M14 reuse 增加双保险
+  - 新增 `REUSE_CONFIDENCE_MIN = 0.7`：复用门槛除 `score ≥ 0.5` 外还需 `kb.confidence ≥ 0.7`
+  - 新增 `REUSE_CATEGORIES` 白名单（`决策/技术/工程经验/feature_full/bug_fix`），排除 `其他/事件/偏好` 等弱相关类别
+  - `recallBeforeDispatch` 返回结果增加 `confidence` 字段；reason 文本同步展示相似度/置信度/类别
+  - 导出 `REUSE_CONFIDENCE_MIN` 与 `REUSE_CATEGORIES` 供测试校验
+- **`scripts/orchestrator/recall/semantic-recall.js`** — 索引输出增加 confidence
+  - `parseKB` 已解析 `confidence` frontmatter，现加入 `buildIndex` 的 doc 结构与 `search` 返回结果
+  - 索引增加 `schema_version: 2` 并在 `getIndex()` 中校验，强制旧缓存重建
+- **`scripts/orchestrator/test-graph-dispatch.js`** — 新增 6.5 节 mock 测试：高分+高置信+可信类别→reuse、高分+低置信→similar、高分+不可信类别→similar、置信度恰好阈值→reuse
+- **`scripts/orchestrator/test-dispatch-skill.js`** — 新增 `REUSE_CONFIDENCE_MIN` 与 `REUSE_CATEGORIES` 常量断言
+
+**验证**：
+- `node scripts/orchestrator/test-graph-dispatch.js` 35/35 通过
+- `node scripts/orchestrator/test-dispatch-skill.js` 78/78 通过
+- `node scripts/orchestrator/recall/test-left-brain-recall-default.js` 6/6 通过
+- `npm test` 预存在 recall 失败 1 条（`test-semantic-recall.js` 不存在的查询返回空）未引入新失败
+
+**关联**：AUDIT-M54-batch2-dispatcher-m14 / AUDIT-20260701-P0-003
+
 ### Fixed - AUDIT-M54-batch2-E：recall 阈值 0.2→0.05 与 semantic-recall 对齐（2026-07-01）
 
 > **背景**：`semantic-recall.js` 默认 `minScore = 0.05`，但 `dispatcher.js` 的 `GRAPH_RECALL_THRESHOLDS.similar` 长期为 0.2，导致 dispatcher M14 知识图谱检索门槛高于底层引擎默认值，部分 0.05~0.2 区间的相关 KB 被误判为 miss。

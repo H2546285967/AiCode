@@ -256,14 +256,18 @@ function agentsFromScore(score) {
 
 /**
  * M14 阈值（与 04 文档 §0.4 增量 M14 验收对齐，similar 与 semantic-recall.js 默认 minScore 0.05 一致）
- *   score ≥ 0.5  → 命中复用（不派 Agent，附 KB 答案）
- *   0.05 ≤ score < 0.5 → 类似案例（按原逻辑派 Agent，附 KB 案例参考）
+ *   score ≥ 0.5 且 confidence ≥ 0.7 且 category ∈ 可信列表 → 命中复用（不派 Agent，附 KB 答案）
+ *   score ≥ 0.05 但未达 reuse 门槛 → 类似案例（按原逻辑派 Agent，附 KB 案例参考）
  *   score < 0.05  → 完全未知（按原逻辑派 Agent，无 KB 参考）
  */
 const GRAPH_RECALL_THRESHOLDS = {
   reuse: 0.5,
   similar: 0.05,
 };
+
+// M14 reuse 额外置信门槛：防止低 confidence 或闲聊类 KB 被误复用
+const REUSE_CONFIDENCE_MIN = 0.7;
+const REUSE_CATEGORIES = new Set(['决策', '技术', '工程经验', 'feature_full', 'bug_fix']);
 
 // 软引用 semantic-recall（M14 自身测试时可独立 require）
 let _semanticRecall = null;
@@ -283,7 +287,7 @@ function getSemanticRecall() {
  *
  * 设计：
  *   - 软引用：KB 引擎不可用（require 失败/索引缺失）→ 返回 no-graph
- *   - 三档 hit：reuse / similar / miss（与 GRAPH_RECALL_THRESHOLDS 对齐）
+ *   - 三档 hit：reuse / similar / miss（与 GRAPH_RECALL_THRESHOLDS + REUSE_CONFIDENCE_MIN + REUSE_CATEGORIES 对齐）
  *   - 不抛异常（任何异常 → 降级为 miss 不阻塞主流程）
  *   - 同步记 evo.kb.recall 评价事件（接 M15 评价闭环）
  *
@@ -291,8 +295,9 @@ function getSemanticRecall() {
  * @returns {{
  *   matched: boolean,  // 是否有 KB 命中（任何 score ≥ similar 阈值）
  *   hit: 'reuse'|'similar'|'miss'|'no-graph',
- *   kb: { id, category, content, score }|null,
+ *   kb: { id, category, content, score, confidence }|null,
  *   score: number,
+ *   confidence: number,
  *   threshold: { reuse, similar }
  * }}
  */
@@ -332,10 +337,14 @@ function recallBeforeDispatch(taskText) {
   }
 
   const top = hits[0];
-  result.kb = { id: top.id, category: top.category, content: top.content, score: top.score };
+  result.kb = { id: top.id, category: top.category, content: top.content, score: top.score, confidence: top.confidence };
   result.score = top.score;
+  result.confidence = top.confidence;
 
-  if (top.score >= GRAPH_RECALL_THRESHOLDS.reuse) {
+  const canReuse = top.score >= GRAPH_RECALL_THRESHOLDS.reuse
+    && (top.confidence || 0) >= REUSE_CONFIDENCE_MIN
+    && REUSE_CATEGORIES.has(top.category);
+  if (canReuse) {
     result.matched = true;
     result.hit = 'reuse';
   } else {
@@ -366,12 +375,12 @@ function decide(taskText) {
   // v3.0.0 M14: 先查知识图谱（KB 命中复用/类似时调整决策）
   const graph = recallBeforeDispatch(taskText);
 
-  // M14 hit=reuse（≥0.5）：KB 已有答案，强制不派，附 KB id
+  // M14 hit=reuse（≥0.5 + confidence≥0.7 + category 可信）：KB 已有答案，强制不派，附 KB id
   if (graph.hit === 'reuse' && graph.kb) {
     return {
       dispatch: false,
       agents: 0,
-      reason: `M14 知识图谱命中复用：KB[${graph.kb.id}] 相似度 ${(graph.kb.score * 100).toFixed(1)}% ≥ ${GRAPH_RECALL_THRESHOLDS.reuse * 100}%，直接复用`,
+      reason: `M14 知识图谱命中复用：KB[${graph.kb.id}] 相似度 ${(graph.kb.score * 100).toFixed(1)}% / 置信度 ${(graph.kb.confidence * 100).toFixed(0)}% / 类别 ${graph.kb.category}，直接复用`,
       layer: 1,
       confidence: confidence('high'),
       graph,
@@ -555,5 +564,7 @@ module.exports = {
   agentsFromScore,  // v2.5.1 M10
   recallBeforeDispatch,  // v3.0.0 M14
   GRAPH_RECALL_THRESHOLDS,  // v3.0.0 M14
+  REUSE_CONFIDENCE_MIN,  // M14 confidence 下限
+  REUSE_CATEGORIES,  // M14 reuse 可信类别
   RULES,
 };
