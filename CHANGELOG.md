@@ -10,6 +10,34 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Fixed - evolution：统一 GitHub 认证到公共工具（2026-07-01 · AUDIT-20260701-P0-005）
+
+**背景**：`github-scanner.js` 内部实现 `getGitHubToken()` + 自建 fetch 头（v3.0.2 M18），`trend-watcher.js` 用裸 `fetch()` 无 Authorization header，**限流 10 req/min**（认证模式 30 req/min）。三脚本（trend-watcher/upgrade-checker/enrichTrendingRepos）的认证口径分散。
+
+**澄清**：
+- `enrichTrendingRepos.js` **不存在**（任务标题漂移，已记入 evolution-plan history）
+- `upgrade-checker.js` 不调 GitHub API（只读 `evolved-features.json` / `candidates.json`），**不改**
+
+**修复**：
+- **`scripts/evolution/github-auth.js`**（新增）— 公共认证模块：
+  - `getGitHubToken()` 三档 fallback：gh CLI / `GH_TOKEN|GITHUB_TOKEN` / null
+  - `githubFetch(url, opts)` token 存在时自动加 `Authorization: Bearer ...` + 默认 `User-Agent` / `Accept` headers
+  - `isGhLoggedIn()` / `_resetCacheForTesting()` / `_setMockToken()` 测试 hook
+- **`scripts/evolution/github-scanner.js`** — require 解构 + 删 32 行重复实现；本地 `isGhLoggedIn()` 保留（用 `gh auth status`，逻辑不同）
+- **`scripts/evolution/trend-watcher.js`** — 裸 `fetch()` → `githubFetch()`，自动获得 Bearer
+- **`scripts/evolution/test-github-auth.js`**（新增）— 10/10 通过
+
+**验证**：
+- `node scripts/evolution/test-github-auth.js` 10/10 通过
+- `node scripts/evolution/test-github-scanner-auth.js` 14/14 通过
+- `node scripts/orchestrator/test-graph-dispatch.js` 35/35 通过（无回归）
+- `node scripts/orchestrator/test-dispatch-skill.js` 73/73 通过（无回归）
+- `npm test` 全量：除预存的 `semantic-recall` "不存在的查询返回空" 1 条外全部通过（与本修复无关）
+
+**L5 影响**：evolution 三个工具（github-scanner / trend-watcher / upgrade-checker）认证口径统一；trend-watcher 限流 10 → 30 req/min（gh CLI 登录时）
+
+**关联**：AUDIT-20260701-P0-005
+
 ### Fixed - dispatcher.js M14 no-graph 不计入 recall.miss（2026-07-01 · AUDIT-20260701-P0-003）
 
 **背景**：dispatcher.js:367 `_recordRecallMetric(hit, subTag)` 当 KB 引擎不可用时调 `recallPrecision(false, { source: 'dispatcher', hit: 'no-graph' })`，但 `metrics.js` 的 `recallPrecision(hit, tags)` 设计是 `hit=true` 写 `evo.kb.recall.hit`，`hit=false` 写 `evo.kb.recall.miss`，**不区分 subTag**。结果：每次 KB 引擎不可用（依赖 require 失败 / 索引缺失）都被算成 recall 失败，月度聚合的 precision 被「KB 引擎本身不可用」污染，**违背了原始设计意图**（commit 24f299e 当时写的"避免污染指标"）。同时确认 M14 reuse 的 `kb.confidence >= 0.7`（line 269 REUSE_CONFIDENCE_MIN）+ `category ∈ 可信列表`（line 270 REUSE_CATEGORIES）已实现，标题描述的"增加 kb.confidence 下限 + category 过滤"无需新代码。

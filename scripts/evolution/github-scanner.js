@@ -18,6 +18,7 @@
 const fs = require('fs')
 const path = require('path')
 const { execSync } = require('child_process')
+const { getGitHubToken, githubFetch: _ghFetch } = require('./github-auth')
 
 // ── 配置 ──────────────────────────────────────────────
 
@@ -60,41 +61,10 @@ const CAPABILITY_KEYWORDS = [
 // ── GitHub Auth（v3.0.2 M18）────────────────────────────
 
 /**
- * 读 GitHub Token（通过 gh CLI 拿，不进对话）
- * 优先级：
- *   1. `gh auth token`（gh CLI 已登录时返回 token）— 推荐路径
- *   2. 环境变量 GH_TOKEN / GITHUB_TOKEN（fallback）
- *   3. null（匿名模式，限流 60 次/小时）
- *
- * @returns {string|null}
+ * v3.0.5 M18 auth 已迁出至 ./github-auth（P0-005 公共化）
+ *   本文件顶部已 require 解构，新代码请直接用 getGitHubToken
+ *   （保留 JSDoc 仅作实现参考）
  */
-let _cachedToken = null;
-let _tokenChecked = false;
-function getGitHubToken() {
-  if (_tokenChecked) return _cachedToken;
-  _tokenChecked = true;
-
-  // 1. gh auth token
-  try {
-    const out = execSync('gh auth token', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-    const tok = (out || '').trim();
-    if (tok && tok.length > 10) {
-      _cachedToken = tok;
-      return tok;
-    }
-  } catch { /* gh 未登录或不存在 */ }
-
-  // 2. 环境变量
-  const envTok = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
-  if (envTok && envTok.length > 10) {
-    _cachedToken = envTok;
-    return envTok;
-  }
-
-  // 3. 匿名
-  _cachedToken = null;
-  return null;
-}
 
 /**
  * 测试 gh CLI 是否已登录（给用户友好提示用）

@@ -18,6 +18,8 @@
 
 const fs = require('fs')
 const path = require('path')
+// v3.0.5 P0-005: 统一用公共 GitHub 认证 + fetch（认证后 30 req/min，匿名 10 req/min）
+const { githubFetch, isGhLoggedIn } = require('./github-auth')
 
 // ── 配置 ──────────────────────────────────────────────
 
@@ -84,12 +86,8 @@ async function searchGitHub(keyword, perPage = 5) {
   const url = `${GITHUB_API}/search/repositories?q=${encoded}&sort=stars&order=desc&per_page=${perPage}`
 
   try {
-    const resp = await fetch(url, {
-      headers: {
-        'User-Agent': 'ai-workspace-scanner/1.0',
-        'Accept': 'application/vnd.github.v3+json',
-      },
-    })
+    // v3.0.5 P0-005: 用公共 githubFetch，token 存在时自动加 Authorization header
+    const resp = await githubFetch(url)
 
     if (resp.status === 403) {
       console.warn(`  ⚠ API 限流，跳过: ${keyword}`)
