@@ -92,6 +92,66 @@ function log(level, message) {
   console.log(`[${ts}] [${level}] ${message}`);
 }
 
+// ── PID / stale 检测工具 ─────────────────────────────
+
+/**
+ * 检测指定 PID 是否仍在运行（signal 0 不杀进程）
+ */
+function isProcessAlive(pid) {
+  if (!pid || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 记录当前 runner 子进程 PID
+ */
+function setRunnerPid(pid) {
+  const state = loadAutonomousState();
+  state.runner_pid = pid;
+  state.runner_started_at = now();
+  saveAutonomousState(state);
+}
+
+/**
+ * 清除 runner PID（仅在匹配时清除，避免误删新 runner）
+ */
+function clearRunnerPid(expectedPid) {
+  const state = loadAutonomousState();
+  if (expectedPid === undefined || state.runner_pid === expectedPid) {
+    delete state.runner_pid;
+    delete state.runner_started_at;
+    saveAutonomousState(state);
+    return true;
+  }
+  return false;
+}
+
+/**
+ * 阶段开始前 stale 检测
+ * @returns {{ stale?: boolean, alive?: boolean, pid?: number }}
+ */
+function checkStaleStage(snapshot, autoState) {
+  const stage = snapshot?.stage;
+  if (!stage || stage.status !== 'in_progress') return { stale: false };
+
+  const pid = autoState.runner_pid;
+  if (pid && isProcessAlive(pid)) {
+    return { stale: false, alive: true, pid };
+  }
+
+  // stale：上一个 runner 已死但阶段仍标为 in_progress
+  const reason = `stale runner (pid ${pid || 'none'} not alive), stage ${stage.current} reset`;
+  stage.next = stage.current; // 重试同一阶段
+  if (pid) clearRunnerPid(pid);
+  markStageFailed(snapshot, reason);
+  return { stale: true };
+}
+
 // ── 状态管理 ─────────────────────────────────────────
 
 function loadAutonomousState() {
@@ -107,6 +167,8 @@ function disableAutonomous(reason) {
   state.enabled = false;
   state.disabled_at = now();
   state.disabled_reason = reason || null;
+  delete state.runner_pid;
+  delete state.runner_started_at;
   saveAutonomousState(state);
   log('WARN', `自主模式已停止: ${reason}`);
 }
@@ -254,7 +316,7 @@ CONTEXT:
 `.trim();
 }
 
-function runClaudeStage(prompt) {
+function runClaudeStage(prompt, onSpawn) {
   return new Promise((resolve) => {
     log('INFO', `启动 claude -p 子会话执行阶段... (bin: ${CLAUDE_BIN})`);
 
@@ -267,6 +329,15 @@ function runClaudeStage(prompt) {
       stdio: ['pipe', 'inherit', 'inherit'],
       shell: true,
     });
+
+    // 立即记录子进程 PID，供外部 stale 检测
+    if (child.pid && typeof onSpawn === 'function') {
+      try {
+        onSpawn(child.pid);
+      } catch (e) {
+        log('WARN', `onSpawn 回调异常: ${e.message}`);
+      }
+    }
 
     // 喂入 prompt 后关闭 stdin，让 claude 开始处理
     if (child.stdin) {
@@ -285,7 +356,7 @@ function runClaudeStage(prompt) {
     child.on('exit', (code, signal) => {
       if (timeoutId) clearTimeout(timeoutId);
       log('INFO', `子会话结束: code=${code}, signal=${signal}`);
-      resolve({ code, signal });
+      resolve({ code, signal, pid: child.pid });
     });
 
     child.on('error', (err) => {
@@ -300,7 +371,7 @@ function runClaudeStage(prompt) {
       } else {
         log('ERROR', `启动子会话失败: ${err.message}`);
       }
-      resolve({ code: -1, signal: null, error: err.message });
+      resolve({ code: -1, signal: null, error: err.message, pid: child.pid });
     });
   });
 }
@@ -317,10 +388,28 @@ async function runLoop() {
       break;
     }
 
+    // 启动时清理：历史 runner PID 已死 → 删除 stale 标记
+    if (autoState.runner_pid && !isProcessAlive(autoState.runner_pid)) {
+      log('WARN', `历史 runner pid=${autoState.runner_pid} 已不存在，清理 stale 标记`);
+      clearRunnerPid(autoState.runner_pid);
+    }
+
     const snapshot = loadSnapshot();
     if (!snapshot) {
       log('WARN', '无可用快照，runner 等待 10 秒后重试');
       await sleep(10000);
+      continue;
+    }
+
+    // stale 检测：上一个 runner 异常退出后阶段仍 in_progress
+    const staleCheck = checkStaleStage(snapshot, autoState);
+    if (staleCheck.alive) {
+      log('WARN', `另一 runner (pid=${staleCheck.pid}) 正在运行，当前 runner 退出`);
+      break;
+    }
+    if (staleCheck.stale) {
+      log('WARN', '检测到 stale 阶段，已重置为失败待重试');
+      await sleep(5000);
       continue;
     }
 
@@ -347,7 +436,14 @@ async function runLoop() {
     log('INFO', `开始阶段: ${nextStage}`);
 
     const prompt = buildStagePrompt(loadSnapshot());
-    const result = await runClaudeStage(prompt);
+    let stagePid = null;
+    const result = await runClaudeStage(prompt, (pid) => {
+      stagePid = pid;
+      setRunnerPid(pid);
+    });
+
+    // 子进程已结束，清理 runner_pid（仅清除当前阶段记录的 PID）
+    if (stagePid) clearRunnerPid(stagePid);
 
     // 重新加载快照检查阶段结果
     const afterSnapshot = loadSnapshot();
@@ -458,6 +554,13 @@ async function main() {
             console.log(`   原因: ${autoState.reason}`);
           }
         }
+        if (autoState.runner_pid) {
+          const alive = isProcessAlive(autoState.runner_pid);
+          console.log(`   runner_pid: ${autoState.runner_pid} (${alive ? '运行中' : 'stale'})`);
+          if (autoState.runner_started_at) {
+            console.log(`   runner_started_at: ${autoState.runner_started_at}`);
+          }
+        }
         if (stage) {
           console.log(`🎯 当前阶段: ${stage.current || '(无)'}`);
           console.log(`   状态: ${stage.status || 'idle'}`);
@@ -505,6 +608,10 @@ module.exports = {
   runClaudeStage,
   runLoop,
   resolveClaudeBin,
+  isProcessAlive,
+  setRunnerPid,
+  clearRunnerPid,
+  checkStaleStage,
   AUTONOMOUS_STATE_FILE,
   SNAPSHOT_FILE,
 };

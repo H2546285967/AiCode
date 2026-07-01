@@ -24,6 +24,10 @@ const {
   loadAutonomousState,  // M24-C
   saveAutonomousState,  // M24-C
   disableAutonomous,  // M24-C
+  isProcessAlive,
+  setRunnerPid,
+  clearRunnerPid,
+  checkStaleStage,
   AUTONOMOUS_STATE_FILE,
   SNAPSHOT_FILE,
 } = require('./autonomous-runner');
@@ -31,6 +35,7 @@ const {
 // ── 测试工具 ─────────────────────────────────────────
 
 let backupSnapshot = null;
+let stateBackupText = null;
 
 function backup() {
   if (fs.existsSync(SNAPSHOT_FILE)) {
@@ -45,6 +50,21 @@ function restore() {
     fs.unlinkSync(SNAPSHOT_FILE);
   }
   backupSnapshot = null;
+}
+
+function backupStateFile() {
+  if (fs.existsSync(AUTONOMOUS_STATE_FILE)) {
+    stateBackupText = fs.readFileSync(AUTONOMOUS_STATE_FILE, 'utf8');
+  }
+}
+
+function restoreStateFile() {
+  if (stateBackupText !== null) {
+    fs.writeFileSync(AUTONOMOUS_STATE_FILE, stateBackupText);
+  } else if (fs.existsSync(AUTONOMOUS_STATE_FILE)) {
+    fs.unlinkSync(AUTONOMOUS_STATE_FILE);
+  }
+  stateBackupText = null;
 }
 
 function writeSnapshot(data) {
@@ -230,6 +250,105 @@ function testResolveClaudeBin() {
   console.log('✅ resolveClaudeBin');
 }
 
+// ── M54-D: runner PID + stale 检测测试 ──
+
+function testIsProcessAlive() {
+  assert.strictEqual(isProcessAlive(process.pid), true, '当前进程应存活');
+  assert.strictEqual(isProcessAlive(99999999), false, '不存在 PID 应返回 false');
+  assert.strictEqual(isProcessAlive(-1), false, '非法 PID 返回 false');
+  assert.strictEqual(isProcessAlive(null), false, 'null PID 返回 false');
+  console.log('✅ isProcessAlive');
+}
+
+function testSetAndClearRunnerPid() {
+  backupStateFile();
+  saveAutonomousState({ enabled: true, mode: 'always' });
+  setRunnerPid(12345);
+  let s = loadAutonomousState();
+  assert.strictEqual(s.runner_pid, 12345, '应记录 runner_pid');
+  assert.ok(s.runner_started_at, '应记录 runner_started_at');
+  clearRunnerPid(12345);
+  s = loadAutonomousState();
+  assert.strictEqual(s.runner_pid, undefined, '清除后 runner_pid 应消失');
+  assert.strictEqual(s.runner_started_at, undefined, '清除后 runner_started_at 应消失');
+  restoreStateFile();
+  console.log('✅ setRunnerPid / clearRunnerPid');
+}
+
+function testCheckStaleStageDeadPid() {
+  backup();
+  backupStateFile();
+  writeSnapshot({
+    summary: 'stale test',
+    stage: {
+      current: 'stage-A',
+      status: 'in_progress',
+      completed: [],
+      next: null,
+      failure_count: 0,
+      started_at: new Date().toISOString(),
+    },
+  });
+  saveAutonomousState({ enabled: true, runner_pid: 99999999, runner_started_at: new Date().toISOString() });
+
+  const snapshot = readSnapshot();
+  const autoState = loadAutonomousState();
+  const r = checkStaleStage(snapshot, autoState);
+
+  assert.strictEqual(r.stale, true, '死 PID 应判定为 stale');
+  const after = readSnapshot();
+  assert.strictEqual(after.stage.status, 'failed', 'stale 阶段应标记为 failed');
+  assert.strictEqual(after.stage.next, 'stage-A', 'stale 阶段 next 应回退为 current 以重试');
+  assert.strictEqual(after.stage.failure_count, 1, 'stale 应计一次失败');
+  const stateAfter = loadAutonomousState();
+  assert.strictEqual(stateAfter.runner_pid, undefined, '死 PID 应被清理');
+
+  restore();
+  restoreStateFile();
+  console.log('✅ checkStaleStage 死 PID');
+}
+
+function testCheckStaleStageAlivePid() {
+  backup();
+  backupStateFile();
+  writeSnapshot({
+    summary: 'alive test',
+    stage: {
+      current: 'stage-A',
+      status: 'in_progress',
+      completed: [],
+      next: null,
+      failure_count: 0,
+    },
+  });
+  saveAutonomousState({ enabled: true, runner_pid: process.pid, runner_started_at: new Date().toISOString() });
+
+  const snapshot = readSnapshot();
+  const autoState = loadAutonomousState();
+  const r = checkStaleStage(snapshot, autoState);
+
+  assert.strictEqual(r.alive, true, '当前进程 PID 应判定为存活');
+  assert.strictEqual(r.stale, false, '存活不应判定 stale');
+  const after = readSnapshot();
+  assert.strictEqual(after.stage.status, 'in_progress', '存活时不动状态');
+
+  restore();
+  restoreStateFile();
+  console.log('✅ checkStaleStage 存活 PID');
+}
+
+function testDisableAutonomousClearsRunnerPid() {
+  backupStateFile();
+  saveAutonomousState({ enabled: true, runner_pid: 12345, runner_started_at: new Date().toISOString() });
+  disableAutonomous('test cleanup');
+  const s = loadAutonomousState();
+  assert.strictEqual(s.enabled, false, 'disable 后 enabled=false');
+  assert.strictEqual(s.runner_pid, undefined, 'disable 后 runner_pid 应被清除');
+  assert.strictEqual(s.runner_started_at, undefined, 'disable 后 runner_started_at 应被清除');
+  restoreStateFile();
+  console.log('✅ disableAutonomous 清除 runner_pid');
+}
+
 // ── M24-C: checkHandoff 集成测试 ──
 
 async function testCheckHandoffTimeout() {
@@ -301,6 +420,11 @@ function main() {
     testFailureRetryLimit();
     testSingleModeStopsAfterOneStage();
     testResolveClaudeBin();
+    testIsProcessAlive();
+    testSetAndClearRunnerPid();
+    testCheckStaleStageDeadPid();
+    testCheckStaleStageAlivePid();
+    testDisableAutonomousClearsRunnerPid();
     testCheckHandoffExport();
 
     // 异步 M24-C 测试
@@ -309,7 +433,7 @@ function main() {
         await testCheckHandoffTimeout();
         await testCheckHandoffClearedDuringWait();
         await testCheckHandoffNoAwaiting();
-        console.log('\n🎉 全部测试通过（8 原 + 4 M24-C = 12 项）');
+        console.log('\n🎉 全部测试通过（8 原 + 4 M24-C + 5 PID = 17 项）');
         process.exit(0);
       } catch (e) {
         console.error('\n❌ M24-C 测试失败:', e.message);

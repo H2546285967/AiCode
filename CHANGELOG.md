@@ -10,6 +10,25 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Fixed - AUDIT-M54-batch2-D：runner PID + stale 检测（2026-07-01）
+
+> **背景**：`autonomous-runner.js` 在 `STAGE_TIMEOUT_MS=30min` SIGTERM 杀子进程或 runner 异常退出后，`stage.status` 仍停留在 `in_progress`；新 runner 启动后可能重复执行同一阶段，导致重复 commit。
+
+- **`scripts/orchestrator/autonomous-runner.js`** — runner PID 跟踪 + stale 检测
+  - 新增 `isProcessAlive(pid)` / `setRunnerPid(pid)` / `clearRunnerPid(expectedPid)` / `checkStaleStage(snapshot, autoState)`
+  - `runLoop` 启动时清理已死的历史 `runner_pid`
+  - 阶段开始前若 `stage.status === 'in_progress'` 且 PID 已死 → 标记阶段 failed 并回退 `next = current` 重试；若 PID 仍存活则退出，避免双 runner 并行
+  - `runClaudeStage` 通过 `onSpawn` 回调把子进程 PID 写入 `autonomous-state.json`，子进程结束后清除
+  - `disableAutonomous` 同时清除 `runner_pid` / `runner_started_at`
+  - `status` 命令显示 `runner_pid` 及其存活状态
+- **`scripts/orchestrator/test-autonomous-runner.js`** — 新增 5 项 PID/stale 测试：`isProcessAlive`、`set/clearRunnerPid`、`checkStaleStage` 死 PID / 活 PID、`disableAutonomous` 清除 PID
+
+**验证**：
+- `npm run test:autonomous` 全绿（`test-autonomous.js` 64/64 + `test-autonomous-runner.js` 17/17 + `test-autonomous-menu.js` 6/6 + `verify-runner-subprocess.js` 21/21）
+- `npm run doc:check` 36/0/1
+
+**关联**：AUDIT-M54-batch2-D-runner-pid
+
 ### Fixed - AUDIT-M54-batch2-B：补 PostToolUse hook 自动埋点 workflow 事件（2026-07-01）
 
 > **背景**：`.claude/settings.json` 已注册 PostToolUse → `posttool-hook.sh`，但该脚本只跑 self-reflect + plan-detect，从未调用 `workflow-observer.js`，导致 97% 生产数据只有 session_start/end，`file_modified`/`command_run`/`test_run`/`commit` 全靠手动埋点。
