@@ -10,6 +10,48 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Fixed - workflow：pattern-miner 窗口共现算法全量计数（2026-07-01 · AUDIT-20260701-P0-007）
+
+**背景**：
+`scripts/orchestrator/workflow/pattern-miner.js` 的 Step 2 共现挖掘用 `let matchedB = null; ... break;` 模式（line 224-234），**每个 trigger 最多只统计窗口内第一个匹配 action**。
+
+**bug 场景**：
+```
+t=0   file_modified
+t=5   command_run
+t=10  command_run   ← 同一 RULE 第二个 action 匹配，未计入
+t=15  command_run   ← 同上
+```
+- 修复前 support=1（错）
+- 修复后 support=3（对）
+
+**根因**：原作者语义混淆 — `count` 应该数 "trigger-action 共现对数"，还是 "trigger 后窗口内有 action 的 instance 数"。**任务标题明确**：统计窗口内所有匹配 action（即共现对数）。
+
+**修复**：
+- **`scripts/orchestrator/workflow/pattern-miner.js`** — Step 2 内层循环移除 `break`，改为完整遍历窗口内事件，每个匹配 B 都 `existing.count++`（语义改为"共现 pair 数"）
+- **`scripts/orchestrator/workflow/test-pattern-miner.js`** —
+  - 现有 `testMineFileToCommand`：3 交替（file_modified → command_run）× 全量计数 = **support 6**（3+2+1），更新期望值 + 注释
+  - 新增 `testMineMultiActionPerTrigger`：1 trigger + 3 action 应 support=3（P0-007 修复主验证）
+
+**语义变更影响**：
+| 场景 | 修复前 | 修复后 |
+|:-----|:-------|:-------|
+| 1 trigger + 1 action | support=1 | support=1 |
+| 1 trigger + N action | support=1 ❌ | support=N ✓ |
+| N trigger × 1 action | support=N | support=N |
+| N trigger × M action（交替）| support=N | support=N+M-1 |
+| confidence = count / triggerTotal | 保持不变（trigger 计数未变） | 保持不变 |
+
+**验证**：
+- `node test-pattern-miner.js` 5/5 通过（含新增 testMineMultiActionPerTrigger）
+- `node test-workflow-observer.js` 通过（无回归）
+- `node test-suggestion-engine.js` 通过（无回归）
+- `npm test` 全量：除预存 `semantic-recall` "不存在的查询返回空" 1 条外全部通过
+
+**L5 影响**：workflow pattern 挖掘更准确——能反映"该 trigger 之后用户多次执行同类 action"的真实习惯（如：改完文件后跑 3 次 npm test 才会 commit）。M55 二次采样精度 ↑
+
+**关联**：AUDIT-20260701-P0-007
+
 ### Fixed - evolution：明确 feature-analyzer 启发式与 LLM-judge 独立模块（2026-07-01 · AUDIT-20260701-P0-006）
 
 **背景**：

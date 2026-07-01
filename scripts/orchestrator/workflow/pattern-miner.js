@@ -221,35 +221,30 @@ const Miner = {
       for (const rule of RULE_TEMPLATES) {
         if (evA.type !== rule.trigger) continue;
 
-        // 向后看窗口内的事件，每个 A 只计一次匹配的 B
-        let matchedB = null;
+        // v3.0.8 P0-007 修复：窗口内所有匹配 action 都计数（之前 break 只计首个）
         for (let j = i + 1; j < events.length; j++) {
           const evB = events[j];
           const tB = new Date(evB.ts).getTime();
           if (tB - tA > windowMs) break;
           if (evB.type !== rule.action) continue;
 
-          matchedB = evB;
-          break;
-        }
-
-        if (matchedB) {
-          const pattern = makePattern(evA, matchedB, 0);
+          // 每次匹配都计一对（共现 pair）
+          const pattern = makePattern(evA, evB, 0);
           const hash = hashPattern(pattern);
 
           const existing = cooccurrence.get(hash);
           if (existing) {
             existing.count++;
-            if (matchedB.ts > existing.lastTs) {
-              existing.lastTs = matchedB.ts;
-              existing.lastAction = matchedB;
+            if (evB.ts > existing.lastTs) {
+              existing.lastTs = evB.ts;
+              existing.lastAction = evB;
             }
           } else {
             cooccurrence.set(hash, {
               pattern,
               count: 1,
-              lastTs: matchedB.ts,
-              lastAction: matchedB,
+              lastTs: evB.ts,
+              lastAction: evB,
             });
           }
         }

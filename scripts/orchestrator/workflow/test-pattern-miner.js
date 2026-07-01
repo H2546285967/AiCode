@@ -49,7 +49,9 @@ function testMineFileToCommand() {
     p.action.command === 'npm test'
   );
   assert(pattern, '应找到 file_modified → command_run(npm test) 模式');
-  assert.strictEqual(pattern.support, 3, '支持度应为 3');
+  // v3.0.8 P0-007: 窗口内所有匹配 action 都计数（修复前仅首个）
+  // 3 个 file_modified × 每个向后看到 2 个 command_run（除了最后一个只看 1 个）= 3+2+1 = 6
+  assert.strictEqual(pattern.support, 6, '全量计数后支持度应为 6');
   assert(pattern.confidence >= 0.99, '置信度应接近 1');
 
   console.log('✅ testMineFileToCommand passed');
@@ -131,12 +133,44 @@ function testThresholdFiltering() {
   console.log('✅ testThresholdFiltering passed');
 }
 
+// v3.0.8 P0-007: 1 trigger + N action 应 support=N（之前只 =1）
+function testMineMultiActionPerTrigger() {
+  reset();
+
+  // 1 个 file_modified，窗口内跟 3 个 command_run
+  const base = Date.now();
+  const history = [
+    { type: 'file_modified', payload: { files: ['a.js'] }, offsetMinutes: 0 },
+    { type: 'command_run', payload: { command: 'npm test' }, offsetMinutes: 5 },
+    { type: 'command_run', payload: { command: 'npm test' }, offsetMinutes: 10 },
+    { type: 'command_run', payload: { command: 'npm test' }, offsetMinutes: 15 },
+  ];
+  for (const ev of history) {
+    fs.appendFileSync(TEST_EVENTS_FILE, JSON.stringify({
+      ts: new Date(base + ev.offsetMinutes * 60 * 1000).toISOString(),
+      type: ev.type,
+      session: 'test',
+      payload: ev.payload,
+    }) + '\n');
+  }
+
+  const result = Miner.mine({ minSupport: 1, minConfidence: 0.1, windowMinutes: 30 });
+  const pattern = result.patterns.find(p =>
+    p.trigger.type === 'file_modified' && p.action.type === 'command_run'
+  );
+  assert(pattern, '应找到 file_modified → command_run 模式');
+  assert.strictEqual(pattern.support, 3, '1 trigger + 3 action 应 support=3（全量计数）');
+
+  console.log('✅ testMineMultiActionPerTrigger passed');
+}
+
 // ── 运行 ─────────────────────────────────────────────
 
 function run() {
   testMineFileToCommand();
   testMineAndSave();
   testMatchPatterns();
+  testMineMultiActionPerTrigger();
   testThresholdFiltering();
   console.log('\n🎉 pattern-miner 测试全部通过');
 }
