@@ -95,14 +95,20 @@ function readEvents() {
   return events.sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
 }
 
+function hashTrigger(trigger) {
+  const parts = [
+    `T:${trigger.type}`,
+    trigger.modules ? `M:${trigger.modules.sort().join(',')}` : '',
+    trigger.exts ? `E:${trigger.exts.sort().join(',')}` : '',
+    trigger.command ? `C:${trigger.command}` : '',
+  ];
+  return parts.filter(Boolean).join('|');
+}
+
 function hashPattern(pattern) {
-  const t = pattern.trigger;
   const a = pattern.action;
   const parts = [
-    `T:${t.type}`,
-    t.modules ? `M:${t.modules.sort().join(',')}` : '',
-    t.exts ? `E:${t.exts.sort().join(',')}` : '',
-    t.command ? `C:${t.command}` : '',
+    hashTrigger(pattern.trigger),
     `A:${a.type}`,
     a.command ? `C:${a.command}` : '',
     a.testCommand ? `TC:${a.testCommand}` : '',
@@ -185,15 +191,23 @@ const Miner = {
       return { patterns: [], stats };
     }
 
-    // Step 1: 统计 trigger 出现次数（按事件类型去重，避免同一事件匹配多条规则被重复计数）
-    const triggerCounts = {};
+    // Step 1: 统计 trigger 出现次数（按 trigger 完整维度：type + modules + exts + command）
+    // 修复：旧逻辑只按 trigger.type 计数，导致同一 type 在不同 context（如 .js vs .md）被合并，
+    // 分母过大、confidence 系统性偏低，minConfidence=0.5 会滤掉真模式。
+    const triggerCounts = new Map(); // hash -> count
     for (const ev of events) {
-      const counted = new Set();
+      const counted = new Set(); // 同一事件同一 trigger 维度只计一次（可能匹配多个 rule）
       for (const rule of RULE_TEMPLATES) {
-        if (ev.type === rule.trigger && !counted.has(rule.trigger)) {
-          triggerCounts[rule.trigger] = (triggerCounts[rule.trigger] || 0) + 1;
-          counted.add(rule.trigger);
-        }
+        if (ev.type !== rule.trigger) continue;
+        const trigger = { type: ev.type };
+        const payload = ev.payload || {};
+        if (payload.modules?.length) trigger.modules = payload.modules.slice().sort();
+        if (payload.exts?.length) trigger.exts = payload.exts.slice().sort();
+        if (payload.command) trigger.command = payload.command;
+        const hash = hashTrigger(trigger);
+        if (counted.has(hash)) continue;
+        counted.add(hash);
+        triggerCounts.set(hash, (triggerCounts.get(hash) || 0) + 1);
       }
     }
 
@@ -245,7 +259,8 @@ const Miner = {
     // Step 3: 计算置信度并过滤
     const patterns = [];
     for (const { pattern, count, lastAction } of cooccurrence.values()) {
-      const triggerTotal = triggerCounts[pattern.trigger.type] || 1;
+      const triggerHash = hashTrigger(pattern.trigger);
+      const triggerTotal = triggerCounts.get(triggerHash) || 1;
       const confidence = count / triggerTotal;
       if (count >= minSupport && confidence >= minConfidence) {
         pattern.support = count;
