@@ -1,0 +1,92 @@
+[
+  {
+    "id": "review-1782936126781-uvbj",
+    "timestamp": "2026-07-01T20:02:06.781Z",
+    "file_path": "04_自我演进路线.md",
+    "tool_name": "Edit",
+    "reasons": [
+      "修改高风险文件: 04_自我演进路线.md",
+      "内容含安全敏感关键词（auth/token/secret/password 等）"
+    ],
+    "status": "pending",
+    "sample_method": "llm-secondary"
+  },
+  {
+    "id": "review-1782936081096-bwq7",
+    "timestamp": "2026-07-01T20:01:21.096Z",
+    "file_path": "02_工作空间功能介绍.md",
+    "tool_name": "Edit",
+    "reasons": [
+      "内容含安全敏感关键词（auth/token/secret/password 等）"
+    ],
+    "status": "pending",
+    "sample_method": "llm-secondary"
+  },
+  {
+    "id": "review-1782935323986-h8mc",
+    "timestamp": "2026-07-01T19:48:43.986Z",
+    "file_path": "scripts/evolution/test-github-auth.js",
+    "tool_name": "Write",
+    "reasons": [
+      "内容含安全敏感关键词（auth/token/secret/password 等）"
+    ],
+    "status": "pending",
+    "sample_method": "llm-secondary"
+  },
+  {
+    "id": "review-1782935300936-vkhw",
+    "timestamp": "2026-07-01T19:48:20.936Z",
+    "file_path": "scripts/evolution/trend-watcher.js",
+    "tool_name": "Edit",
+    "reasons": [
+      "内容含安全敏感关键词（auth/token/secret/password 等）"
+    ],
+    "status": "pending",
+    "sample_method": "llm-secondary"
+  },
+  {
+    "id": "review-1782935087201-m86a",
+    "timestamp": "2026-07-01T19:44:47.201Z",
+    "file_path": "scripts/evolution/github-scanner.js",
+    "tool_name": "Edit",
+    "reasons": [
+      "内容含安全敏感关键词（auth/token/secret/password 等）"
+    ],
+    "status": "pending",
+    "sample_method": "llm-secondary"
+  },
+  {
+    "id": "review-1782935073118-ceee",
+    "timestamp": "2026-07-01T19:44:33.118Z",
+    "file_path": "scripts/evolution/github-auth.js",
+    "tool_name": "Write",
+    "reasons": [
+      "内容含安全敏感关键词（auth/token/secret/password 等）"
+    ],
+    "status": "pending",
+    "sample_method": "llm-secondary"
+  },
+  {
+    "id": "review-1782934758307-rlea",
+    "timestamp": "2026-07-01T19:39:18.307Z",
+    "file_path": ".claude/skills/left-brain/memory/evolution-plan.json",
+    "tool_name": "Edit",
+    "reasons": [
+      "内容含安全敏感关键词（auth/token/secret/password 等）"
+    ],
+    "status": "pending",
+    "sample_method": "llm-secondary"
+  },
+  {
+    "id": "review-1782918185331-ph9w",
+    "timestamp": "2026-07-01T15:03:05.331Z",
+    "file_path": "CHANGELOG.md",
+    "tool_name": "Edit",
+    "reasons": [
+      "修改高风险文件: CHANGELOG.md",
+      "内容含安全敏感关键词（auth/token/secret/password 等）"
+    ],
+    "status": "pending",
+    "sample_method": "llm-secondary"
+  }
+]

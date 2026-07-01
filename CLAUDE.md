@@ -133,6 +133,7 @@ AiCode/
 | **`kb-promote`** (M48/M62) | **KB 毕业机制 + memory 体检 + session-init 自动预警** | **借鉴 neat-freak 91 行：毕业三触发（主题反复 ≥3 / 系统机制 / 事件 >14 天）+ sync-matrix 变更映射 + self-discipline 5 步法 + memory-health-check 4 项硬约束；`session-init.sh` Step 1 自动 `--compact` 显示 MEMORY.md / KB 状态；`npm run kb:promote -- --report` 看毕业建议 + `npm run memory:health` 体检 MEMORY.md 200/25KB + 17+15+1 测试（v3.0.6/v3.0.8）** |
 | **`deep-research`** (M49+3 · v3.0.8) | **深度研究（横纵双轴 · 6 段方法论闭环）** | **借鉴 hv-analysis + 卡兹克公众号通用 Prompt：纵向 5 维度 + 横向 3 场景 + 交汇 5 核心问题 + 3 剧本 + 机遇/风险/痛点 + 分人群（创业者/从业者/学习者/投资人）行动建议；`npm run deep-research -- analyze "对象名"` 生成报告框架（21/21 测试）** |
 | **`prompt-optimizer`** (M54 Phase 2 · v3.0.8) | **提示词优化闭环** | **借鉴 prompt-optimizer：分析 → 评估 → 对比 → 智能改写；`npm run po:run -- --file .claude/agents/qa-reviewer.md --rounds 3`（22/22 测试）** |
+| **`karpathy-4-principles`** (M63 · v3.0.8) | **AI 编码行为纪律** | **编码前思考 / 简洁优先 / 精准修改 / 目标驱动执行；融入 first-principles.md / behavior.md / plan-protocol.md / go-pipeline.js；plan 每步带 `验证:`，/go 每阶段带 verification（test-plan-detect 5/5 + test-self-discipline 29/29 + test-go-pipeline 19/19）** |
 | MCP servers | 工具链 | 本地文件/数据库/网页/**工程审计**能力 |
 | `hooks/` | 环境集成 | 自动执行启动/停止逻辑 |
 | `自我约束规范.md` | 工作流 | 改完代码自动收尾 |
@@ -226,7 +227,7 @@ AiCode/
 | `auto-perceive.md` | 自动感知、纠正学习规则 |
 | `behavior.md` | 文件读取、输出控制、任务切换、子代理调度 |
 | `session-memory.md` | 会话记忆、智能丢弃 |
-| `plan-protocol.md` | 智能任务规划协议（[plan] 块格式 + agent/files 字段 + 状态机 + 与 dispatcher 边界，M54 兑现 CLAUDE.md:239 引用）|
+| `plan-protocol.md` | 智能任务规划协议（[plan] 块格式 + agent/files/验证 字段 + 目标驱动执行 + 状态机 + 与 dispatcher 边界，M54 兑现 CLAUDE.md:239 引用 · M63 加 `验证:` 字段）|
 | `cost-control.md` | 成本控制 + Git 工作流（个人工程） |
 | `daily-maintenance.md` | 每日更新、Changelog |
 | `self-discipline.md` | 改动后自动收尾（测试/快照/KB/文档）+ 6 步法（M52 升级 = 5 步 + 0.5 步思维闸门） |
@@ -241,7 +242,8 @@ AiCode/
 ## 🧠 智能任务规划协议
 
 > 复杂任务（满足文件数 ≥ 3 / 模块数 ≥ 2 / 改根目录配置 / 5 类任务类型 / 用户说"先评估"中**任意 2 条**）必须先出 `[plan]...[/plan]` 块，等 `/ok` 后再执行。简单任务直接干。
-> 📖 **完整格式 + agent 字段 + 执行流程**：见 [`.claude/rules/plan-protocol.md`](.claude/rules/plan-protocol.md)
+> 每个 plan 步骤建议带 `验证:` 字段，把指令式任务转为可验证目标（Karpathy「目标驱动执行」原则）。
+> 📖 **完整格式 + agent/files/验证 字段 + 执行流程**：见 [`.claude/rules/plan-protocol.md`](.claude/rules/plan-protocol.md)
 
 ---
 

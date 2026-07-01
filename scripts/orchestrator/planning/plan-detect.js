@@ -97,6 +97,7 @@ function parsePlanBlock(blockContent) {
         text: currentStep.text,
         ...(currentStep.agent && { agent: currentStep.agent }),
         ...(currentStep.files && currentStep.files.length > 0 && { files: currentStep.files }),
+        ...(currentStep.verification && { verification: currentStep.verification }),
       });
     }
     currentStep = null;
@@ -146,6 +147,11 @@ function parsePlanBlock(blockContent) {
         if (currentStep) {
           currentStep._filesRaw = trimmed.replace(/^files[：:]\s*/i, '').trim();
         }
+      } else if (/^验证[：:]\s*/i.test(trimmed)) {
+        // 验证: 该步骤完成的可验证标准
+        if (currentStep) {
+          currentStep.verification = trimmed.replace(/^验证[：:]\s*/i, '').trim();
+        }
       } else if (trimmed && !/^[A-Za-z一-龥]+[：:]/.test(trimmed)) {
         // 步骤延续（下一行是上一行的说明）
         if (currentStep) {
@@ -190,6 +196,9 @@ function applyFallback(step) {
   }
   if (!result.files || result.files.length === 0) {
     result.files = extractFilesFromText(result.text);
+  }
+  if (!result.verification) {
+    result.verification = '步骤完成且无回归';
   }
   return result;
 }

@@ -35,6 +35,7 @@ const STAGE_DEFS = {
   test: {
     name: '测试',
     description: '运行项目测试套件',
+    verification: 'npm test 退出码为 0，无失败用例',
     defaultCmd: 'npm',
     defaultArgs: ['test', '--silent'],
     // 退出码 0 = 通过，非 0 = 失败
@@ -44,6 +45,7 @@ const STAGE_DEFS = {
   simplify: {
     name: '简化',
     description: '运行代码质量优化（移除冗余/重复）',
+    verification: '代码简化后测试仍通过，且无新增 lint/风格问题',
     defaultCmd: null, // 当前无独立脚本 → 标记 skipped
     defaultArgs: [],
     passOnExitZero: true,
@@ -52,6 +54,7 @@ const STAGE_DEFS = {
   review: {
     name: '审查',
     description: '多 Agent 代码审查（git diff 维度）',
+    verification: '代码审查通过，无高风险问题未处理',
     defaultCmd: null, // 当前无独立脚本 → 标记 skipped
     defaultArgs: [],
     passOnExitZero: true,
@@ -60,6 +63,7 @@ const STAGE_DEFS = {
   commit: {
     name: '提交',
     description: 'git add -A + git commit（仅在前面阶段全部通过时）',
+    verification: 'git commit 成功创建，包含本次改动',
     defaultCmd: 'git',
     defaultArgs: ['commit', '--allow-empty', '-m', 'auto-commit via /go pipeline'],
     passOnExitZero: true,
@@ -292,12 +296,14 @@ function formatHuman(result) {
   lines.push(`🚀 /go pipeline v1.0.0 (${result.startedAt}${result.dryRun ? ' · dry-run' : ''})`);
   lines.push('');
   for (const s of result.stages) {
+    const def = STAGE_DEFS[s.stage];
     const icon =
       s.status === 'passed' ? '✅' :
       s.status === 'dry-run' ? '🟡' :
       s.status === 'skipped' ? '⏭️ ' :
       s.status === 'failed' ? '❌' : '❓';
     lines.push(`${icon} [${s.stage}] ${s.name} — ${s.status} (${s.durationMs}ms)`);
+    if (def?.verification) lines.push(`   验证: ${def.verification}`);
     if (s.message) lines.push(`   ${s.message}`);
   }
   lines.push('');

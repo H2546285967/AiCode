@@ -1,8 +1,8 @@
 # 项目上下文速览（1 分钟掌握全貌）
 
 > **用途**：新会话启动时自动加载（`session-init.sh` top-list 包含本文件），快速建立项目心智模型，避免扫描整个仓库浪费 token。
-> **更新时间**：2026-06-29（M54 /audit full 深度审计 P0 批次 4 真风险修复 + 5 主题入队）
-> **版本**：v3.0.8（M52 两大神级 Prompt 思维闸门 + M53 RESEARCH 候选关闭 + M54 /audit P0 修复 · 9 技能 + 13 规则文件 + self-discipline v5 6 步法）
+> **更新时间**：2026-07-01（M54 /audit full 深度审计 P0 批次 4 真风险修复 + 5 主题入队；**M63 吸收 Karpathy 4 原则**）
+> **版本**：v3.0.8（M52 两大神级 Prompt 思维闸门 + M53 RESEARCH 候选关闭 + M54 /audit P0 修复 + **M63 Karpathy 4 原则** · 9 技能 + 13 规则文件 + self-discipline v6 6 步法）
 > **加载方式**：session-init 自动加载（≈ 100 行 · token 友好）
 
 ---
@@ -27,7 +27,7 @@
 | **📊 metrics** | `node scripts/orchestrator/metrics/report.js` | 月度报告（4 指标：耗时/成功率/KB 召回/人工干预）| L4 |
 | **📋 workflow** | `/workflow` / `/workflow learn` | 学用户工作模式，主动建议下一步 | L4 |
 | **🔄 handoff** | `/handoff` 或 `node scripts/orchestrator/handoff.js` | 会话交接（自动快照 + 接续 prompt）| L4 |
-| **🛡️ self-discipline** | (自动) | 完成改动后自动收尾（5 步法：尺寸体检→盘点→sync-matrix→修改→自检→摘要 · 8 文档同步）| L4 |
+| **🛡️ self-discipline** | (自动) | 完成改动后自动收尾（6 步法：尺寸体检 → **Karpathy 4 原则自检** → 盘点 → sync-matrix → 修改 → 自检 → 摘要 · 8 文档同步）| L4 |
 | **🔒 evolution-lock** | `node scripts/orchestrator/evolution-lock.js status\|queue\|complete` | 防止多窗口同时改 04/CLAUDE/CHANGELOG 导致漂移 | P0-0 |
 | **🌳 sync-roadmap** | `node scripts/orchestrator/sync-roadmap.js` | 自动同步 04.md §十二 ⏳ 段 + evolution-plan.json | M24-D |
 | **🧬 gepa** | `npm run gepa:evolve` 或 `node scripts/evolution/daily-evolution.js self-evolve` | SKILL.md 自我进化（5 模块 + 5 道护栏 + 26/26 测试，借鉴 Hermes GEPA）| L4 |
@@ -39,7 +39,7 @@
 | **🎯 aris-poc** (M38) | `npm run aris-poc:demo` 或 `aris-poc:review` / `aris-poc:idea` | 借鉴 wanshuiyin/ARIS：6-state verdict 合约 + cross-model review loop（5 视角）+ idea discovery（5 维评分 + Top-K），95/95 测试 | L4 |
 | **🧠 mem-poc** (M39) | `npm run mem-poc:demo` 或 `mem-poc:inject "query"` | 借鉴 thedotmack/claude-mem：78 session → 35 事件压缩 + 按 query 注入最相关历史决策/教训，71/71 测试 | L2 |
 | **🗂️ skill-hub** (M40) | `npm run skill-hub:demo` 或 `skill-hub:search "chart"` | 借鉴 davepoon/buildwithclaude：已装 + 本地 + 远程缓存三源聚合，统一搜索/推荐 skill，33/33 测试 | L4 |
-| **🚀 go** (M43) | `/go` 或 `npm run go` / `npm run go:dry` | 交付流水线自动化：测试 → 简化 → 审查 → 提交 4 阶段（失败立即停止，纯函数 + 19/19 测试 + `--dry-run/--skip/--only` 5 参数） | L4 |
+| **🚀 go** (M43+M63) | `/go` 或 `npm run go` / `npm run go:dry` | 交付流水线自动化：测试 → 简化 → 审查 → 提交 4 阶段（每阶段带 verification，失败立即停止，纯函数 + 19/19 测试 + `--dry-run/--skip/--only` 5 参数） | L4 |
 
 ---
 

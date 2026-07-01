@@ -1,7 +1,8 @@
 # AiCode — Claude Code 客户端 Agent 增强工程
 
-> **v3.0.8** · 一个**会自己调度、自己记忆、自己审计、自己进化**的 Claude Code 工作空间。
+> **v3.0.8** · 一个**会自己调度、自己记忆、自己审计、自己进化、自己约束**的 Claude Code 工作空间。
 > **32+ 个测试文件 / 486+ 项断言全过**，L1→L5 5 级智能增量路径打通（L4 ✅ / L5 🟡 3/5）。
+> **M63 新增**：Karpathy 4 原则（编码前思考 / 简洁优先 / 精准修改 / 目标驱动执行）融入规则与流程。
 
 **定位**：我们**不增强 Claude 大模型本身**，而是增强 **Claude Code 客户端 Agent** —— 通过调度 / 记忆 / 工具 / 工作流 / 自动化，让同样的 Claude 模型发挥出 2-10 倍效率。
 
@@ -38,10 +39,10 @@ claude
 | 🎯 **ARIS POC** | 6-state verdict 合约 + cross-model review loop + idea discovery | `aris-poc` |
 | 🧠 **Mem POC** | 跨会话智能压缩 + 按 query 注入最相关历史事件 | `mem-poc` |
 | 🗂️ **Skill Hub** | 已装 + 本地 + 远程缓存三源聚合，统一搜索/推荐 skill | `skill-hub` |
-| 🚀 **/go 一键交付** | 测试 → 简化 → 审查 → 提交 4 阶段流水线（失败立即停止）| `go` |
+| 🚀 **/go 一键交付** | 测试 → 简化 → 审查 → 提交 4 阶段流水线（每阶段带验证标准，失败立即停止）| `go` |
 | 📋 **会话交接** | 上下文 40% 时一键 `/handoff` 换窗口 | `handoff` |
 | 📊 **效果量化** | 月度报告：耗时 / 成功率 / KB 召回 / 人工干预 | `metrics` |
-| 🛡️ **自动收尾** | 改完代码自动测试 + 快照 + KB + 8 文档同步（5 步法）| `self-discipline` |
+| 🛡️ **自动收尾** | 改完代码自动测试 + 快照 + KB + 8 文档同步（6 步法 · 含 Karpathy 4 原则自检）| `self-discipline` |
 | 🧹 **KB 毕业 + MEMORY 体检** | 把稳定 KB 升 docs + 缩源为 pointer，治 memory 膨胀（neat-freak 借鉴）| `kb-promote` + `memory-health` |
 | 🔬 **深度研究（横纵双轴）** | 借鉴 hv-analysis：纵向 5 维度 + 横向 3 场景 + 交汇 5 核心问题 | `deep-research` |
 

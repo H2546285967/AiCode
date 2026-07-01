@@ -6,7 +6,7 @@
 > - 改动收尾规则见 `.claude/rules/doc-sync.md`（🔴 大 / 🏁 级别强制同步 4 文档 + CHANGELOG）
 >
 > 工作空间通用行为标准。所有 AI 助手和人类开发者共同遵守。
-> 最后更新：2026-07-01（v3.0.8：补 4 个能力 — 二次采样验证 / cron 主动报告 / LLM 辅助 auto-fix / 个人 workflow 智能化；M10 评分驱动 Agent 数量已闭环；新增 /audit 工程自查）
+> 最后更新：2026-07-01（v3.0.8：补 4 个能力 — 二次采样验证 / cron 主动报告 / LLM 辅助 auto-fix / 个人 workflow 智能化；M10 评分驱动 Agent 数量已闭环；新增 /audit 工程自查；**M63 吸收 Karpathy 4 原则：编码前思考 / 简洁优先 / 精准修改 / 目标驱动执行**）
 
 ---
 
@@ -27,6 +27,10 @@
 | **上下文分片** | `.claudeignore` 排除 2GB+ 数据，理论省 60% token |
 | **QA 子代理** | `.claude/agents/qa-reviewer.md`（独立验证，28/28 测试覆盖） |
 | **后台异步** | `Ctrl+B` 把当前命令放到后台跑，主线继续。`/tasks` 看所有后台任务 |
+| **编码前思考** | 复杂任务先停止默认类比，明确假设、呈现权衡、困惑时澄清（`.claude/rules/first-principles.md`） |
+| **简洁优先** | 最少代码解决问题，不堆抽象、不加未要求的灵活性（`.claude/rules/behavior.md`） |
+| **精准修改** | 只碰必须碰的，每一行改动追溯到用户请求（`.claude/rules/behavior.md`） |
+| **目标驱动执行** | 把指令式任务转为可验证目标，plan 每步带 `验证:`，/go 每阶段带验证标准（`.claude/rules/plan-protocol.md`） |
 
 ---
 
@@ -120,7 +124,7 @@
 | 查看系统 | `/status` | 看监控 |
 | 压缩上下文 | `/compact-hint` | 精准压缩 |
 | 代码审查 | `/code-review` | 多 Agent 审查 |
-| **思维闸门**（M52） | prompt 末尾加「从第一性原理出发」 + commit 前开多 Agent 对抗式审查 | 复杂任务生成 + 验证闭环（v3.0.8 新增）|
+| **思维闸门**（M52+M63） | prompt 末尾加「从第一性原理出发」+ 编码前思考（不假设/呈现权衡/困惑澄清）+ commit 前开多 Agent 对抗式审查 | 复杂任务生成 + 验证闭环（v3.0.8+ 新增）|
 | 全自动交付 | `/go` | 测试→简化→审查→提交 |
 | 新建项目 | `/new-project` | 项目脚手架 |
 | **智能派发** | `/dispatch 任务` | 自动判断要不要派 Agent |
@@ -144,7 +148,7 @@
 | **ARIS POC** | `npm run aris-poc:demo` 或 `aris-poc:review -- --file foo.js` 或 `aris-poc:idea -- --json candidates.json` | 借鉴 wanshuiyin/ARIS：6-state verdict 合约 + cross-model review loop（5 视角）+ idea discovery（5 维评分 + Top-K）（v3.0.5 M38），详见 02 §2.32 |
 | **Mem POC** | `npm run mem-poc:demo` 或 `mem-poc:inject "PowerShell 中文乱码"` | 借鉴 thedotmack/claude-mem：78 session → 35 事件压缩 + 按 query 注入最相关历史决策/教训（v3.0.5 M39），详见 02 §2.33 |
 | **Skill Hub** | `npm run skill-hub:demo` 或 `skill-hub:search "chart"` | 借鉴 davepoon/buildwithclaude：三源聚合（已装+本地+远程缓存）统一搜索/推荐 skill（v3.0.5 M40），详见 02 §2.34 |
-| **/go 一键交付** | `/go` 或 `npm run go` / `npm run go:dry` | 测试 → 简化 → 审查 → 提交 4 阶段流水线，失败立即停止（v3.0.5 M43，19/19 测试），详见 02 §2.35 |
+| **/go 一键交付** | `/go` 或 `npm run go` / `npm run go:dry` | 测试 → 简化 → 审查 → 提交 4 阶段流水线，每阶段带验证标准，失败立即停止（v3.0.5 M43 + v3.0.8 M63 目标驱动执行，19/19 测试），详见 02 §2.35 |
 | **KB 分类质量** | `npm run kb:report` | 看 KB 分类分布 + 「其他」占比（v3.0.5 M45，49.3% → 4.2%）|
 | **KB 毕业机制** | `npm run kb:promote -- --report` | 借鉴 neat-freak：把稳定 KB 升 docs + 缩源为 pointer，治 memory 膨胀（v3.0.6 M48-A，17/17 测试）|
 | **Prompt 资产管理** | `npm run prompt-asset:list` | 列出/拼合/升级 `.claude/prompt-assets/` 中版本化 prompt 组件（v3.0.8 M54 Phase 3，17/17 测试）|

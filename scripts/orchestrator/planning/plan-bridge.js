@@ -218,10 +218,13 @@ ${plan.goal ? `目标: ${plan.goal}` : ''}
 【本步指令】
 ${filled.text}
 
+【本步验证标准】
+${filled.verification || '步骤完成且无回归'}
+
 【相关文件】
 ${files}
 
-请专注于完成这一步。完成后用 1-3 行总结你做了什么。`;
+请专注于完成这一步，并确保验证标准达成。完成后用 1-3 行总结你做了什么。`;
 }
 
 /**
@@ -333,6 +336,7 @@ function executePlan(planId, opts = {}) {
       stepText: filled.text,
       agent: filled.agent,
       files: filled.files || [],
+      verification: filled.verification || '步骤完成且无回归',
       timestamp: new Date().toISOString(),
     };
 
@@ -408,6 +412,7 @@ if (require.main === module) {
           for (const step of r.results) {
             const icon = step.status === 'done' ? '✅' : step.status === 'error' ? '❌' : step.dryRun ? '🔍' : '❓';
             console.log(`  ${icon} [${step.agent}] ${step.stepText.slice(0, 60)}`);
+            if (step.verification) console.log(`     验证: ${step.verification.slice(0, 80)}`);
             if (step.error) console.log(`     错误: ${step.error.slice(0, 100)}`);
           }
           if (dryRun) console.log('\n💡 Dry-run 模式，未真执行');

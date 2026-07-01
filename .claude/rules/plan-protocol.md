@@ -1,6 +1,6 @@
 # 📋 智能任务规划协议（plan-protocol）
 
-> **作用**：规定 `[plan]...[/plan]` 块的标准格式 + 触发条件 + agent/files 字段 + 状态机 + 与 dispatcher 关系。
+> **作用**：规定 `[plan]...[/plan]` 块的标准格式 + 触发条件 + agent/files/verification 字段 + 状态机 + 与 dispatcher 关系。
 > **来源**：实现见 [`scripts/orchestrator/planning/plan-detect.js`](../../scripts/orchestrator/planning/plan-detect.js) + [`plan-bridge.js`](../../scripts/orchestrator/planning/plan-bridge.js)
 > **创建日期**：2026-06-29（深度审计 P0 #11 补建）
 > **关联**：[CLAUDE.md §🧠 智能任务规划协议](../../CLAUDE.md) · [`/ok`](../../commands/ok.md) · [`/no`](../../commands/no.md) · [`/plan-execute`](../../commands/plan-execute.md)
@@ -31,9 +31,11 @@
   1. <步骤 1 描述>
      agent: <explorer|planner|qa-reviewer|claude，默认 claude>
      files: <a.js, b.md，回车逗号分隔>
+     验证: <该步骤完成的可验证标准>
   2. <步骤 2 描述>
      agent: explorer
      files: scripts/foo.js
+     验证: <该步骤完成的可验证标准>
   ...
 预计改动: <N> 个文件
 预计风险: <低/中/高>
@@ -47,9 +49,10 @@
 |:-----|:----:|:-----|
 | 任务 | ✅ | 一句话标题，会写进 pending-plans.json |
 | 目标 | 🟡 | 完成标准（用于验收） |
-| 步骤 | ✅ | 至少 1 步，每步可带 `agent:` 和 `files:` 字段 |
+| 步骤 | ✅ | 至少 1 步，每步可带 `agent:` / `files:` / `验证:` 字段 |
 | `step.agent` | 🟡 | 派哪种子代理（explorer/planner/qa-reviewer/claude），缺省 `claude` |
 | `step.files` | 🟡 | 涉及文件列表（可从 `step.text` 自动提取） |
+| `step.验证` | 🟡 | 该步骤完成的可验证标准（Karpathy「目标驱动执行」：步骤 → 验证） |
 | 预计改动 | 🟡 | 文件数（帮助用户判断规模）|
 | 预计风险 | 🟡 | 低/中/高（影响 `/ok` 后是否需要 review）|
 | 回退方案 | 🟡 | 怎么撤回 |
@@ -57,6 +60,22 @@
 **agent 缺省 fallback**：当 `step.agent` 缺失时回退 `claude` 通用 agent（plan-bridge.js:188）。
 
 **files 缺省 fallback**：当 `step.files` 缺失时从 `step.text` 提取文件路径（plan-detect.js:172 extractFilesFromText）。
+
+**验证缺省 fallback**：当 `step.验证` 缺失时，默认值为"步骤完成且无回归"（plan-detect.js）。
+
+---
+
+## 🎯 目标驱动执行（Karpathy 原则在 plan 中的体现）
+
+每个 plan 步骤都应该能回答：**"我怎么知道这一步完成了？"**
+
+| 弱标准 | 强标准（带验证） |
+|:-------|:-----------------|
+| "修改 plan-protocol.md" | "修改 plan-protocol.md，使其包含 `验证:` 字段说明 → 验证: test-plan-detect.js 新增用例通过" |
+| "跑测试" | "跑 npm test → 验证: 全部测试通过" |
+| "同步文档" | "同步 CHANGELOG + 04/03/01/02/CLAUDE → 验证: `npm run doc:check` 无漂移" |
+
+**原则**：把指令式任务转化为带有验证循环的声明式目标。没有 `验证:` 的步骤，默认 fallback 为"步骤完成且无回归"。
 
 ---
 
