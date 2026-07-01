@@ -276,6 +276,62 @@ function selfReflect(toolName, filePath, content) {
   return written;
 }
 
+// ── Hook 输入解析（PostToolUse 嵌套结构 + 扁平测试结构）─────────────
+
+/**
+ * 解析 PostToolUse hook 输入（支持 2 种结构）
+ *
+ * 真实 PostToolUse（CC hook 协议）：
+ *   { tool_use_name: 'Edit', tool_input: { file_path, new_content, old_content } }
+ *
+ * 扁平结构（测试 / 手动 CLI）：
+ *   { tool_use_name: 'Write', file_path: '...', content: '...' }
+ *
+ * @param {string} input JSON 字符串
+ * @returns {{ toolName: string|null, filePath: string|null, content: string|null }}
+ */
+function parseHookInput(input) {
+  if (!input || typeof input !== 'string') {
+    return { toolName: null, filePath: null, content: null };
+  }
+
+  let data;
+  try {
+    data = JSON.parse(input);
+  } catch {
+    return { toolName: null, filePath: null, content: null };
+  }
+  if (!data || typeof data !== 'object') {
+    return { toolName: null, filePath: null, content: null };
+  }
+
+  // 嵌套结构（PostToolUse 主路径）
+  const toolInput = data.tool_input && typeof data.tool_input === 'object' ? data.tool_input : {};
+
+  const toolName = data.tool_use_name
+                 || toolInput.tool_use_name
+                 || data.toolName
+                 || data.tool_name
+                 || null;
+
+  const filePath = toolInput.file_path
+                || toolInput.path
+                || data.file_path
+                || data.filePath
+                || data.path
+                || null;
+
+  const content = toolInput.new_content
+                || toolInput.content
+                || toolInput.old_content  // fallback：没有 new 时用 old（如 dry-run）
+                || data.content
+                || data.new_content
+                || data.newContent
+                || null;
+
+  return { toolName, filePath, content };
+}
+
 // ── CLI 入口 ────────────────────────────────────────
 
 if (require.main === module) {
@@ -288,16 +344,7 @@ if (require.main === module) {
     input = fs.readFileSync(0, 'utf8');  // stdin
   }
 
-  let toolName = null, filePath = null, content = null;
-  try {
-    const data = JSON.parse(input);
-    toolName = data.tool_use_name || data.toolName || data.tool_name;
-    filePath = data.file_path || data.filePath || data.path;
-    content = data.content || data.new_content || data.newContent;
-  } catch (e) {
-    // 不是 JSON 也不致命，exit 0
-    process.exit(0);
-  }
+  const { toolName, filePath, content } = parseHookInput(input);
 
   try {
     const findings = selfReflect(toolName, filePath, content);
@@ -317,6 +364,7 @@ if (require.main === module) {
 
 module.exports = {
   selfReflect,
+  parseHookInput,
   checkCodeCompleteness,
   checkTestTrigger,
   checkTodoScan,

@@ -10,6 +10,52 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Fixed - self-reflect.js PostToolUse 输入解析 Bug（2026-07-01 · AUDIT-20260701-P0-001）
+
+**背景**：`scripts/orchestrator/reflection/self-reflect.js` 的 CLI 入口只读顶层字段 `data.file_path` / `data.content`，但 Claude Code PostToolUse hook 传入的是**嵌套结构** `{tool_use_name, tool_input: {file_path, new_content}}`。结果：当 hook 通过 stdin 喂入真实 JSON 时，`filePath` 永远是 null，5 个内置规则（code-completeness / test-trigger / todo-scan / doc-version / high-stakes-trigger）全部失效，JSONL 一条都不写。
+
+**修复**：
+- **`scripts/orchestrator/reflection/self-reflect.js`** — 提取 `parseHookInput(input)` 纯函数：优先解析嵌套 `data.tool_input.file_path` / `data.tool_input.new_content`，fallback 到扁平 `data.file_path` / `data.content`（向后兼容现有 14/14 测试）；CLI 入口改用 `parseHookInput`；`module.exports` 暴露新函数
+- **`scripts/orchestrator/reflection/test-self-reflect.js`** — 新增 9 个断言：嵌套结构 / Edit 工具 / 扁平 fallback / 非法 JSON / null 输入 / 嵌套 + 扁平 CLI 端到端
+
+**验证**：
+- `node scripts/orchestrator/reflection/test-self-reflect.js` 55/55 通过（原 14 + 新增 41）
+- 手动模拟 PostToolUse：嵌套结构触发 3 项反馈（console.log + debugger + TODO），扁平结构触发 2 项反馈（向后兼容未破坏）
+- JSONL 落盘验证：`reflections.jsonl` 正确写入（修复前为 0 条）
+- 同目录参考：`evolution-lock.js:147` + `workflow-observer.js:271` 已用正确嵌套结构
+- `npm test` 全量：self-reflect 55/55；唯一失败是预存的 `semantic-recall` 测试，与本修复无关
+- **L5 影响**：L4 学习闭环的「质量自检」从未真正运转，本次修复让其从 0 反馈 → 真实规则执行
+
+**Files**（修改/新增清单）：
+- `scripts/orchestrator/reflection/self-reflect.js`（CLI 解析 + 暴露 parseHookInput）
+- `scripts/orchestrator/reflection/test-self-reflect.js`（新增 9 断言）
+
+**关联**：本次 `/audit` 深度审计（2026-07-01）P0 真风险；同批次 P0-002 ~ P0-008 见 evolution-plan.json next 队列
+
+### Added - M63：吸收 andrej-karpathy-skills 4 原则到规则与流程（2026-07-01）
+
+> **背景**：`multica-ai/andrej-karpathy-skills` 把 Andrej Karpathy 总结的 LLM 编码陷阱压缩为 4 条原则（编码前思考 / 简洁优先 / 精准修改 / 目标驱动执行）。本工程将其系统化融入规则、plan 模板、/go 流水线、self-discipline 6 步法，减少 AI 错误假设、过度工程和无关修改。
+
+- **`.claude/rules/first-principles.md`** — 新增「🧠 编码前思考」小节，把 Karpathy 4 要求作为 0.5a 前置动作；0.5 步扩展为 0.5a/0.5b/0.5c（编码前思考 / 第一性原理 / 对抗式审查）
+- **`.claude/rules/behavior.md`** — 新增「✂️ 简洁优先」+「🎯 精准修改」两小节，明确 diff 纪律："每一行修改都必须追溯到用户请求"
+- **`.claude/rules/self-discipline.md`** — 6 步法融入 Karpathy 4 原则；动作清单增加 0.5d/0.5e/0.5f；最后更新改为 2026-07-01 v6
+- **`.claude/rules/plan-protocol.md`** — plan 标准格式每步增加 `验证:` 字段；新增「目标驱动执行」小节
+- **`scripts/orchestrator/planning/plan-detect.js`** — 解析 `验证:` 字段到 `step.verification`；`applyFallback` 缺 verification 时默认"步骤完成且无回归"
+- **`scripts/orchestrator/planning/plan-bridge.js`** — `buildStepPrompt` 把 verification 写入子会话 prompt；执行日志记录 verification；CLI 输出打印 verification
+- **`scripts/orchestrator/test-plan-detect.js`** — 新建 5 个单元测试，覆盖 `验证:` 字段解析与 fallback
+- **`scripts/orchestrator/go-pipeline.js`** — 4 阶段定义增加 `verification` 字段；`formatHuman` 每阶段输出验证标准
+- **`.claude/skills/go/skill.md`** — 强调阶段级验证标准与「目标驱动执行」
+- **`scripts/orchestrator/自我约束规范.md`** — 决策树加入 Karpathy 4 原则自检；动作编号增加 0.5 步
+- **`scripts/orchestrator/test-self-discipline.js`** — 升级到 v6，增加 Karpathy 4 原则、behavior.md、04.md M63 行校验
+
+**验证**：
+- `node scripts/orchestrator/test-plan-detect.js` 5/5 通过
+- `node scripts/orchestrator/test-self-discipline.js` 29/29 通过
+- `node scripts/orchestrator/test-go-pipeline.js` 19/19 通过
+- `npm run doc:check` 36/0/1
+
+**关联**：M63 / Karpathy 4 原则
+
 ### Added - M62：MEMORY.md 接近限值预警绑定 session-init Step 1（2026-07-01）
 
 > **背景**：M48-D 已引入 `memory-health-check.js` 4 项硬约束，但 `session-init.sh` 启动时不会主动显示 MEMORY.md / KB 体量，用户只有手动跑 `npm run memory:health` 才知道是否接近 200 行 / 25KB 红线。

@@ -9,6 +9,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const {
   selfReflect,
+  parseHookInput,
   checkCodeCompleteness,
   checkTestTrigger,
   checkTodoScan,
@@ -275,6 +276,91 @@ section('CLI 入口');
     code = e.status;
   }
   assert(code === 0, '非法 JSON exit 0（不阻塞主流程）', `code=${code}`);
+}
+
+// ==================== 7. parseHookInput 单元测试（M54-A 修复） ====================
+section('parseHookInput：PostToolUse 嵌套 + 扁平双结构');
+
+// 真实 PostToolUse 嵌套结构
+{
+  const r = parseHookInput(JSON.stringify({
+    tool_use_name: 'Write',
+    tool_input: { file_path: '/p/a.js', new_content: 'console.log(1);' },
+  }));
+  assert(r.toolName === 'Write', '嵌套：toolName 解析', `got=${r.toolName}`);
+  assert(r.filePath === '/p/a.js', '嵌套：file_path 解析', `got=${r.filePath}`);
+  assert(r.content === 'console.log(1);', '嵌套：new_content 解析', `got=${r.content}`);
+}
+
+// 真实 Edit 工具
+{
+  const r = parseHookInput(JSON.stringify({
+    tool_use_name: 'Edit',
+    tool_input: {
+      file_path: '/p/b.js',
+      old_content: 'var x = 1;',
+      new_content: 'const x = 1;',
+    },
+  }));
+  assert(r.toolName === 'Edit', 'Edit: toolName', `got=${r.toolName}`);
+  assert(r.filePath === '/p/b.js', 'Edit: file_path', `got=${r.filePath}`);
+  assert(r.content === 'const x = 1;', 'Edit: 优先取 new_content', `got=${r.content}`);
+}
+
+// 扁平结构（向后兼容）
+{
+  const r = parseHookInput(JSON.stringify({
+    tool_use_name: 'Write',
+    file_path: '/p/c.js',
+    content: '// TODO',
+  }));
+  assert(r.toolName === 'Write', '扁平：toolName');
+  assert(r.filePath === '/p/c.js', '扁平：file_path');
+  assert(r.content === '// TODO', '扁平：content');
+}
+
+// 非法 JSON
+{
+  const r = parseHookInput('not json');
+  assert(r.toolName === null && r.filePath === null && r.content === null,
+    '非法 JSON 全 null');
+}
+
+// 空 / 非字符串
+{
+  assert(parseHookInput(null).filePath === null, 'null 输入');
+  assert(parseHookInput('').filePath === null, '空字符串');
+  assert(parseHookInput(123).filePath === null, '非字符串输入');
+  assert(parseHookInput('{"tool_use_name":"Write"}').filePath === null,
+    '无 tool_input/file_path 时为 null');
+}
+
+// CLI 端到端：嵌套结构能写入 JSONL
+{
+  const fp = tmpJs('nested-test.js', 'console.log("nested");');
+  const input = JSON.stringify({
+    tool_use_name: 'Write',
+    tool_input: { file_path: fp, new_content: 'console.log("nested");' },
+  });
+  clearReflection();
+  const out = execFileSync('node', ['self-reflect.js', input], {
+    cwd: __dirname, encoding: 'utf8', stdio: 'pipe',
+  });
+  assert(out.includes('反馈已记录'), '嵌套结构 CLI 触发反馈', `out=${out.slice(0, 100)}`);
+  const lines = fs.readFileSync(REFLECTION_FILE, 'utf8').trim().split('\n').filter(Boolean);
+  assert(lines.length >= 1, '嵌套结构 JSONL 写入', `lines=${lines.length}`);
+}
+
+// CLI 端到端：Edit 工具不输出
+{
+  const input = JSON.stringify({
+    tool_use_name: 'Read',
+    tool_input: { file_path: '/tmp/x.js' },
+  });
+  const out = execFileSync('node', ['self-reflect.js', input], {
+    cwd: __dirname, encoding: 'utf8', stdio: 'pipe',
+  });
+  assert(!out.includes('反馈已记录'), '嵌套结构 Read 不输出');
 }
 
 // ==================== 清理 ====================
