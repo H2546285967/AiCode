@@ -57,7 +57,7 @@ console.log('── 1. 边界条件 ──');
 console.log('\n── 2. GRAPH_RECALL_THRESHOLDS 常量 ──');
 
 check('reuse 阈值 = 0.5', GRAPH_RECALL_THRESHOLDS.reuse === 0.5);
-check('similar 阈值 = 0.2', GRAPH_RECALL_THRESHOLDS.similar === 0.2);
+check('similar 阈值 = 0.05', GRAPH_RECALL_THRESHOLDS.similar === 0.05);
 check('RULES.version = 3.0.0', RULES.version === '3.0.0');
 
 // ==================== 3. 完全未知 query（用随机字符串避开 KB） ====================

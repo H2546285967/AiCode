@@ -24,7 +24,7 @@
  *   - decide() 返回加 complexity_score + complexity_band
  * @changed v3.0.0 (2026-06-25) M14:
  *   - 加 recallBeforeDispatch(task) 钩子 — 派 Agent 前查知识图谱
- *   - 三档决策：命中复用（≥0.5）/ 类似案例（≥0.2）/ 完全未知（< 0.2）
+ *   - 三档决策：命中复用（≥0.5）/ 类似案例（≥0.05）/ 完全未知（< 0.05）
  *   - decide() 返回加 graph 字段（{ matched, hit: 'reuse'|'similar'|'miss', kb, score }）
  *   - 软引用 semantic-recall（KB 引擎不可用时降级为 no-graph）
  *   - 同步记 evo.kb.recall 评价事件（接 M15 评价闭环）
@@ -255,14 +255,14 @@ function agentsFromScore(score) {
 // ==================== v3.0.0 M14: 知识图谱反哺调度 ====================
 
 /**
- * M14 阈值（与 04 文档 §0.4 增量 M14 验收对齐）
+ * M14 阈值（与 04 文档 §0.4 增量 M14 验收对齐，similar 与 semantic-recall.js 默认 minScore 0.05 一致）
  *   score ≥ 0.5  → 命中复用（不派 Agent，附 KB 答案）
- *   0.2 ≤ score < 0.5 → 类似案例（按原逻辑派 Agent，附 KB 案例参考）
- *   score < 0.2  → 完全未知（按原逻辑派 Agent，无 KB 参考）
+ *   0.05 ≤ score < 0.5 → 类似案例（按原逻辑派 Agent，附 KB 案例参考）
+ *   score < 0.05  → 完全未知（按原逻辑派 Agent，无 KB 参考）
  */
 const GRAPH_RECALL_THRESHOLDS = {
   reuse: 0.5,
-  similar: 0.2,
+  similar: 0.05,
 };
 
 // 软引用 semantic-recall（M14 自身测试时可独立 require）

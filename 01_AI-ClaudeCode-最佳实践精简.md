@@ -157,6 +157,7 @@
 | **handoff 接续（机器接续 runner）** | `/handoff "..." --runner` 或 `node handoff.js "..." --runner` | 离开时让 runner 循环跑（v3.0.5 M24-C） |
 | **handoff 接续（人工接管 runner）** | `/handoff --resume` | runner 跑一半想换回人工（v3.0.5 M24-C） |
 | **路线图同步** | `npm run roadmap:sync` | 04.md §十二 ⏳ 段漂移时根除（v3.0.5 M24-D） |
+| **演进锁**（M60） | `node scripts/orchestrator/evolution-lock.js status` | L3 hook 强制校验 allowed_docs，防多窗口同时改 04.md/CLAUDE.md/CHANGELOG 漂移（v3.0.8，15/15 测试）|
 | **L1→L5 智能演进** | v3.0.4 M23 | 4 文档全景图 + 5 级速览 + v4.0.0 触发条件 + L5 5 条达成 |
 | **路线图同步预览** | `npm run roadmap:sync:dry` | 看完再决定是否真同步 |
 | **路线图同步状态** | `npm run roadmap:sync:status` | 看 next 队列和 04.md 是否一致 |

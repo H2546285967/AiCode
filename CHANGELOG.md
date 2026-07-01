@@ -10,6 +10,22 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Fixed - AUDIT-M54-batch2-E：recall 阈值 0.2→0.05 与 semantic-recall 对齐（2026-07-01）
+
+> **背景**：`semantic-recall.js` 默认 `minScore = 0.05`，但 `dispatcher.js` 的 `GRAPH_RECALL_THRESHOLDS.similar` 长期为 0.2，导致 dispatcher M14 知识图谱检索门槛高于底层引擎默认值，部分 0.05~0.2 区间的相关 KB 被误判为 miss。
+
+- **`scripts/orchestrator/dispatcher.js`** — 将 `GRAPH_RECALL_THRESHOLDS.similar` 从 0.2 降至 0.05
+  - 同步更新顶部注释与 `recallBeforeDispatch` 阈值注释，明确 similar 档与 `semantic-recall.js` 默认 minScore 0.05 一致
+- **`scripts/orchestrator/test-graph-dispatch.js`** — `similar` 阈值断言 0.2 → 0.05
+- **`scripts/orchestrator/test-dispatch-skill.js`** — `graph.threshold.similar` 与常量断言同步改为 0.05
+
+**验证**：
+- `node scripts/orchestrator/test-graph-dispatch.js` 35/35 通过
+- `node scripts/orchestrator/test-dispatch-skill.js` 73/73 通过
+- `npm test` 预存在 recall 失败 1 条（`test-semantic-recall.js` 不存在的查询返回空）未引入新失败
+
+**关联**：AUDIT-M54-batch2-E-recall-threshold / AUDIT-20260701-P0-004
+
 ### Fixed - AUDIT-M54-batch2-D：runner PID + stale 检测（2026-07-01）
 
 > **背景**：`autonomous-runner.js` 在 `STAGE_TIMEOUT_MS=30min` SIGTERM 杀子进程或 runner 异常退出后，`stage.status` 仍停留在 `in_progress`；新 runner 启动后可能重复执行同一阶段，导致重复 commit。
@@ -27,7 +43,7 @@
 - `npm run test:autonomous` 全绿（`test-autonomous.js` 64/64 + `test-autonomous-runner.js` 17/17 + `test-autonomous-menu.js` 6/6 + `verify-runner-subprocess.js` 21/21）
 - `npm run doc:check` 36/0/1
 
-**关联**：AUDIT-M54-batch2-D-runner-pid
+**关联**：M59
 
 ### Added - AUDIT-M54-batch2-D：L3 allowed_docs 演进锁强制校验（2026-07-01）
 
@@ -47,7 +63,7 @@
 - `npm run doc:check` 36/0/1
 - `npm test` 全绿除预存在 recall 失败 1 条（`test-semantic-recall.js` 不存在的查询返回空）
 
-**关联**：AUDIT-M54-batch2-D-autonomous-l3
+**关联**：M60
 
 ### Fixed - AUDIT-M54-batch2-B：补 PostToolUse hook 自动埋点 workflow 事件（2026-07-01）
 
@@ -81,7 +97,7 @@
 **验证**：
 - `node scripts/orchestrator/proactive/test-proactive-scan.js` 36/36 通过
 
-**关联**：AUDIT-M54-batch2-C-todo-stale-truncate
+**关联**：M58
 
 ### Fixed - AUDIT-M54-batch2-B：auto-implement 决策流程补 metrics 埋点（2026-07-01）
 
@@ -97,7 +113,7 @@
 **验证**：
 - `node scripts/evolution/test-auto-implement.js` 37/37 通过
 
-**关联**：AUDIT-M54-batch2-B-auto-implement-metrics · M15 评价闭环
+**关联**：M56 · M15 评价闭环
 
 ### Fixed - M54 版本号 metadata 漂移：建立 package.json 为唯一真实源（2026-07-01）
 

@@ -123,7 +123,7 @@ for (const inp of graphInputs) {
     `decide("${inp}").graph.hit ∈ 四档之一`, g ? `实际=${g.hit}` : '');
   assert(typeof g.matched === 'boolean', `decide("${inp}").graph.matched 是 boolean`);
   assert(typeof g.score === 'number', `decide("${inp}").graph.score 是 number`);
-  assert(g.threshold && g.threshold.reuse === 0.5 && g.threshold.similar === 0.2,
+  assert(g.threshold && g.threshold.reuse === 0.5 && g.threshold.similar === 0.05,
     `decide("${inp}").graph.threshold 符合 M14 设定`, g ? JSON.stringify(g.threshold) : '');
 }
 
@@ -136,7 +136,7 @@ assert(recallBeforeDispatch(null).hit === 'miss', 'null → hit=miss（不抛）
 
 // 阈值常量
 assert(GRAPH_RECALL_THRESHOLDS.reuse === 0.5, 'reuse 阈值 = 0.5');
-assert(GRAPH_RECALL_THRESHOLDS.similar === 0.2, 'similar 阈值 = 0.2');
+assert(GRAPH_RECALL_THRESHOLDS.similar === 0.05, 'similar 阈值 = 0.05');
 
 // 正常查询 → 返回结构合法
 const r1 = recallBeforeDispatch('修复 PowerShell 中文乱码');
