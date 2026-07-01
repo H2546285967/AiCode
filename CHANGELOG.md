@@ -10,6 +10,32 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Fixed - workflow：getRecentModifiedFiles 改用 Observer + git diff HEAD（2026-07-01 · AUDIT-20260701-P0-008）
+
+**背景**：
+`suggestion-engine.js` 的 `getRecentModifiedFiles(hours)` 用 `git log --pretty=format:"%H %ad" --date=iso --since="${since}" --name-only`，**只能读 committed files**——uncommitted 改动完全看不到，且 `slice(0, 10)` 硬截断。
+
+**bug 场景**：
+- 用户在 2 小时内改了 5 个文件但没 commit
+- `recentFiles` 返回 `[]`（因为 git log 看不到）
+- `Suggest.context(2).recentFiles` 显示空 → 建议引擎失明
+
+**修复**：
+- **`scripts/orchestrator/workflow/suggestion-engine.js#getRecentModifiedFiles`** 重写为 2 源策略：
+  1. **优先 `Observer.getRecentEvents(hours)`** 过滤 `type='file_modified'`，去重 `payload.files`
+  2. **Fallback `git diff HEAD --name-only`**（合并 staged + unstaged + untracked vs HEAD）
+- 上限从 10 → 20（更可见）
+
+**验证**：
+- 新增 `testGetRecentModifiedFiles` — 写 3 个 events（含 1 个非 file_modified），验证去重 + 覆盖
+- `test-suggestion-engine` 5/5 通过
+- `test-pattern-miner` 5/5 通过（无回归）
+- `test-workflow-observer` 7/7 通过（无回归）
+
+**L5 影响**：suggestion-engine 的 `recentFiles` 字段从"只看 committed 假象"变成"实时近期改动真值"，workflow 主动建议更准
+
+**关联**：AUDIT-20260701-P0-008
+
 ### Fixed - workflow：pattern-miner 窗口共现算法全量计数（2026-07-01 · AUDIT-20260701-P0-007）
 
 **背景**：

@@ -266,17 +266,40 @@ function getUncommittedCount() {
 }
 
 function getRecentModifiedFiles(hours) {
-  const since = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
-  const output = execSafe(`git log --pretty=format:"%H %ad" --date=iso --since="${since}" --name-only`);
+  // v3.0.8 P0-008 重写：
+  //   1) 优先读 Observer 事件流（实时含 uncommitted）
+  //   2) Fallback: git diff HEAD --name-only（合并 staged + unstaged + untracked）
+  //   修复前: 用 git log --since 只看 committed，漏掉 uncommitted 改动
+
+  // 来源 1: Observer 事件流
+  try {
+    const Observer = loadObserver();
+    if (Observer && typeof Observer.getRecentEvents === 'function') {
+      const events = Observer.getRecentEvents(hours);
+      const files = new Set();
+      for (const ev of events) {
+        if (ev.type !== 'file_modified') continue;
+        const payloadFiles = ev.payload?.files || [];
+        for (const f of payloadFiles) {
+          if (typeof f === 'string' && f.trim()) files.add(f.trim());
+        }
+      }
+      if (files.size > 0) {
+        return Array.from(files).slice(0, 20);
+      }
+    }
+  } catch { /* 静默降级到 git fallback */ }
+
+  // 来源 2: git diff（fallback）
+  const output = execSafe('git diff HEAD --name-only');
   if (!output) return [];
 
   const files = new Set();
   for (const line of output.split('\n')) {
-    if (line.trim() && !line.includes(' ')) {
-      files.add(line.trim());
-    }
+    const f = line.trim();
+    if (f) files.add(f);
   }
-  return Array.from(files).slice(0, 10);
+  return Array.from(files).slice(0, 20);
 }
 
 function generateHeuristicSuggestions(recentEvents, usedKeys) {

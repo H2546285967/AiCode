@@ -100,6 +100,37 @@ function testContext() {
   console.log('✅ testContext passed');
 }
 
+// v3.0.8 P0-008: getRecentModifiedFiles 优先 Observer，fallback git diff
+function testGetRecentModifiedFiles() {
+  reset();
+
+  // 用 mock Observer：直接写 events.jsonl
+  const base = Date.now();
+  const events = [
+    { ts: new Date(base).toISOString(), type: 'file_modified', session: 'test', payload: { files: ['a.js', 'b.js'] } },
+    { ts: new Date(base - 1000).toISOString(), type: 'file_modified', session: 'test', payload: { files: ['b.js', 'c.js'] } },  // 重复 b.js
+    { ts: new Date(base - 2000).toISOString(), type: 'command_run', session: 'test', payload: { command: 'npm test' } },  // 非 file_modified
+  ];
+  for (const ev of events) {
+    fs.appendFileSync(TEST_EVENTS_FILE, JSON.stringify(ev) + '\n');
+  }
+
+  // 强制重载 module
+  delete require.cache[require.resolve('./workflow-observer')];
+  delete require.cache[require.resolve('./suggestion-engine')];
+
+  const Suggest = require('./suggestion-engine');
+  const files = Suggest.context(24).recentFiles;
+  assert(files.length > 0, '应从 Observer 读到文件');
+  assert(files.includes('a.js'), '应包含 a.js');
+  assert(files.includes('c.js'), '应包含 c.js');
+  // 去重
+  const dedup = new Set(files);
+  assert.strictEqual(dedup.size, files.length, '文件应去重');
+
+  console.log('✅ testGetRecentModifiedFiles passed');
+}
+
 // ── 运行 ─────────────────────────────────────────────
 
 function run() {
@@ -107,6 +138,7 @@ function run() {
   testSuggestHeuristicUncommitted();
   testFormat();
   testContext();
+  testGetRecentModifiedFiles();
   console.log('\n🎉 suggestion-engine 测试全部通过');
 }
 
