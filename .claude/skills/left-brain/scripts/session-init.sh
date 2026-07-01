@@ -169,7 +169,15 @@ echo ""
 #     node "$WORKSPACE_ROOT/scripts/orchestrator/workflow/workflow-cli.js" record session_start "{\"source\":\"session-init\"}" "{\"session\":\"$SESSION_ID\"}" >/dev/null 2>&1
 # fi
 
-echo "🔍 Step 1: 自我反思反馈（v1.9.1+ 智能增量 A）"
+echo "🧠 Step 1: MEMORY.md 健康体检 + kb-count（M54 leftbrain-promote-warning）"
+if [ -n "$WORKSPACE_ROOT" ] && [ -f "$WORKSPACE_ROOT/scripts/knowledge/memory-health-check.js" ]; then
+  node "$WORKSPACE_ROOT/scripts/knowledge/memory-health-check.js" --compact 2>/dev/null || true
+else
+  echo "  ⚠️ memory-health-check.js 未找到"
+fi
+echo ""
+
+echo "🔍 Step 1.5: 自我反思反馈（v1.9.1+ 智能增量 A）"
 REFLECTION_FILE="${SKILL_DIR}/memory/reflections.jsonl"
 if [ -f "$REFLECTION_FILE" ] && [ -s "$REFLECTION_FILE" ]; then
     count=$(wc -l < "$REFLECTION_FILE")

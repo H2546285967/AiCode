@@ -178,6 +178,14 @@ test('CLI --json 输出合法 JSON', () => {
   }
 });
 
+test('CLI --compact 输出简洁格式', () => {
+  const { spawnSync } = require('child_process');
+  const r = spawnSync('node', [path.join(__dirname, 'memory-health-check.js'), '--compact'], { encoding: 'utf8' });
+  assert(r.stdout.indexOf('MEMORY.md') >= 0, '含 MEMORY.md');
+  assert(r.stdout.indexOf('KB') >= 0, '含 KB 计数');
+  assert(r.stdout.indexOf('体检报告') < 0, '不含详细报告标题');
+});
+
 test('CLI 默认跑输出报告', () => {
   const { spawnSync } = require('child_process');
   const r = spawnSync('node', [path.join(__dirname, 'memory-health-check.js')], { encoding: 'utf8' });

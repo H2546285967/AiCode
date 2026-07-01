@@ -219,13 +219,31 @@ function runAll() {
 
 // ── 报告输出 ─────────────────────────────────────────
 
-function printReport(result, { json = false, ci = false } = {}) {
+function printReport(result, { json = false, ci = false, compact = false } = {}) {
   if (json) {
     console.log(JSON.stringify(result, null, 2));
     return;
   }
 
   if (ci) return; // CI mode 静默
+
+  if (compact) {
+    const memoryIdx = result.checks.find(c => c.name === 'MEMORY_INDEX');
+    const singleKB = result.checks.find(c => c.name === 'SINGLE_KB');
+    const errorCount = result.summary.error;
+    const warnCount = result.summary.warn;
+    const statusIcon = errorCount > 0 ? '🔴' : (warnCount > 0 ? '🟡' : '✅');
+    const statusText = errorCount > 0 ? `${errorCount} ERROR` : (warnCount > 0 ? `${warnCount} WARN` : '健康');
+    const parts = [];
+    if (memoryIdx) {
+      parts.push(`MEMORY.md ${memoryIdx.lines} 行 / ${fmtBytes(memoryIdx.bytes)}`);
+    }
+    if (singleKB) {
+      parts.push(`KB ${singleKB.total} 条（${singleKB.oversized} 条超 100 行）`);
+    }
+    console.log(`  ${statusIcon} ${parts.join(' · ')} · ${statusText}`);
+    return;
+  }
 
   console.log(`\n🩺 MEMORY.md 体检报告 (${result.timestamp.slice(0, 10)})\n`);
   console.log('=' .repeat(60));
@@ -287,6 +305,7 @@ function parseArgs() {
   return {
     json: args.includes('--json'),
     ci: args.includes('--ci'),
+    compact: args.includes('--compact'),
   };
 }
 

@@ -10,6 +10,25 @@
 > **说明**：2026-06-25 清理历史 Unreleased 堆积 — 已交付内容已迁入对应版本号段（详见下方各 `[vX.Y.Z]`）。
 > 本段仅作占位，下个增量/发版再追加条目。
 
+### Added - M62：MEMORY.md 接近限值预警绑定 session-init Step 1（2026-07-01）
+
+> **背景**：M48-D 已引入 `memory-health-check.js` 4 项硬约束，但 `session-init.sh` 启动时不会主动显示 MEMORY.md / KB 体量，用户只有手动跑 `npm run memory:health` 才知道是否接近 200 行 / 25KB 红线。
+
+- **`.claude/skills/left-brain/scripts/session-init.sh`** — Step 1 改为「MEMORY.md 健康体检 + kb-count」
+  - 调用 `scripts/knowledge/memory-health-check.js --compact`，启动即显示 MEMORY.md 行数/字节、KB 总数、超尺寸 KB 数、ERROR/WARN 状态
+  - 原 Step 1「自我反思反馈」后移为 Step 1.5
+- **`scripts/knowledge/memory-health-check.js`** — 新增 `--compact` 简洁输出模式
+  - 单行输出：`🟡 MEMORY.md 124 行 / 11.9KB · KB 81 条（6 条超 100 行）· 1 WARN`
+  - 保留默认报告模式与 `--json` / `--ci` 模式
+- **`scripts/knowledge/test-memory-health-check.js`** — 新增 `CLI --compact 输出简洁格式` 断言
+
+**验证**：
+- `node scripts/knowledge/test-memory-health-check.js` 16/16 通过
+- `bash .claude/skills/left-brain/scripts/session-init.sh` Step 1 正确显示 compact 体检结果
+- `npm run doc:check` 36/0/1
+
+**关联**：M62
+
 ### Fixed - AUDIT-M54-batch2-evolution-eval-dataset：补全 GEPA evolve eval-dataset.json（2026-07-01）
 
 > **背景**：`.claude/skills/evolve/SKILL.md` frontmatter 声明 `data/gepa/evolve/eval-dataset.json` 存在（`eval_dataset_source: synthetic`），但实际目录为空，导致 GEPA 评估 coverage 维度始终 fallback 到 0.5，且承诺与现实脱节。

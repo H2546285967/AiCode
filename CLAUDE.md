@@ -130,7 +130,7 @@ AiCode/
 | **`skill-hub`** (M40) | **buildwithclaude 借鉴 + skill 统一发现** | **借鉴 davepoon/buildwithclaude：已装 + 本地 + 远程缓存三源聚合，统一搜索/推荐 skill + CLI（npm run skill-hub:demo）** |
 | **`go`** (M43) | **交付流水线自动化** | **测试 → 简化 → 审查 → 提交 4 阶段一气呵成（失败立即停止），纯函数 + 19/19 测试 + `--dry-run/--skip/--only` 5 参数（v3.0.5）** |
 | **`kb-classify`** (M45) | **KB 分类质量提升** | **71 条 KB 「其他」从 49.3% → 4.2%（远超 20% 目标），L5 第 3 条数据真实性 ↑；`npm run kb:report` 看分布 + `npm run kb:enrich` 补 frontmatter + 24/24 测试（v3.0.5）** |
-| **`kb-promote`** (M48) | **KB 毕业机制 + memory 体检** | **借鉴 neat-freak 91 行：毕业三触发（主题反复 ≥3 / 系统机制 / 事件 >14 天）+ sync-matrix 变更映射 + self-discipline 5 步法 + memory-health-check 4 项硬约束；`npm run kb:promote -- --report` 看毕业建议 + `npm run memory:health` 体检 MEMORY.md 200/25KB + 17+15 测试（v3.0.6）** |
+| **`kb-promote`** (M48/M62) | **KB 毕业机制 + memory 体检 + session-init 自动预警** | **借鉴 neat-freak 91 行：毕业三触发（主题反复 ≥3 / 系统机制 / 事件 >14 天）+ sync-matrix 变更映射 + self-discipline 5 步法 + memory-health-check 4 项硬约束；`session-init.sh` Step 1 自动 `--compact` 显示 MEMORY.md / KB 状态；`npm run kb:promote -- --report` 看毕业建议 + `npm run memory:health` 体检 MEMORY.md 200/25KB + 17+15+1 测试（v3.0.6/v3.0.8）** |
 | **`deep-research`** (M49+3 · v3.0.8) | **深度研究（横纵双轴 · 6 段方法论闭环）** | **借鉴 hv-analysis + 卡兹克公众号通用 Prompt：纵向 5 维度 + 横向 3 场景 + 交汇 5 核心问题 + 3 剧本 + 机遇/风险/痛点 + 分人群（创业者/从业者/学习者/投资人）行动建议；`npm run deep-research -- analyze "对象名"` 生成报告框架（21/21 测试）** |
 | **`prompt-optimizer`** (M54 Phase 2 · v3.0.8) | **提示词优化闭环** | **借鉴 prompt-optimizer：分析 → 评估 → 对比 → 智能改写；`npm run po:run -- --file .claude/agents/qa-reviewer.md --rounds 3`（22/22 测试）** |
 | MCP servers | 工具链 | 本地文件/数据库/网页/**工程审计**能力 |
